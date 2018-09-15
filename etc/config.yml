@@ -1,0 +1,364 @@
+#
+# Sample annotated config for DIRBS Core configuration.
+#
+# Copyright (c) 2018 Qualcomm Technologies, Inc.
+#
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without modification,
+# are permitted (subject to the limitations in the disclaimer below) provided that the
+# following conditions are met:
+#
+# * Redistributions of source code must retain the above copyright notice, this list of conditions
+#   and the following disclaimer.
+# * Redistributions in binary form must reproduce the above copyright notice, this list of conditions
+#   and the following disclaimer in the documentation and/or other materials provided with the distribution.
+# * Neither the name of Qualcomm Technologies, Inc. nor the names of its contributors may be used to endorse
+#   or promote products derived from this software without specific prior written permission.
+#
+# NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED
+# BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+# TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
+# THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+# STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+
+# PostgreSQL settings used to build connection string
+postgresql:
+  # Database name (an empty database on the first run). Overridden by environment
+  # variable DIRBS_DB_DATABASE if set.
+  database: dirbs
+  # Host that the PostgreSQL server runs on. Overridden by environment
+  # variable DIRBS_DB_HOST if set.
+  host: localhost
+  # PostgreSQL port if not running on standard port of 5432. Overridden by environment
+  # variable DIRBS_DB_PORT if set.
+  port: 5432
+  # Database role/user that DIRBS will connect to PostgreSQL as. Overridden by environment
+  # variable DIRBS_DB_USER if set.
+  user: dirbs
+  # Password used to connect to the database.
+  #
+  # There are a number of ways to set the password, with each option having pros and cons
+  # dependent on the level of security required vs. ability to automate
+  #   - Firstly, the password can be defined here in clear text. This file would
+  #     then have its permissions set appropriately to restrict access to non-admin
+  #     users
+  #   - If the setting is not defined in this config file, the user's .pgpass file
+  #     will be read from their home directory. Note that this file will only be
+  #     read if its permissions are set appropriately (must only be readable by the user)
+  #   - If the DIRBS_DB_PASSWORD environment variable is set, this value will
+  #     overwrite any value configured in here or in .pgpass
+  #   - Finally, the --db-password-prompt command-line option can be used to prompt
+  #     the user for a password when a command is run.
+  #
+  # Uncomment the below line to set the password explicitly in this config file
+  #
+  # password: <change me>
+
+# Definitions of regional settings used by DIRBS core for reporting and
+# for input validation.
+region:
+  # Name is used for the country level report
+  name: Country1
+  # Whether or not MSISDN data is present and should be imported for this region
+  import_msisdn_data: True
+  # Whether or not RAT data is present and should be imported for this region
+  import_rat_data: True
+  # country_codes are used to validate MSISDNs during operator data import
+  country_codes:
+    - "22"
+  # exempted_device_types contains a list of GSMA device types that do not require
+  # registration in this country. Specifiying a list of device types here will mean
+  # that the not_in_registration_list classification dimension will ignore IMEIs
+  # whose TACs correspond to the listed device types. They will also be ignored in
+  # the IMEI API's realtime registration check. The expected syntax for this is:
+  #
+  # exempted_device_types:
+  #   - Module
+  #   - Tablet
+  exempted_device_types: []
+  # operators map operator IDs to a more human-friendly display string for
+  # reporting purposes
+  operators:
+    - id: operator1
+      name: First Operator
+      # mcc_mnc values are used to:
+      # - validate IMSIs during operator data import
+      # - work out which operators notifications about an offending subscriber
+      #   should be sent to
+      # - work out which operators excepted IMEI-IMSI pairings should be sent to
+      mcc_mnc_pairs:
+        - mcc: "111"
+          mnc: "01"
+    - id: operator2
+      name: Second Operator
+      mcc_mnc_pairs:
+        - mcc: "111"
+          mnc: "02"
+    - id: operator3
+      name: Third  Operator
+      mcc_mnc_pairs:
+        - mcc: "111"
+          mnc: "03"
+    - id: operator4
+      name: Fourth Operator
+      mcc_mnc_pairs:
+        - mcc: "111"
+          mnc: "04"
+
+# Definitions of configuration variables related to pruning of subscriber data
+# after a specified retention window
+data_retention:
+  # The number of months from the start of the current months that DIRBS core
+  # will retain data about a triplet seen in its DB. After this time, the triplet
+  # will be erased from the monthly_network_triplets tables (country and per-MNO).
+  # The IMEI will continue to be stored after this date as it is needed for continued
+  # list generation, etc. All references to IMSI and MSISDN will be pruned after this date.
+  months_retention: 6
+
+# Definitions of configuration variables used by DIRBS Core in the list generation process.
+list_generation:
+  # The number of days that DIRBS core will look back through data from current date to determine IMSIs/MSISDNs
+  # which were associated with the notifiable IMEIs.
+  lookback_days: 180
+  # If true, the exception list will contain only those IMEI-IMSI pairs where the IMEI is on the blacklist.
+  # By default, all IMEI-IMSI pairs part of the pairing list are output to the exception list.
+  restrict_exceptions_list_to_blacklisted_imeis: false
+  # If true, generate a check digit for IMEIs during list generation.
+  # Check digit will only be added to "valid IMEIs"
+  generate_check_digit: false
+  # If true, output only "valid" IMEIs.
+  # Valid IMEIs start with 14 digits as they will have 15 digits if the check digit append has been enabled
+  output_invalid_imeis: true
+
+# Definitions of configuration variables used by DIRBS Core in the report generation process.
+report_generation:
+  # This setting is used by blacklist violations and stolen list violations reports to give the MNO
+  # some processing time (in days) before an IMEI appearing on the network is considered a violation.
+  blacklist_violations_grace_period_days: 2
+
+# Definitions of configuration variables used by DIRBS Core to determine how many workers to use to parallelise
+multiprocessing:
+  # The maximum number of local processing blade workers to use to achieve DIRBS Core tasks. This is particularly
+  # useful for pre-validation of large operator import jobs where we can run multiple instances of the pre-validator
+  # in parallel on different parts of the file. The default is to use half of the available CPUs in the
+  # system will be used.
+  # max_local_cpus: 10
+  # The maximum number of database connections to use to parallelise DIRBS Core tasks. PostgreSQL 9.6 has support
+  # for parellelising tasks internally - this setting does not affect parellelisation for a single connection.
+  # Where PostgreSQL is unable to parallelise a single query by itself, we use this number of workers to issue
+  # multiple queries at once on different connections. Generally this scales very well - it is safe to set this
+  # reasonably high. It should probably be set to roughly the number of disks in your RAID array in case there are
+  # I/O intensive DB operations going on. If using SSD, can be set to a higher value.
+  max_db_connections: 8
+
+# Definition of ratio limits for the various checks on operator data.
+operator_threshold:
+  # The proportion of the entries in the data that are allowed to have a NULL IMEI
+  null_imei_threshold: 0.05
+  # The proportion of the entries in the data that are allowed to have a NULL IMSI
+  null_imsi_threshold: 0.05
+  # The proportion of the entries in the data that are allowed to have a NULL MSISDN (ignored if MSISDN disabled)
+  null_msisdn_threshold: 0.05
+  # The proportion of the entries in the data that are allowed to have a NULL RAT (ignored if RAT disabled)
+  null_rat_threshold: 0.05
+  # The proportion of the entries in the data that are allowed to have any column equal to NULL
+  # This only includes columns enabled in the import (MSISDN and RAT may be excluded)
+  null_threshold: 0.05
+  # The proportion of the non-NULL IMEIs in the data that are allowed to not start with 14 digits
+  unclean_imei_threshold: 0.05
+  # The proportion of the non-NULL IMSIs in the data that are allowed to not be 14-15 digits
+  unclean_imsi_threshold: 0.05
+  # The proportion of entries in the data that are allowed to have either a unclean IMEI or an unclean IMSI
+  unclean_threshold: 0.05
+  # The proportion of the non-NULL IMSIs in the data that are allowed to have a MCC that does not match the
+  # configured region
+  out_of_region_imsi_threshold: 0.1
+  # The proportion of the non-NULL MSISDNs in the data that are allowed to have a CC that does not match the
+  # configured region. Ignored ir MSISDN disabled
+  out_of_region_msisdn_threshold: 0.1
+  # The combined proportion of entries in the data that are allowed to have either a CC (IMSI) or MCC (MSISDN)
+  # that does not match the configured region. Ignored if MSISDN if disabled, as this would then be the same as the
+  # out of region IMSI check.
+  out_of_region_threshold: 0.1
+  # The proportion of the entries in the data that are allowed to have an IMSI not starting with one of the MCC-MNC
+  # prefixes associated with the operator the data is being imported for
+  non_home_network_threshold: 0.2
+  # The minimum valid ratio of average daily IMEI count against historical daily IMEI count for a data dump to be
+  # considered valid.
+  historic_imei_threshold: 0.9
+  # The minimum valid ratio of average daily IMSI count against historical daily IMSI count for a data dump to be
+  # considered valid.
+  historic_imsi_threshold: 0.9
+  # The minimum valid ratio of average daily MSISDN count against historical daily MSISDN count for a data dump to be
+  # considered valid. Ignored if MSISDN if disabled
+  historic_msisdn_threshold: 0.9
+
+# Each of the following importers specifies 2 historic_thresholds which can be used to validate new import
+# row count against previously imported data for the same importer.
+# - import_size_variation_absolute: The most an import can decrease in absolute row count before
+#    it is rejected as invalid. By setting this variable to -1, this check will be disabled.
+# - import_size_variation_percent: The most an import can decrease in percentage row count before
+#    it is rejected as invalid. 0.75 indicates a new import must be at least 75% of the previous
+#    import's row count or it will be rejected. Therefore, setting this variables to 0 will disable
+#    this check.
+gsma_threshold:
+  import_size_variation_absolute: 100
+  import_size_variation_percent: 0
+
+pairing_list_threshold:
+  import_size_variation_absolute: 1000
+  import_size_variation_percent: 0.95
+
+stolen_list_threshold:
+  import_size_variation_absolute: -1
+  import_size_variation_percent: 0.75
+
+registration_list_threshold:
+  import_size_variation_absolute: -1
+  import_size_variation_percent: 0.75
+
+golden_list_threshold:
+  import_size_variation_absolute: -1
+  import_size_variation_percent: 0.75
+
+# Definition of conditions used by the DIRBS system. There are zero or more
+# conditions used to drive the classification. A system with zero conditions
+# does no classification at all
+conditions:
+  # Each condition specifies the following properties
+  #   label: A name for the condition. This is the id/key for the condition. If
+  #     this is changed, all previous classifications will be reset. Likewise,
+  #     if you change the dimensions but keep the condition label the same,
+  #     existing classifications for that condition will be retained.
+  #   dimensions: A list of dimensions whose intersection forms the IMEI set
+  #     result for the condition. Each of these can take parameters that
+  #     are particular for the dimension being used. Additionally, they all
+  #     accept an 'invert' property, which basically NOTs the result of the
+  #     dimension by taking the all-time observed IMEIs list and subtracting the
+  #     set of IMEIs returned by this dimension
+  #   grace_period_days: The integer number of days that an IMEI failing
+  #     this condition will remain on the notification list before moving
+  #     to the black list.
+  #   blocking: A boolean stating whether this condition contributes to
+  #     list generation or is simply informational. Information conditions
+  #     can be used to try out new modules or to tweak parameters.
+  #   reason: A string sent to the operators describing why the IMEI is
+  #     to be blacklisted.
+  #   max_allowed_matching_ratio: The maximum percentage of all-time seen IMEIs
+  #     this condition is allowed to match. This is a safety check implemented
+  #     to catch a missing GSMA TAC DB, registration list, etc.
+  #
+  # The following are just sample conditions designed to show the features of
+  # DIRBS Core and just an example of simple/compound conditions. They are not
+  # supposed to represent suggestions for real business rules. Please consult
+  # the release documentation for available dimensions and their parameters.
+  - label: simple_dimension
+    dimensions:
+      - module: gsma_not_found
+    grace_period_days: 30
+    blocking: true
+    reason: Violated simple dimension
+    max_allowed_matching_ratio: 0.1
+  - label: compound_dimension
+    dimensions:
+      - module: stolen_list
+      - module: duplicate_daily_avg
+        parameters:
+          threshold: 3.1
+          period_days: 30
+          min_seen_days: 5
+        invert: True
+    grace_period_days: 0
+    blocking: true
+    reason: Violated compound dimension
+    max_allowed_matching_ratio: 0.1
+
+# Definition of settings to be used for logging output of DIRBS system.
+logging:
+  # Logging level determines the verbosity of logs. This is also set to 'debug' by the -v CLI option
+  level: info
+  # Format string can be configured here
+  format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+  # Set this to true if you want to see logging message for StatsD
+  show_statsd_messages: False
+  # Set this to true if you want to see Werkzeug internal log messages from TAC/IMEI APIs
+  show_werkzeug_messages: False
+  # Set this to true if you want to see SQL messages from DIRBS (most are debug level)
+  show_sql_messages: False
+  # If log_directory is set to a value that is not "null", DIRBS will log to a file as well as to the console. The
+  # log files will all be generated in the directory specified by this setting. This directory needs to exist and
+  # be writable
+  log_directory: /var/log/dirbs
+  # Uncomment and set this value if you want to prefix all log files created on this host with a prefix
+  # to distinguish them from other host
+  file_prefix: null
+  # Set the number of bytes before a logfile is rotated. If this or file_rotation_backup_count is zero, rotation
+  # is disabled
+  file_rotation_max_bytes: 100000000
+  # Sets the numbwe old logs to keep
+  file_rotation_backup_count: 100
+
+# Definition of settings to be used for forwarding application-defined metrics to a StatsD server
+# for aggregation
+statsd:
+  # The hostname for the StatsD server. Overridden by environment
+  # variable DIRBS_STATSD_HOST if set.
+  #
+  # Uncomment this and set to a real StatsD hostname to enable collection of metrics
+  # hostname = statsd.local
+  #
+  # The UDP port that the StatsD server is listening on for metrics. Overridden by environment
+  # variable DIRBS_STATSD_PORT
+  port: 8125
+  # The prefix to be used for for all metrics collected from this instance. This is useful
+  # if you have multiple hosts or environments sending data to the same StatsD server and you
+  # want to differentiate them, Overridden by the environment variable DIRBS_ENV if set.
+  #
+  # Uncomment this and set to a prefix string to enable prefixing of StatsD metrics
+  # prefix =
+
+# Definition of settings to be used during data cataloging process.
+catalog:
+  # The prospector harvests all files in the path adding them to the data catalog.
+  # Each prospector specifies the following properties:
+  #   file_type: Type of files contained within the specified paths.
+  #     It should match the keyword specified during dirbs-import (eg. operator, gsma_tac etc.)
+  #   paths: Directories and/or files to be harvested. Sub-directories within the listed path are not
+  #     traversed automatically; they should be listed separately if files within them need to be cataloged.
+  #     Multiple paths can be defined for each file type and the path used should be absolute and globally unique.
+  #   schema_filename: Schema file to be used for data pre-validation (if enabled).
+  #     Multiple prospectors can be defined for the same file_type if files exist across multiple schema versions.
+  prospectors:
+    - file_type: operator
+      paths:
+        - /path/to/operator_data/directory
+      schema_filename: OperatorImportSchema_v2.csvs
+    - file_type: operator
+      paths:
+        - /path/to/operator_data/directory/operator_data_file
+      schema_filename: OperatorImportSchema.csvs
+    - file_type: gsma_tac
+      paths:
+        - /path/to/gsma_tac/directory
+      schema_filename: GSMASchema.csvs
+
+  # Set this to true if pre-validation should be performed on the data files.
+  # Note: Enabling this can slow down the process if there are a lot of uncataloged files.
+  perform_prevalidation: False
+
+# Definition of settings to be used for amnesty feature. Amnesty feature enables native grandfathering support within
+# DIRBS Core. A list of whitelisted IMEIs is managed within Core transparent to EIRs during the amnesty period.
+# The amnesty list is mutable during the amnesty evaluation period, immutable during the amnesty period.
+# During the amnesty evaluation period, the amnesty_list table is overwritten each time dirbs-classify is run.
+amnesty:
+  # Boolean value to indicate whether to enable this feature or not.
+  amnesty_enabled: False
+  # End date of the amnesty evaluation period & start of the amnesty period.
+  evaluation_period_end_date: 19700101
+  # End of amnesty period.  Must be greater than the evaluation period end date.
+  amnesty_period_end_date: 19700102
