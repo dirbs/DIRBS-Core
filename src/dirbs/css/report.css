@@ -1,0 +1,476 @@
+/*
+ * DIRBS Core Operator/Country Report CSS
+ *
+ * Copyright (c) 2018 Qualcomm Technologies, Inc.
+ *
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted (subject to the limitations in the disclaimer below) provided that the
+ * following conditions are met:
+ *
+ *  * Redistributions of source code must retain the above copyright notice, this list of conditions
+ *    and the following disclaimer.
+ *  * Redistributions in binary form must reproduce the above copyright notice, this list of conditions
+ *    and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ *  * Neither the name of Qualcomm Technologies, Inc. nor the names of its contributors may be used to endorse
+ *    or promote products derived from this software without specific prior written permission.
+ *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED
+ * BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
+ * THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+html, body, div, span, h1, h3, h4, p, a, strong, ul, li, table, tbody, tr, th, td {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    font-size: 100%;
+    vertical-align: baseline;
+    background: transparent;
+}
+
+html, body {
+    box-sizing: border-box;
+    height: 100%;
+}
+
+*, *:before, *:after {
+  box-sizing: inherit;
+}
+
+body {
+    background-color: #ffffff;
+    font-family: Arial, SunSans-Regular, Sans-Serif;
+    font-size: 14px;
+    line-height: 1.6em;
+    color: #666666;
+    margin: 0;
+}
+
+ul {
+    padding: 0;
+    list-style: none;
+    margin-top: 8px;
+}
+
+:focus {
+    outline: 0;
+}
+
+table {
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+
+a {
+    color: #30a27e;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+a:hover {
+    color: #2f3338;
+}
+
+h1 {
+    font-size: 50px;
+    font-weight: bold;
+    letter-spacing: -4px;
+    color: #2f3338;
+    margin-bottom: 10px;
+    margin-left: -4px;
+    line-height: 1.1em;
+}
+
+h3 {
+    color: #2f3338;
+    font-size: 22px;
+    margin-bottom: 30px;
+}
+
+h4 {
+    color: #2f3338;
+    font-size: 14px;
+    margin-bottom: 15px;
+    font-weight: 500;
+    margin-top: -25px;
+}
+
+ul:last-child {
+    margin-bottom: 0;
+}
+
+li {
+    line-height: 18px;
+}
+
+.container {
+    width: 880px;
+    margin: 0 auto;
+    padding-top: 30px;
+    padding-right: 30px;
+    position: relative;
+    background-color: #ffffff;
+}
+
+.missing-data-alert {
+    background: #f2dede;
+    padding: 25px;
+    margin-bottom: 25px;
+    border: 1px solid #ebcccc;
+    border-radius: 8px;
+    color: #a94442;
+}
+
+.missing-data-alert h4, .missing-data-alert p {
+    color: inherit;
+}
+
+.missing-data-alert h4 {
+    margin-top: 0;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.missing-data-alert p {
+    line-height: 1.33;
+    margin-bottom: 1em;
+}
+
+.missing-data-alert p:last-child {
+    margin-bottom: 0;
+}
+
+.missing-data-alert span.cli {
+    font-family: monospace;
+    white-space: nowrap;
+}
+
+#menu {
+    position: fixed;
+    width: 200px;
+    padding: 0;
+    margin: 0;
+    top: 40px;
+    font-size: 14px;
+}
+
+#menu li {
+    margin-bottom: 12px;
+}
+
+.spacer {
+    height: 40px;
+    display: block;
+}
+
+#content {
+    margin-left: 220px;
+    background-color: #fff;
+    overflow: auto;
+}
+
+.section {
+    margin-bottom: 45px;
+    padding-bottom: 35px;
+    border-bottom: 2px solid #30a27e;
+    float: left;
+    width: 100%;
+}
+
+.section:last-child {
+    border-bottom: none;
+}
+
+.dirbs p {
+    font-size: 18px;
+    line-height: 26px;
+    color: #30a27e;
+}
+
+h1 span {
+    color: #30a27e;
+}
+
+/* Table stylings */
+table {
+    width: 100%;
+}
+
+.tg  {
+    border-collapse: collapse;
+    border-spacing: 0;
+    border-color: #bbb;
+}
+
+.tg td, .tg th {
+    font-family: Arial, sans-serif;
+    border-width: 1px;
+    overflow: hidden;
+    word-break: normal;
+    white-space: nowrap;
+    vertical-align: top;
+    border-top-style: solid;
+    -webkit-print-color-adjust: exact;
+}
+
+.tg td.noborder {
+    border-top-style: none;
+}
+
+.tg tr:last-child td {
+    border-bottom-style: solid;
+}
+
+.tg td {
+    font-size: 12px;
+    padding: 10px;
+    border-color: #e6e6e6;
+    color: #594F4F;
+}
+
+.tg th {
+    font-size: 14px;
+    font-weight: normal;
+    padding: 15px 15px;
+    border-color: #bbb;
+    color: #493F3F;
+    background-color: #ebecf1;
+}
+
+.tg .tg-cellspan {
+    text-align: center;
+}
+
+.tg .tg-labels-cn {
+    font-weight: 700;
+    text-align:left;
+    width: 70%;
+}
+
+.tg .tg-labels-m {
+    font-weight: 700;
+    text-align:left;
+    white-space: nowrap;
+}
+
+.tg-label-trend {
+    font-weight: 700;
+    text-align:center;
+    width: 12%;
+}
+
+.tg-label-value {
+    font-weight: 700;
+    text-align:right;
+    white-space: nowrap;
+}
+
+.tg-label-check {
+    font-weight: 700;
+    text-align:center;
+    white-space: nowrap;
+}
+
+.tg .tg-index {
+    text-align:left;
+    white-space: nowrap;
+}
+
+.tg .tg-item {
+    text-align:left;
+}
+
+.tg .tg-subitem {
+    padding-left: 30px;
+}
+
+.tg .tg-value {
+    text-align:right;
+}
+
+.tg .tg-value-center {
+    text-align:center;
+    border-width: 0;
+}
+
+.tghead {
+    background-color: #E9E4E4 !important;
+}
+
+.tg .bl_label {
+    color: #000;
+    width: 20%;
+}
+
+.tg .tg-trend {
+    padding: 0 0 0 10px;
+}
+
+.tg .tg-trend svg {
+    vertical-align: top;
+}
+
+.ok {
+    background-color: rgb(173,212,157);
+    -webkit-print-color-adjust: exact;
+}
+
+.bad {
+    background-color: rgb(233,150,151);
+    -webkit-print-color-adjust: exact;
+}
+
+.chart {
+    margin: 0 auto 30px auto;
+    padding: 20px 0;
+    width: 100%;
+}
+
+@media only print, screen and (max-width: 870px) {
+    #content {
+        margin-left: 20px;
+    }
+
+    #menu {
+        display: none;
+    }
+}
+
+.legend-item {
+    float: left;
+}
+
+.legend-row {
+    overflow: auto;
+    zoom: 1;
+    margin-bottom: 10px;
+}
+
+.legend-item {
+    margin-right: 20px;
+}
+
+.legend-box {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    margin-right: 8px;
+    vertical-align: top;
+    -webkit-print-color-adjust: exact;
+}
+
+.legend-text {
+    font-size: 12px;
+    line-height: 20px;
+    vertical-align: top;
+}
+
+/* Legend boxes */
+.legend-box.compliant {
+    background: rgb(19,145,72);
+}
+
+.legend-box.noncompliant {
+    background: rgb(248,102,106);
+}
+
+.legend-box.first {
+    background: rgb(10,86,139);
+}
+
+.legend-box.second {
+    background: rgb(56,142,199);
+}
+
+.legend-box.third {
+    background: rgb(155,198,227);
+}
+
+/* Condition breakdown and blacklist violation charts */
+#compliance_breakdown_chart, #condition_breakdown_chart, #blacklist_violations_chart, #blacklist_trends_chart, #id_trends_chart, #compliance_trends_chart {
+    display: none;
+    font-size: 12px;
+}
+
+.barchart-bar, .segment-compliant {
+    fill: rgb(19,145,72);
+}
+
+.barchart-bar.blocking, .segment-noncompliant {
+    fill: rgb(248,102,106);
+}
+
+.id-bubble {
+    display: inline-block;
+    background: rgb(179,179,179);
+    color: white;
+    padding: 8px;
+    line-height: 1;
+    border-radius: 50%;
+}
+
+#blacklist_violations_chart, #id_trends_chart, #compliance_trends_chart, #blacklist_trends_chart {
+    margin-bottom: 0;
+}
+
+.segment-noncompliant {
+    stroke-width: 1px;
+    stroke: #ddd;
+}
+
+.trendline {
+    stroke-width: 2px;
+}
+
+.trendline.imei-trend {
+    stroke: rgb(10,86,139);
+}
+
+.trendline.msisdn-trend {
+    stroke: rgb(56,142,199);
+}
+
+.trendline.imsi-trend {
+    stroke: rgb(155,198,227);
+}
+
+.imei-circle {
+    fill: rgb(10,86,139);
+}
+
+.msisdn-circle {
+    fill: rgb(56,142,199);
+}
+
+.imsi-circle {
+    fill: rgb(155,198,227);
+}
+
+.condition-substat {
+    width: 280px;
+}
+
+.condition-substat-container {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.condition-substat .label, .config-item .label {
+    font-style: italic;
+}
+
+.dimension-list {
+    margin-top: 0;
+    margin-left: 30px;
+    list-style-type: square;
+}
+
