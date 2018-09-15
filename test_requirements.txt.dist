@@ -1,0 +1,6 @@
+pg8000==1.11.0
+py==1.5.2
+pytest==3.4.0
+pytest-mock==1.6.3
+testing.common.database==2.0.3
+testing.postgresql==1.3.0

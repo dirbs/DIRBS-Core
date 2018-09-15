@@ -1,0 +1,29 @@
+{
+    "env": {
+        "browser": true
+    },
+    "extends": "eslint:recommended",
+    "rules": {
+        "indent": "off",
+        "indent-legacy": [
+            "error",
+            2
+        ],
+        "no-console": [
+            "error",
+            { "allow": ["warn", "error"] }
+        ],
+        "linebreak-style": [
+            "error",
+            "unix"
+        ],
+        "quotes": [
+            "error",
+            "single"
+        ],
+        "semi": [
+            "error",
+            "always"
+        ]
+    }
+}
