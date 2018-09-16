@@ -1,0 +1,481 @@
+{#
+  Copyright (c) 2018 Qualcomm Technologies, Inc.
+
+  All rights reserved.
+
+  Redistribution and use in source and binary forms, with or without modification,
+  are permitted (subject to the limitations in the disclaimer below) provided that the
+  following conditions are met:
+
+   * Redistributions of source code must retain the above copyright notice, this list of conditions
+     and the following disclaimer.
+   * Redistributions in binary form must reproduce the above copyright notice, this list of conditions
+     and the following disclaimer in the documentation and/or other materials provided with the distribution.
+   * Neither the name of Qualcomm Technologies, Inc. nor the names of its contributors may be used to endorse
+     or promote products derived from this software without specific prior written permission.
+
+  NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED
+  BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+  TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
+  THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+  STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#}
+
+{% extends "base.html" %}
+
+{% block mainContent %}
+{% if not data.has_data %}
+  <div style="padding: 20px">
+    <div class="section">
+      <h1>DIRBS<span>.</span></h1>
+      <p style="font-size: 18px; margin-bottom: 20px; font-weight: bold;"> Device Identification, Registration, &amp; Blocking System.</p>
+    </div>
+
+    <p>Unfortunately, no data was found for this report. Please run this report again once data has been received
+    for this reporting period ({{ data.start_date }} to {{ data.end_date }}).</p>
+  </div>
+{% else %}
+  <div class="container">
+    <div id="menu">
+      <ul>
+        <li><a href="#id_counts">Identifier Counts</a></li>
+        <li><a href="#id_trends">Identifier Trends</a></li>
+        <li><a href="#compliance">Compliance Breakdown</a></li>
+        <li><a href="#compliance_trends">IMEI Compliance Trends</a></li>
+        <li><a href="#condition">Conditions Breakdown</a></li>
+        <li><a href="#condition_combinations">Condition Combinations</a></li>
+        <li><a href="#topmodels">Top Models: Counts</a></li>
+        <li><a href="#gross">Top Models: Gross Adds</a></li>
+      </ul>
+    </div>
+    <div id="content">
+      {% if not data.has_compliance_data %}
+        <div class="missing-data-alert">
+          <h4>Warning: Missing Compliance Data Detected</h4>
+          <p>This report has been generated from previously calculated and
+          stored reporting data, meaning that per-TAC compliance data could
+          not be re-generated and included in the machine-readable JSON report.<p>
+
+          <p>Before publishing this report, please ensure that this report is
+          generated using the <span class="cli">--force-refresh</span> flag to <span class="cli">dirbs-report</span> (this is
+          the default).</p>
+        </div>
+      {% endif %}
+
+      <div class="section">
+        <h1>DIRBS<span>.</span></h1>
+        <p style="font-size: 18px; margin-bottom: 20px; font-weight: bold;"> Device Identification, Registration, &amp; Blocking System.</p>
+      </div>
+
+      <div class="section dirbs">
+        <p>
+          {% block titleBlock %}{% endblock %}<br/>
+          Report Creation Date: {{ data.creation_date }}<br/>
+          Reporting Period: {{ data.start_date }} to {{ data.end_date }}<br/><br/>
+        </p>
+      </div>
+
+      <div class="section">
+        <a style="display: block; height: 40px;" name="id_counts" id="id_counts"></a>
+        <h3>Identifier Counts</h3>
+        <table class="tg">
+          <tr class="tghead">
+            <td class="tg-labels-cn">Identifier</td>
+            <td class="tg-label-value">Count</td>
+          </tr>
+          </tr>
+            <td class="tg-item">Devices (non-empty IMEI count)</td>
+            <td class="tg-value">{{ '{:,}'.format(data.total_imeis_seen) }}</td>
+          </tr>
+          <tr>
+            <td class="tg-item">Subscribers (non-empty MSISDN count)</td>
+            <td class="tg-value">{{ '{:,}'.format(data.total_msisdns_seen) }}</td>
+          </tr>
+          <tr>
+            <td class="tg-item">Connections (non-empty IMSI count)</td>
+            <td class="tg-value">{{ '{:,}'.format(data.total_imsis_seen) }}</td>
+          </tr>
+          <tr>
+            <td class="tg-item">IMEI-IMSI pairs (IMEI/IMSI combinations where both are non-empty)</td>
+            <td class="tg-value">{{ '{:,}'.format(data.total_imei_imsis_seen) }}</td>
+          </tr>
+          <tr>
+            <td class="tg-item">IMEI-MSISDN pairs (IMEI/MSISDN combinations where both are non-empty)</td>
+            <td class="tg-value">{{ '{:,}'.format(data.total_imei_msisdns_seen) }}</td>
+          </tr>
+          <tr>
+            <td class="tg-item">IMSI-MSISDN pairs (IMSI/MSISDN combinations where both are non-empty)</td>
+            <td class="tg-value">{{ '{:,}'.format(data.total_imsi_msisdns_seen) }}</td>
+          </tr>
+          <tr>
+            <td class="tg-item">Triplets (IMEI/IMSI/MSISDN combinations where all are non-empty)</td>
+            <td class="tg-value">{{ '{:,}'.format(data.total_triplets_seen) }}</td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="section">
+        <a style="display: block; height: 40px;" name="id_trends" id="id_trends"></a>
+        <h3>Identifier Trends</h3>
+
+        <div class="chart" id="id_trends_chart">
+          <div class="legend-row">
+            <div class="legend-item">
+              <span class="legend-box first"></span>
+              <span class="legend-text">IMEIs</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-box second"></span>
+              <span class="legend-text">MSISDNs</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-box third"></span>
+              <span class="legend-text">IMSIs</span>
+            </div>
+          </div>
+
+          <div class="d3-chart"></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <a name="compliance" id="compliance" style="display: block; height: 40px;"></a>
+        <h3>Compliance Breakdown</h3>
+
+        <div class="chart" id="compliance_breakdown_chart">
+          <div class="legend-row">
+            <div class="legend-item">
+              <span class="legend-box compliant"></span>
+              <span class="legend-text">Compliant</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-box noncompliant"></span>
+              <span class="legend-text">Non-compliant</span>
+            </div>
+          </div>
+
+          <div class="d3-chart"></div>
+        </div>
+
+        <table class="tg">
+          <tr class="tghead">
+            <td><strong>Compliant and Non-Compliant as of {{ data.creation_date }}</strong></td>
+            <td class="tg-value">IMEIs</td>
+            <td class="tg-value">IMEI %</td>
+            <td class="tg-value">Triplets</td>
+            <td class="tg-value">Triplet %</td>
+          </tr>
+          <tr class="ok">
+            <td class="tg-item"><strong>Compliant</strong></td>
+            <td class="tg-value">{{ '{:,}'.format(data.compliance_breakdown.num_noncompliant_imeis_info_only +
+                                                  data.compliance_breakdown.num_compliant_imeis) }}</td>
+            <td class="tg-value">
+              {% if data.total_imeis_seen == 0 %}
+                0 %
+              {% else %}
+                {{ '%.2f' % (100 * (data.compliance_breakdown.num_noncompliant_imeis_info_only +
+                                    data.compliance_breakdown.num_compliant_imeis) / data.total_imeis_seen) }} %
+              {% endif %}
+            </td>
+            <td class="tg-value">{{ '{:,}'.format(data.compliance_breakdown.num_noncompliant_triplets_info_only +
+                                                  data.compliance_breakdown.num_compliant_triplets) }}</td>
+            <td class="tg-value">
+              {% if data.total_triplets_seen == 0 %}
+                0 %
+              {% else %}
+                {{ '%.2f' % (100 * (data.compliance_breakdown.num_noncompliant_triplets_info_only +
+                                    data.compliance_breakdown.num_compliant_triplets) / data.total_triplets_seen) }} %
+              {% endif %}
+            </td>
+          </tr>
+          <tr>
+            <td class="tg-subitem">Do not meet any conditions</td>
+            <td class="tg-value">{{ '{:,}'.format(data.compliance_breakdown.num_compliant_imeis) }}</td>
+            <td class="tg-value"></td>
+            <td class="tg-value">{{ '{:,}'.format(data.compliance_breakdown.num_compliant_triplets) }}</td>
+            <td class="tg-value"></td>
+          </tr>
+          <tr>
+            <td class="tg-subitem">Meet only non-blocking conditions</td>
+            <td class="tg-value">{{ '{:,}'.format(data.compliance_breakdown.num_noncompliant_imeis_info_only) }}</td>
+            <td class="tg-value"></td>
+            <td class="tg-value">{{ '{:,}'.format(
+                  data.compliance_breakdown.num_noncompliant_triplets_info_only) }}</td>
+            <td class="tg-value"></td>
+          </tr>
+          <tr class="bad">
+            <td class="tg-item"><strong>Non-Compliant</strong></td>
+            <td class="tg-value">{{ '{:,}'.format(data.compliance_breakdown.num_noncompliant_imeis_blocking) }}</td>
+            <td class="tg-value">
+              {% if data.total_imeis_seen == 0 %}
+                0 %
+              {% else %}
+                {{ '%.2f' % (100 * data.compliance_breakdown.num_noncompliant_imeis_blocking
+                    / data.total_imeis_seen) }} %
+              {% endif %}
+            </td>
+            <td class="tg-value">{{ '{:,}'.format(data.compliance_breakdown.num_noncompliant_triplets_blocking) }}</td>
+            <td class="tg-value">
+              {% if data.total_triplets_seen == 0 %}
+                0 %
+              {% else %}
+                {{ '%.2f' % (100 * data.compliance_breakdown.num_noncompliant_triplets_blocking
+                    / data.total_triplets_seen) }} %
+              {% endif %}
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="section">
+        <a style="display: block; height: 40px;" name="compliance_trends" id="compliance_trends"></a>
+        <h3>IMEI Compliance Trends</h3>
+
+        <div class="chart" id="compliance_trends_chart">
+          <div class="d3-chart"></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <a name="condition" id="condition" style="display: block; height: 40px;"></a>
+
+        <h3>Conditions Breakdown</h3>
+
+        <div class="chart" id="condition_breakdown_chart">
+
+          <div class="id-bubble">ID</div>
+
+          <div class="d3-chart"></div>
+
+          <div class="legend-row">
+            <div class="legend-item">
+              <span class="legend-box compliant"></span>
+              <span class="legend-text">Non-blocking</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-box noncompliant"></span>
+              <span class="legend-text">Blocking</span>
+            </div>
+          </div>
+        </div>
+
+        <table class="tg">
+          <tr class="tghead">
+            <td class="tg-index"><strong>ID</strong></td>
+            <td class="tg-labels-cn">Condition Name</td>
+            <td class="tg-label-check">Blocking</td>
+            <td class="tg-label-value">IMEIs</td>
+            <td class="tg-label-value">IMEI %</td>
+            <td class="tg-label-trend">IMEI Trend</td>
+          </tr>
+          {% for condition in data.classification_conditions %}
+            <tr>
+              <td>{{ 'C%d'|format(loop.index) }}</td>
+              <td>{{ condition.label }}</td>
+              {% if data.classification_conditions[loop.index0].blocking %}
+                <td class="tg-value-center bad">Blocking</td>
+              {% else %}
+                <td class="tg-value-center">Non-Blocking</td>
+              {% endif %}
+              <td class="tg-value">{{ '{:,}'.format(data.conditions_breakdown[condition.label].num_imeis) }}</td>
+              <td class="tg-value">
+                {% if data.total_imeis_seen == 0 %}
+                  0 %
+                {% else %}
+                  {{ '%.2f' % (100 * data.conditions_breakdown[condition.label].num_imeis / data.total_imeis_seen) }} %
+                {% endif %}
+              </td>
+              <td class="tg-trend"></td>
+            </tr>
+            <tr>
+              <td class="noborder">&nbsp;</td>
+              <td colspan="5" class="noborder">
+                <span><strong>Other counts and percentages</strong></span>
+                <div class="condition-substat-container">
+                  <div class="condition-substat">
+                    <span class="label">Gross Add IMEIs:</span>
+                    <span class="value">{{ '{:,}'.format(data.conditions_breakdown[condition.label].num_imei_gross_adds) }}
+                    <span class="percentage">
+                      {% if data.total_gross_adds == 0 %}
+                        (0 %)
+                      {% else %}
+                        ({{ '%.2f' % (100 * data.conditions_breakdown[condition.label].num_imei_gross_adds / data.total_gross_adds) }} %)
+                      {% endif %}
+                    </span>
+                  </div>
+                  <div class="condition-substat">
+                    <span class="label">IMEI-MSISDN pairs:</span>
+                    <span class="value">{{ '{:,}'.format(data.conditions_breakdown[condition.label].num_imei_msisdns) }}
+                    <span class="percentage">
+                      {% if data.total_imei_msisdns_seen == 0 %}
+                        (0 %)
+                      {% else %}
+                        ({{ '%.2f' % (100 * data.conditions_breakdown[condition.label].num_imei_msisdns / data.total_imei_msisdns_seen) }} %)
+                      {% endif %}
+                    </span>
+                  </div>
+                  <div class="condition-substat">
+                    <span class="label">IMEI-IMSI pairs:</span>
+                    <span class="value">{{ '{:,}'.format(data.conditions_breakdown[condition.label].num_imei_imsis) }}
+                    <span class="percentage">
+                      {% if data.total_imei_imsis_seen == 0 %}
+                        (0 %)
+                      {% else %}
+                        ({{ '%.2f' % (100 * data.conditions_breakdown[condition.label].num_imei_imsis / data.total_imei_imsis_seen) }} %)
+                      {% endif %}
+                    </span>
+                  </div>
+                  <div class="condition-substat">
+                    <span class="label">IMEI-IMSI-MSISDN triplets:</span>
+                    <span class="value">{{ '{:,}'.format(data.conditions_breakdown[condition.label].num_triplets) }}
+                    <span class="percentage">
+                      {% if data.total_triplets_seen == 0 %}
+                        (0 %)
+                      {% else %}
+                        ({{ '%.2f' % (100 * data.conditions_breakdown[condition.label].num_triplets / data.total_triplets_seen) }} %)
+                      {% endif %}
+                    </span>
+                  </div>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td class="noborder">&nbsp;</td>
+              <td colspan="5" class="noborder">
+                <span><strong>Configuration (for last successful classification)</strong></span>
+                <div class="config-container">
+                  <div class="config-item">
+                    <span class="label">Dimensions:</span>
+                    <ul class="dimension-list">
+                      {% for dimension in condition.config.dimensions %}
+                        <li class="dimension-list-item">
+                          <span class="module">{{ dimension.module }}</span>
+                          {% if dimension.invert %}<span class="inverted">(inverted)</span>{% endif %}
+                            {% for key, value in dimension.parameters.items() %}
+                              {% if loop.first %} with parameters{% endif %}
+                              <span class="parameter">{{key}}={{value}}{% if not loop.last %}, {% endif %}</span>
+                            {% endfor %}
+                        </li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                  <div class="config-item">
+                    <span class="label">Grace period:</span>
+                    <span class="value">{{ condition.config.grace_period_days }} days</span>
+                  </div>
+                  <div class="config-item">
+                    <span class="label">Last successful run date:</span>
+                    <span class="value">{{ condition.last_successful_run if condition.last_successful_run else 'Never successfully run' }}</span>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </table>
+        <div class="spacer"></div>
+      </div>
+
+      <div class="section">
+        <a name="condition" id="condition_combinations" style="display: block; height: 40px;"></a>
+
+        <h3>Condition Combinations Breakdown</h3>
+
+        <table class="tg">
+          <tr class="tghead">
+            {% for condition in data.classification_conditions %}
+              <td class="tg-index"><strong>{{ 'C%d'|format(loop.index) }}</strong></td>
+            {% endfor %}
+            <td class="tg-label-check">Blocking</td>
+            <td class="tg-label-value">IMEIs</td>
+            <td class="tg-label-value">IMEI-IMSIs</td>
+            <td class="tg-label-value">Triplets</td>
+          </tr>
+          {% for row in data.condition_combination_table %}
+            <tr>
+              {% for condition in data.classification_conditions %}
+                {% if row.combination[condition.label] %}
+                  <td class="tg-index">&#11044;</td>
+                {% else %}
+                  <td class="tg-index">&#9711;</td>
+                {% endif %}
+              {% endfor %}
+              {% if row.compliance_level == 0  %}
+                <td class="tg-value-center bad">Blocked</td>
+              {% else %}
+                <td class="tg-value-center ok">Non-Blocked</td>
+              {% endif %}
+              <td class="tg-value">{{ '{:,}'.format(row.num_imeis) }}</td>
+              <td class="tg-value">{{ '{:,}'.format(row.num_imei_imsis) }}</td>
+              <td class="tg-value">{{ '{:,}'.format(row.num_subscriber_triplets) }}</td>
+            </tr>
+          {% endfor %}
+        </table>
+        <div class="spacer"></div>
+      </div>
+
+      <div class="section">
+        <a name="topmodels" id="topmodels" style="display: block; height: 40px;"></a>
+
+        <h3>Top 10 Models by IMEI Counts</h3>
+        {% if data.total_imeis_seen != 0 %}
+          <h4>(representing {{
+              '%.2f' % (100 * data.top_models_imei_count / data.total_imeis_seen)
+            }}% of total IMEI counts)</h4>
+        {% endif %}
+
+        <table class="tg">
+          <tr class="tghead">
+            <td class="tg-labels-m">Model</td>
+            <td class="tg-labels-m">Manufacturer</td>
+            <td class="tg-labels-m">Technologies</td>
+            <td class="tg-label-value">Count</td>
+          </tr>
+          {% for model in data.top_models_imei %}
+          <tr>
+            <td class="tg-item">{{ model.model }}</td>
+            <td class="tg-item">{{ model.manufacturer }}</td>
+            <td class="tg-item">{{ model.tech_generations }}</td>
+            <td class="tg-value">{{ '{:,}'.format(model.count) }}</td>
+          </tr>
+          {% endfor %}
+        </table>
+        <div class="spacer"></div>
+      </div>
+
+      <div class="section">
+        <a name="gross" id="gross" style="display: block; height: 40px;"></a>
+
+        <h3>Top 10 Models by Gross Adds</h3>
+        {% if data.total_gross_adds != 0 %}
+          <h4>(representing {{
+              '%.2f' % (100 * data.top_models_gross_adds_count / data.total_gross_adds)
+            }}% of total gross adds)</h4>
+        {% endif %}
+
+        <table class="tg">
+          <tr class="tghead">
+            <td class="tg-labels-m">Model</td>
+            <td class="tg-labels-m">Manufacturer</td>
+            <td class="tg-labels-m">Technologies</td>
+            <td class="tg-label-value">Count</td>
+          </tr>
+          {% for model in data.top_models_gross_adds %}
+          <tr>
+            <td class="tg-item">{{ model.model }}</td>
+            <td class="tg-item">{{ model.manufacturer }}</td>
+            <td class="tg-item">{{ model.tech_generations }}</td>
+            <td class="tg-value">{{ '{:,}'.format(model.count) }}</td>
+          </tr>
+          {% endfor %}
+        </table>
+        <div class="spacer"></div>
+      </div>
+    </div>
+  </div>
+{% endif %}
+{% endblock %}
+
+
