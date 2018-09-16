@@ -1,0 +1,1 @@
+01234567|A Marketing name|A Internal model|A Manufacturer|GSM 1800, GSM 1900 |01-Mar-2004|460|MANU|125795|GPRS|Not Known|A MODEL|Not Known|Not Known|Not Known|Not Known|Handheld

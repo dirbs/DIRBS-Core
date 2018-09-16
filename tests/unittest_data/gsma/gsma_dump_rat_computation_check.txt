@@ -1,0 +1,10 @@
+TAC|Marketing Name|Internal Model Name|Manufacturer|Bands|Allocation Date|Country Code|Fixed Code|Manufacturer Code|Radio Interface|Brand Name|Model Name|Operating System|NFC|Bluetooth|WLAN|Device Type
+01132222|Awesome Phone1|Great Phone1|Best IT1|GSM 1800, GSM 1900, GSM 900, GSM850 (GSM800)|26-Apr-2013|404|MANU|910124|GPRS|Great|Phone1|Not Known|Not Known|Not Known|Not Known|Handheld
+41255555|Awesome Phone1|Great Phone2|Best IT2|GSM 1800, GSM 1900, GSM 900, GSM850 (GSM800), WCDMA FDD Band I, WCDMA FDD Band II, WCDMA FDD Band III|26-Apr-2013|404|MANU|910124|GPRS|Great|Phone2|Not Known|Not Known|Not Known|Not Known|Handheld
+41266666|Awesome Phone1|Great Phone3|Best IT3|WCDMA FDD Band I, WCDMA FDD Band II, WCDMA FDD Band III|26-Apr-2013|404|MANU|910124|GPRS|Great|Phone3|Not Known|Not Known|Not Known|Not Known|Handheld
+41277777|Awesome Phone1|Great Phone4|Best IT4|GSM 1800, GSM 1900, GSM 900, GSM850 (GSM800), WCDMA FDD Band I, WCDMA FDD Band II, LTE 2100|26-Apr-2013|404|MANU|910124|GPRS|Great|Phone4|Not Known|Not Known|Not Known|Not Known|Handheld
+41288888|Awesome Phone1|Great Phone5|Best IT4|GSM 1800, GSM 1900, LTE 2100, CA_6|26-Apr-2013|404|MANU|910124|GPRS|Great|Phone5|Not Known|Not Known|Not Known|Not Known|Handheld
+41299999|Awesome Phone1|Great Phone6|Best IT4|WCDMA FDD Band I, WCDMA FDD Band II, LTE 2100, CA_6|26-Apr-2013|404|MANU|910124|GPRS|Great|Phone6|Not Known|Not Known|Not Known|Not Known|Handheld
+41233333|Awesome Phone1|Great Phone2|Best IT2|LTE|26-Apr-2013|404|MANU|910124|GPRS|Great|Phone2|Not Known|Not Known|Not Known|Not Known|Handheld
+11111111|Null Phone1|Great Phone1||LTE|26-Apr-2013|404|MANU|910124|GPRS|Great|Phone2|Not Known|Not Known|Not Known|Not Known|Handheld
+22222222|Null Phone2|Great Phone2|Best IT1|LTE|26-Apr-2013|404|MANU|910124|GPRS|Great||Not Known|Not Known|Not Known|Not Known|Handheld

@@ -1,0 +1,224 @@
+#
+# Sample annotated config for the DIRBS core configuration.
+#
+# (C) 2017-2018 Qualcomm Technologies, Inc.  All rights reserved.
+#
+
+# Definitions of regional settings used by DIRBS core for reporting and
+# for input validation.
+region:
+  # Name is used for the country level report
+  name: Country1
+  # Whether or not MSISDN data is present and should be imported for this region
+  import_msisdn_data: True
+  # Whether or not RAT data is present and should be imported for this region
+  import_rat_data: True
+  # country_codes are used to validate MSISDNs during operator data import
+  country_codes:
+    - "22"
+  # exempted_device_types contains a list of GSMA device types that do not require
+  # registration in this country. Specifiying a list of device types here will mean
+  # that the not_in_registration_list classification dimension will ignore IMEIs
+  # whose TACs correspond to the listed device types. They will also be ignored in
+  # the IMEI API's realtime registration check. The expected syntax for this is:
+  #
+  # exempted_device_types:
+  #   - Module
+  #   - Tablet
+  exempted_device_types: []
+  # operators map operator IDs to a more human-friendly display string for
+  # reporting purposes
+  operators:
+    - id: operator1
+      name: First Operator
+      # mcc_mnc values are used to:
+      # - validate IMSIs during operator data import
+      # - work out which operators notifications about an offending subscriber
+      #   should be sent to
+      # - work out which operators excepted IMEI-IMSI pairings should be sent to
+      mcc_mnc_pairs:
+        - mcc: "111"
+          mnc: "01"
+    - id: operator2
+      name: Second Operator
+      mcc_mnc_pairs:
+        - mcc: "111"
+          mnc: "02"
+    - id: operator3
+      name: Third  Operator
+      mcc_mnc_pairs:
+        - mcc: "111"
+          mnc: "03"
+    - id: operator4
+      name: Fourth Operator
+      mcc_mnc_pairs:
+        - mcc: "111"
+          mnc: "04"
+
+# Definitions of configuration variables related to pruning of subscriber data
+# after a specified retention window
+data_retention:
+  # The number of months from the start of the current months that DIRBS core
+  # will retain data about a triplet seen in its DB. After this time, the triplet
+  # will be erased from the monthly_network_triplets tables (country and per-MNO).
+  # The IMEI will continue to be stored after this date as it is needed for continued
+  # list generation, etc. All references to IMSI and MSISDN will be pruned after this date.
+  months_retention: 6
+
+# Definitions of configuration variables used by DIRBS Core in the list generation process.
+list_generation:
+  # The number of days that DIRBS core will look back through data from current date to determine IMSIs/MSISDNs
+  # which were associated with the notifiable IMEIs.
+  lookback_days: 180
+  # If true, the exception list will contain only those IMEI-IMSI pairs where the IMEI is on the blacklist.
+  # By default, all IMEI-IMSI pairs part of the pairing list are output to the exception list.
+  restrict_exceptions_list_to_blacklisted_imeis: false
+  # If true, generate a check digit for IMEIs during list generation.
+  # Check digit will only be added to "valid IMEIs"
+  generate_check_digit: false
+  # If true, output only "valid" IMEIs.
+  # Valid IMEIs start with 14 digits as they will have 15 digits if the check digit append has been enabled
+  output_invalid_imeis: true
+
+# Definitions of configuration variables used by DIRBS Core to determine how many workers to use to parallelise
+multiprocessing:
+  # The maximum number of local processing blade workers to use to achieve DIRBS Core tasks. This is particularly
+  # useful for pre-validation of large operator import jobs where we can run multiple instances of the pre-validator
+  # in parallel on different parts of the file. The default is to use half of the available CPUs in the
+  # system will be used.
+  # max_local_cpus: 10
+  # The maximum number of database connections to use to parallelise DIRBS Core tasks. PostgreSQL 9.6 has support
+  # for parellelising tasks internally - this setting does not affect parellelisation for a single connection.
+  # Where PostgreSQL is unable to parallelise a single query by itself, we use this number of workers to issue
+  # multiple queries at once on different connections. Generally this scales very well - it is safe to set this
+  # reasonably high. It should probably be set to roughly the number of disks in your RAID array
+  max_db_connections: 4
+
+# Definition of ratio limits for the various checks on operator data.
+operator_threshold:
+  # The proportion of the entries in the data that are allowed to have a NULL IMEI
+  null_imei_threshold: 0.05
+  # The proportion of the entries in the data that are allowed to have a NULL IMSI
+  null_imsi_threshold: 0.05
+  # The proportion of the entries in the data that are allowed to have a NULL MSISDN (ignored if MSISDN disabled)
+  null_msisdn_threshold: 0.05
+  # The proportion of the entries in the data that are allowed to have a NULL RAT (ignored if RAT disabled)
+  null_rat_threshold: 0.05
+  # The proportion of the entries in the data that are allowed to have any column equal to NULL
+  # This only includes columns enabled in the import (MSISDN and RAT may be excluded)
+  null_threshold: 0.05
+  # The proportion of the non-NULL IMEIs in the data that are allowed to not start with 14 digits
+  unclean_imei_threshold: 0.05
+  # The proportion of the non-NULL IMSIs in the data that are allowed to not be 14-15 digits
+  unclean_imsi_threshold: 0.05
+  # The proportion of entries in the data that are allowed to have either a unclean IMEI or an unclean IMSI
+  unclean_threshold: 0.05
+  # The proportion of the non-NULL IMSIs in the data that are allowed to have a MCC that does not match the
+  # configured region
+  out_of_region_imsi_threshold: 1.0
+  # The proportion of the non-NULL MSISDNs in the data that are allowed to have a CC that does not match the
+  # configured region. Ignored ir MSISDN disabled
+  out_of_region_msisdn_threshold: 1.0
+  # The combined proportion of entries in the data that are allowed to have either a CC (IMSI) or MCC (MSISDN)
+  # that does not match the configured region. Ignored if MSISDN if disabled, as this would then be the same as the
+  # out of region IMSI check.
+  out_of_region_threshold: 1.0
+  # The proportion of the entries in the data that are allowed to have an IMSI not starting with one of the MCC-MNC
+  # prefixes associated with the operator the data is being imported for
+  non_home_network_threshold: 1.0
+  # The minimum valid ratio of average daily IMEI count against historical daily IMEI count for a data dump to be
+  # considered valid.
+  historic_imei_threshold: 0.9
+  # The minimum valid ratio of average daily IMSI count against historical daily IMSI count for a data dump to be
+  # considered valid.
+  historic_imsi_threshold: 0.9
+  # The minimum valid ratio of average daily MSISDN count against historical daily MSISDN count for a data dump to be
+  # considered valid. Ignored if MSISDN if disabled
+  historic_msisdn_threshold: 0.9
+
+gsma_threshold:
+  import_size_variation_absolute: 100
+  import_size_variation_percent: 0
+
+pairing_list_threshold:
+  import_size_variation_absolute: 1000
+  import_size_variation_percent: 0.95
+
+stolen_list_threshold:
+  import_size_variation_absolute: -1
+  import_size_variation_percent: 0.75
+
+registration_list_threshold:
+  import_size_variation_absolute: -1
+  import_size_variation_percent: 0.75
+
+golden_list_threshold:
+  import_size_variation_absolute: -1
+  import_size_variation_percent: 0.75
+
+# Definition of conditions used by the DIRBS system. There are zero or more
+# conditions used to drive the classification. A system with zero conditions
+# does no classification at all
+conditions:
+    # Each condition specifies 4 properties
+    #   label: A name for the condition.
+    #   dimensions: A list of dimensions whose intersection forms the boolean
+    #     result for the condition.
+    #   grace_period_days: The integer number of days that an IMEI failing
+    #     this condition will remain on the notification list before moving
+    #     to the black list.
+    #   blocking: A boolean stating whether this condition contributes to
+    #     list generation or is simply informational. Information conditions
+    #     can be used to try out new modules or to tweak parameters.
+    #   reason: A string sent to the operators describing why the IMEI is
+    #     to be blacklisted.
+  - label: gsma_not_found
+    dimensions:
+      - module: gsma_not_found
+        parameters:
+          ignore_rbi_delays: True
+    grace_period_days: 30
+    blocking: true
+    reason: TAC not found in GSMA TAC database
+  - label: local_stolen
+    dimensions:
+      - module: stolen_list
+    grace_period_days: 0
+    blocking: true
+    reason: IMEI found on local stolen list
+    max_allowed_matching_ratio: 1.0
+  - label: duplicate_mk1
+    dimensions:
+      - module: duplicate_threshold
+        parameters:
+          threshold: 10
+          period_days: 120
+      - module: duplicate_daily_avg
+        parameters:
+          threshold: 4.0
+          period_days: 30
+          min_seen_days: 5
+    grace_period_days: 60
+    blocking: true
+    sticky: true
+    reason: Duplicate IMEI detected
+  - label: malformed_imei
+    dimensions:
+      - module: malformed_imei
+    grace_period_days: 0
+    blocking: false
+    reason: Invalid characters detected in IMEI
+  - label: not_on_registration_list
+    dimensions:
+      - module: not_on_registration_list
+    grace_period_days: 0
+    blocking: true
+    reason: IMEI not found on local registration list
+    max_allowed_matching_ratio: 1.0
+  - label: inconsistent_rat
+    dimensions:
+      - module: inconsistent_rat
+    grace_period_days: 30
+    blocking: false
+    reason: IMEI RAT inconsistent with device capability
+    max_allowed_matching_ratio: 1.0

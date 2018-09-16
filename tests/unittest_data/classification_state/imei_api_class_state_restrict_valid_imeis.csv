@@ -1,0 +1,5 @@
+imei_norm,cond_name,start_date,end_date,block_date
+119300000000001,duplicate_mk1,'2016-01-01',,'2016-04-01'
+21AA0000000000,duplicate_mk1,'2016-01-01',,'2016-04-01'
+312222222222BB,duplicate_mk1,'2016-01-01',,'2016-04-01'
+41222222222226,duplicate_mk1,'2016-01-01',,'2016-04-01'

@@ -1,0 +1,8 @@
+tac|manufacturer|model_name|bands|allocation_date|device_type|optional_fields
+01234401|A Manufacturer|A MODEL|d3bdf1170bf4b026e6e29b15a0d66a5ca83f1944 |01-Mar-2004|Handheld|{"country_code": "000"}
+01234402|B Manufacturer|D MODEL|d3bdf1170bf4b026e6e29b15a0d66a5ca83f1944 |01-Mar-2004|Vehicle|{"country_code": "000"}
+01234403|C Manufacturer|D MODEL|d3bdf1170bf4b026e6e29b15a0d66a5ca83f1944 |01-Mar-2004|Dongle|{"country_code": "000"}
+01234404|A Manufacturer|A MODEL|d3bdf1170bf4b026e6e29b15a0d66a5ca83f1944 |01-Mar-2004|Tablet|{"country_code": "00"}
+01234405|A Manufacturer|A MODEL|d3bdf1170bf4b026e6e29b15a0d66a5ca83f1944 |01-Mar-2004|Handheld|{"country_code": "000"}
+01234406|A Manufacturer|A MODEL|d3bdf1170bf4b026e6e29b15a0d66a5ca83f1944 |01-Mar-2004|Smartphone|{"country_code": "000"}
+01234407|A Manufacturer|A MODEL|d3bdf1170bf4b026e6e29b15a0d66a5ca83f1944 |01-Mar-2004|Smartphone|{"country_code": "000"}
