@@ -2,13 +2,15 @@
 .. |build_status| image:: https://csce-dirbs-ci-1.qualcomm.com/buildStatus/icon?job=dirbs-build-master
                   :target: https://csce-dirbs-ci-1.qualcomm.com/job/dirbs-build-master/
 
+The Device Identification, Registration, Blocking, System (DIRBS) consists of a Core component, classification engine, and list generation capability along with a collection of subsystem components providing functions that include reporting, registration of IMEIs, verification of IMEI status, pairing of IMEIs with IMSIs to avoid blocking, and reporting of lost & stolen IMEIs. Repositories are provided for each of these components; please see each respective repository for further details on installation and usage. To support Identity & Access Management (IAM) and API gateway functionality, open-source options such as Keycloak (www.keycloak.org) and Tyk (https://tyk.io) are available and may be integrated for a DIRBS deployment.
+
 DIRBS |build_status|
 ====================
 
 Directory structure
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This repository contains code forming the "core" part of DIRBS. It contains
+This repository contains code forming the "core" part of DIRBS. It contains:
 
   * ``src/dirbs/`` -- The DIRBS core Python package, to be installed on target
     machines. SQL files are included in here as they are distributed as package data.
