@@ -2,6 +2,8 @@
 .. |build_status| image:: https://csce-dirbs-ci-1.qualcomm.com/buildStatus/icon?job=dirbs-build-master
                   :target: https://csce-dirbs-ci-1.qualcomm.com/job/dirbs-build-master/
 
+BSD 3-Clause Clear License
+
 Copyright (c) 2018 Qualcomm Technologies, Inc.
  
 All rights reserved.
