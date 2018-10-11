@@ -10,7 +10,7 @@ Jinja2==2.10
 MarkupSafe==1.0
 six==1.11.0
 Werkzeug==0.14.1
-marshmallow==2.15.0
+marshmallow==2.16.0
 webargs==2.0.0
 apispec==0.31.0
 flask-apispec==0.4.2
