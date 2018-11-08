@@ -106,7 +106,7 @@ setup(
     long_description=long_description,
 
     # The project's main homepage.
-    url='https://github.com/dirbs',
+    url='https://github.com/dirbs/DIRBS-Core',
 
     # Author details
     author='Qualcomm Technologies Inc.',
