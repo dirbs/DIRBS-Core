@@ -28,14 +28,13 @@ Copyright (c) 2018 Qualcomm Technologies, Inc.
  OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
  TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
-
 """
 
 import json
 
 from flask import url_for
 
-from _fixtures import *    # noqa: F403, F401
+from _fixtures import *  # noqa: F403, F401
 from _helpers import job_metadata_importer
 import dirbs.metadata as metadata
 
@@ -76,20 +75,38 @@ def test_classification_json_api(flask_app, db_conn, api_version):
     job_metadata_importer(db_conn=db_conn, command='dirbs-classify', run_id=1, subcommand='', status='success',
                           extra_metadata=extra_metadata)
 
-    rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version),
-                               command='dirbs-classify',
-                               run_id=1,
-                               subcommand='',
-                               status='success',
-                               show_details=True))
+    if api_version == 'v1':
+        rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version),
+                                   command='dirbs-classify',
+                                   run_id=1,
+                                   subcommand='',
+                                   status='success',
+                                   show_details=True))
 
-    assert rv.status_code == 200
-    data = json.loads(rv.data.decode('utf-8'))[0]
-    assert data['command'] == 'dirbs-classify'
-    assert data['run_id'] == 1
-    assert data['subcommand'] == ''
-    assert data['status'] == 'success'
-    assert data['extra_metadata'] == extra_metadata
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))[0]
+        assert data['command'] == 'dirbs-classify'
+        assert data['run_id'] == 1
+        assert data['subcommand'] == ''
+        assert data['status'] == 'success'
+        assert data['extra_metadata'] == extra_metadata
+    else:  # job_metadata api version 2.0
+        rv = flask_app.get(url_for('{0}.job_metadata_get_api'.format(api_version),
+                                   command='dirbs-classify',
+                                   run_id=1,
+                                   subcommand='',
+                                   status='success',
+                                   show_details=True))
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))
+        assert data['_keys']['result_size'] == 1
+        assert data['_keys']['previous_key'] == ''
+        assert data['_keys']['next_key'] == ''
+        assert data['jobs'][0]['command'] == 'dirbs-classify'
+        assert data['jobs'][0]['run_id'] == 1
+        assert data['jobs'][0]['subcommand'] == ''
+        assert data['jobs'][0]['status'] == 'success'
+        assert data['jobs'][0]['extra_metadata'] == extra_metadata
 
 
 def test_prune_json_api(flask_app, db_conn, api_version):
@@ -103,32 +120,58 @@ def test_prune_json_api(flask_app, db_conn, api_version):
                       'curr_date': None,
                       'rows_after': 0}
 
-    job_metadata_importer(db_conn=db_conn, command='dirbs-prune', run_id=9, subcommand='triplets', status='success',
+    job_metadata_importer(db_conn=db_conn, command='dirbs-prune',
+                          run_id=9, subcommand='triplets', status='success',
                           extra_metadata=extra_metadata)
 
     job_metadata_importer(db_conn=db_conn, command='dirbs-prune', run_id=10, subcommand='classification_state',
                           status='success', extra_metadata=extra_metadata)
 
-    rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version),
-                               command='dirbs-prune',
-                               status='success',
-                               show_details=True))
+    if api_version == 'v1':
+        rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version),
+                                   command='dirbs-prune',
+                                   status='success',
+                                   show_details=True))
 
-    assert rv.status_code == 200
-    data = json.loads(rv.data.decode('utf-8'))
-    triplets_data = data[0]
-    assert triplets_data['command'] == 'dirbs-prune'
-    assert triplets_data['run_id'] == 9
-    assert triplets_data['subcommand'] == 'triplets'
-    assert triplets_data['status'] == 'success'
-    assert triplets_data['extra_metadata'] == extra_metadata
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))
+        triplets_data = data[0]
+        assert triplets_data['command'] == 'dirbs-prune'
+        assert triplets_data['run_id'] == 9
+        assert triplets_data['subcommand'] == 'triplets'
+        assert triplets_data['status'] == 'success'
+        assert triplets_data['extra_metadata'] == extra_metadata
 
-    class_data = data[1]
-    assert class_data['command'] == 'dirbs-prune'
-    assert class_data['run_id'] == 10
-    assert class_data['subcommand'] == 'classification_state'
-    assert class_data['status'] == 'success'
-    assert class_data['extra_metadata'] == extra_metadata
+        class_data = data[1]
+        assert class_data['command'] == 'dirbs-prune'
+        assert class_data['run_id'] == 10
+        assert class_data['subcommand'] == 'classification_state'
+        assert class_data['status'] == 'success'
+        assert class_data['extra_metadata'] == extra_metadata
+    else:  # job_metadata api version 2.0
+        rv = flask_app.get(url_for('{0}.job_metadata_get_api'.format(api_version),
+                                   command='dirbs-prune',
+                                   status='success',
+                                   show_details=True))
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))
+        triplets_data = data['jobs'][0]
+        assert triplets_data['command'] == 'dirbs-prune'
+        assert triplets_data['run_id'] == 9
+        assert triplets_data['subcommand'] == 'triplets'
+        assert triplets_data['status'] == 'success'
+        assert triplets_data['extra_metadata'] == extra_metadata
+
+        class_data = data['jobs'][1]
+        assert class_data['command'] == 'dirbs-prune'
+        assert class_data['run_id'] == 10
+        assert class_data['subcommand'] == 'classification_state'
+        assert class_data['status'] == 'success'
+        assert class_data['extra_metadata'] == extra_metadata
+
+        assert data['_keys']['result_size'] == 2
+        assert data['_keys']['previous_key'] == ''
+        assert data['_keys']['next_key'] == ''
 
 
 def test_operator_import_json_api(flask_app, db_conn, api_version):
@@ -185,14 +228,25 @@ def test_operator_import_json_api(flask_app, db_conn, api_version):
     job_metadata_importer(db_conn=db_conn, command='dirbs-import', run_id=1, subcommand='operator',
                           status='error', extra_metadata=extra_metadata)
 
-    rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version), show_details=False))
+    if api_version == 'v1':
+        rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version), show_details=False))
 
-    assert rv.status_code == 200
-    data = json.loads(rv.data.decode('utf-8'))[0]
-    assert data['command'] == 'dirbs-import'
-    assert data['run_id'] == 1
-    assert data['subcommand'] == 'operator'
-    assert data['status'] == 'error'
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))[0]
+        assert data['command'] == 'dirbs-import'
+        assert data['run_id'] == 1
+        assert data['subcommand'] == 'operator'
+        assert data['status'] == 'error'
+    else:  # api version 2.0
+        rv = flask_app.get(url_for('{0}.job_metadata_get_api'.format(api_version), show_details=False))
+
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))['jobs'][0]
+        print(data['command'])
+        assert data['command'] == 'dirbs-import'
+        assert data['run_id'] == 1
+        assert data['subcommand'] == 'operator'
+        assert data['status'] == 'error'
 
 
 def test_stolen_import_json_api(flask_app, db_conn, api_version):
@@ -240,14 +294,24 @@ def test_stolen_import_json_api(flask_app, db_conn, api_version):
     job_metadata_importer(db_conn=db_conn, command='dirbs-import', run_id=1, subcommand='stolen_list',
                           status='success', extra_metadata=extra_metadata)
 
-    rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version), command='dirbs-import'))
+    if api_version == 'v1':
+        rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version), command='dirbs-import'))
 
-    assert rv.status_code == 200
-    data = json.loads(rv.data.decode('utf-8'))[0]
-    assert data['command'] == 'dirbs-import'
-    assert data['run_id'] == 1
-    assert data['subcommand'] == 'stolen_list'
-    assert data['status'] == 'success'
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))[0]
+        assert data['command'] == 'dirbs-import'
+        assert data['run_id'] == 1
+        assert data['subcommand'] == 'stolen_list'
+        assert data['status'] == 'success'
+    else:  # api version 2.0
+        rv = flask_app.get(url_for('{0}.job_metadata_get_api'.format(api_version), command='dirbs-import'))
+
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))['jobs'][0]
+        assert data['command'] == 'dirbs-import'
+        assert data['run_id'] == 1
+        assert data['subcommand'] == 'stolen_list'
+        assert data['status'] == 'success'
 
 
 def test_pairing_import_json_api(flask_app, db_conn, api_version):
@@ -279,14 +343,24 @@ def test_pairing_import_json_api(flask_app, db_conn, api_version):
     job_metadata_importer(db_conn=db_conn, command='dirbs-import', run_id=1, subcommand='pairing_list',
                           status='error', extra_metadata=extra_metadata)
 
-    rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version)))
-    assert rv.status_code == 200
-    data = json.loads(rv.data.decode('utf-8'))[0]
-    assert data['command'] == 'dirbs-import'
-    assert data['run_id'] == 1
-    assert data['subcommand'] == 'pairing_list'
-    assert data['status'] == 'error'
-    assert data['extra_metadata'] == extra_metadata
+    if api_version == 'v1':
+        rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version)))
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))[0]
+        assert data['command'] == 'dirbs-import'
+        assert data['run_id'] == 1
+        assert data['subcommand'] == 'pairing_list'
+        assert data['status'] == 'error'
+        assert data['extra_metadata'] == extra_metadata
+    else:  # api version 2.0
+        rv = flask_app.get(url_for('{0}.job_metadata_get_api'.format(api_version)))
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))['jobs'][0]
+        assert data['command'] == 'dirbs-import'
+        assert data['run_id'] == 1
+        assert data['subcommand'] == 'pairing_list'
+        assert data['status'] == 'error'
+        assert data['extra_metadata'] == extra_metadata
 
 
 def test_gsma_import_json_api(flask_app, db_conn, api_version):
@@ -334,14 +408,24 @@ def test_gsma_import_json_api(flask_app, db_conn, api_version):
     job_metadata_importer(db_conn=db_conn, command='dirbs-import', run_id=1, subcommand='gsma_tac',
                           status='success', extra_metadata=extra_metadata)
 
-    rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version), show_details=False))
+    if api_version == 'v1':
+        rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version), show_details=False))
 
-    assert rv.status_code == 200
-    data = json.loads(rv.data.decode('utf-8'))[0]
-    assert data['command'] == 'dirbs-import'
-    assert data['run_id'] == 1
-    assert data['subcommand'] == 'gsma_tac'
-    assert data['status'] == 'success'
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))[0]
+        assert data['command'] == 'dirbs-import'
+        assert data['run_id'] == 1
+        assert data['subcommand'] == 'gsma_tac'
+        assert data['status'] == 'success'
+    else:  # api version 2.0
+        rv = flask_app.get(url_for('{0}.job_metadata_get_api'.format(api_version), show_details=False))
+
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))['jobs'][0]
+        assert data['command'] == 'dirbs-import'
+        assert data['run_id'] == 1
+        assert data['subcommand'] == 'gsma_tac'
+        assert data['status'] == 'success'
 
 
 def test_registration_import_json_api(flask_app, db_conn, api_version):
@@ -368,15 +452,26 @@ def test_registration_import_json_api(flask_app, db_conn, api_version):
     job_metadata_importer(db_conn=db_conn, command='dirbs-import', run_id=1, subcommand='registration_list',
                           status='error', extra_metadata=extra_metadata)
 
-    rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version), command='dirbs-import'))
+    if api_version == 'v1':
+        rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version), command='dirbs-import'))
 
-    assert rv.status_code == 200
-    data = json.loads(rv.data.decode('utf-8'))[0]
-    assert data['command'] == 'dirbs-import'
-    assert data['run_id'] == 1
-    assert data['subcommand'] == 'registration_list'
-    assert data['status'] == 'error'
-    assert data['extra_metadata'] == extra_metadata
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))[0]
+        assert data['command'] == 'dirbs-import'
+        assert data['run_id'] == 1
+        assert data['subcommand'] == 'registration_list'
+        assert data['status'] == 'error'
+        assert data['extra_metadata'] == extra_metadata
+    else:  # api version 2.0
+        rv = flask_app.get(url_for('{0}.job_metadata_get_api'.format(api_version), command='dirbs-import'))
+
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))['jobs'][0]
+        assert data['command'] == 'dirbs-import'
+        assert data['run_id'] == 1
+        assert data['subcommand'] == 'registration_list'
+        assert data['status'] == 'error'
+        assert data['extra_metadata'] == extra_metadata
 
 
 def test_golden_import_json_api(flask_app, db_conn, api_version):
@@ -402,15 +497,26 @@ def test_golden_import_json_api(flask_app, db_conn, api_version):
     job_metadata_importer(db_conn=db_conn, command='dirbs-import', run_id=1, subcommand='golden_list',
                           status='error', extra_metadata=extra_metadata)
 
-    rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version), show_details=True))
+    if api_version == 'v1':
+        rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version), show_details=True))
 
-    assert rv.status_code == 200
-    data = json.loads(rv.data.decode('utf-8'))[0]
-    assert data['command'] == 'dirbs-import'
-    assert data['run_id'] == 1
-    assert data['subcommand'] == 'golden_list'
-    assert data['status'] == 'error'
-    assert data['extra_metadata'] == extra_metadata
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))[0]
+        assert data['command'] == 'dirbs-import'
+        assert data['run_id'] == 1
+        assert data['subcommand'] == 'golden_list'
+        assert data['status'] == 'error'
+        assert data['extra_metadata'] == extra_metadata
+    else:  # api version 2.0
+        rv = flask_app.get(url_for('{0}.job_metadata_get_api'.format(api_version), show_details=True))
+
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))['jobs'][0]
+        assert data['command'] == 'dirbs-import'
+        assert data['run_id'] == 1
+        assert data['subcommand'] == 'golden_list'
+        assert data['status'] == 'error'
+        assert data['extra_metadata'] == extra_metadata
 
 
 def test_db_schema_json_api(flask_app, db_conn, api_version):
@@ -422,15 +528,26 @@ def test_db_schema_json_api(flask_app, db_conn, api_version):
     job_metadata_importer(db_conn=db_conn, command='dirbs-db', run_id=1, subcommand='upgrade',
                           status='success')
 
-    rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version), show_details=True))
+    if api_version == 'v1':
+        rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version), show_details=True))
 
-    assert rv.status_code == 200
-    data = json.loads(rv.data.decode('utf-8'))[0]
-    assert data['command'] == 'dirbs-db'
-    assert data['run_id'] == 1
-    assert data['subcommand'] == 'upgrade'
-    assert data['status'] == 'success'
-    assert data['extra_metadata'] == {}
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))[0]
+        assert data['command'] == 'dirbs-db'
+        assert data['run_id'] == 1
+        assert data['subcommand'] == 'upgrade'
+        assert data['status'] == 'success'
+        assert data['extra_metadata'] == {}
+    else:  # api version 2.0
+        rv = flask_app.get(url_for('{0}.job_metadata_get_api'.format(api_version), show_details=True))
+
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))['jobs'][0]
+        assert data['command'] == 'dirbs-db'
+        assert data['run_id'] == 1
+        assert data['subcommand'] == 'upgrade'
+        assert data['status'] == 'success'
+        assert data['extra_metadata'] == {}
 
 
 def test_list_gen_schema_json_api(flask_app, db_conn, api_version):
@@ -504,15 +621,26 @@ def test_list_gen_schema_json_api(flask_app, db_conn, api_version):
     job_metadata_importer(db_conn=db_conn, command='dirbs-listgen', run_id=1, subcommand='',
                           status='success', extra_metadata=extra_metadata)
 
-    rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version),
-                               show_details=False))
+    if api_version == 'v1':
+        rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version),
+                                   show_details=False))
 
-    assert rv.status_code == 200
-    data = json.loads(rv.data.decode('utf-8'))[0]
-    assert data['command'] == 'dirbs-listgen'
-    assert data['run_id'] == 1
-    assert data['subcommand'] == ''
-    assert data['status'] == 'success'
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))[0]
+        assert data['command'] == 'dirbs-listgen'
+        assert data['run_id'] == 1
+        assert data['subcommand'] == ''
+        assert data['status'] == 'success'
+    else:  # api version 2.0
+        rv = flask_app.get(url_for('{0}.job_metadata_get_api'.format(api_version),
+                                   show_details=False))
+
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))['jobs'][0]
+        assert data['command'] == 'dirbs-listgen'
+        assert data['run_id'] == 1
+        assert data['subcommand'] == ''
+        assert data['status'] == 'success'
 
 
 def test_report_schema_json_api(flask_app, db_conn, api_version):
@@ -528,15 +656,26 @@ def test_report_schema_json_api(flask_app, db_conn, api_version):
     job_metadata_importer(db_conn=db_conn, command='dirbs-report', run_id=1, subcommand='',
                           status='error', extra_metadata=extra_metadata)
 
-    rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version)))
+    if api_version == 'v1':
+        rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version)))
 
-    assert rv.status_code == 200
-    data = json.loads(rv.data.decode('utf-8'))[0]
-    assert data['command'] == 'dirbs-report'
-    assert data['run_id'] == 1
-    assert data['subcommand'] == ''
-    assert data['status'] == 'error'
-    assert data['extra_metadata'] == extra_metadata
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))[0]
+        assert data['command'] == 'dirbs-report'
+        assert data['run_id'] == 1
+        assert data['subcommand'] == ''
+        assert data['status'] == 'error'
+        assert data['extra_metadata'] == extra_metadata
+    else:  # api version 2.0
+        rv = flask_app.get(url_for('{0}.job_metadata_get_api'.format(api_version)))
+
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))['jobs'][0]
+        assert data['command'] == 'dirbs-report'
+        assert data['run_id'] == 1
+        assert data['subcommand'] == ''
+        assert data['status'] == 'error'
+        assert data['extra_metadata'] == extra_metadata
 
 
 def test_job_metadata_bad_pos_int_params(flask_app, db_conn, api_version):
@@ -544,74 +683,112 @@ def test_job_metadata_bad_pos_int_params(flask_app, db_conn, api_version):
 
     Verify that job_metadata API returns a 400 status for not positive integer run_id or max_result,
     """
-    # not numeric run_id
-    rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version),
-                               command='dirbs-classify',
-                               run_id='aaa',
-                               status='success',
-                               show_details=False))
+    if api_version == 'v1':
+        # not numeric run_id
+        rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version),
+                                   command='dirbs-classify',
+                                   run_id='aaa',
+                                   status='success',
+                                   show_details=False))
 
-    assert rv.status_code == 400
-    assert b'Bad \'run_id\':\'aaa\' argument format. Accepts only integer' in rv.data
+        assert rv.status_code == 400
+        assert b'Bad \'run_id\':\'aaa\' argument format. Accepts only integer' in rv.data
 
-    # not positive run_id
-    rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version),
-                               command='dirbs-classify',
-                               run_id=-1,
-                               status='success',
-                               show_details=False))
+        # not positive run_id
+        rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version),
+                                   command='dirbs-classify',
+                                   run_id=-1,
+                                   status='success',
+                                   show_details=False))
 
-    assert rv.status_code == 400
-    assert b'Param \'run_id\':\'-1\' must be greater than 0' in rv.data
+        assert rv.status_code == 400
+        assert b'Param \'run_id\':\'-1\' must be greater than 0' in rv.data
 
-    # not numeric max_result
-    rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version),
-                               command='dirbs-classify',
-                               run_id=1,
-                               status='success',
-                               max_results='a',
-                               show_details=False))
+        # not numeric max_result
+        rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version),
+                                   command='dirbs-classify',
+                                   run_id=1,
+                                   status='success',
+                                   max_results='a',
+                                   show_details=False))
 
-    assert rv.status_code == 400
-    assert b'Bad \'max_results\':\'a\' argument format. Accepts only integer' in rv.data
+        assert rv.status_code == 400
+        assert b'Bad \'max_results\':\'a\' argument format. Accepts only integer' in rv.data
 
-    # not positive max_result
-    rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version),
-                               command='dirbs-classify',
-                               run_id=1,
-                               status='success',
-                               max_results=0,
-                               show_details=False))
+        # not positive max_result
+        rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version),
+                                   command='dirbs-classify',
+                                   run_id=1,
+                                   status='success',
+                                   max_results=0,
+                                   show_details=False))
 
-    assert rv.status_code == 400
-    assert b'Param \'max_results\':\'0\' must be greater than 0' in rv.data
+        assert rv.status_code == 400
+        assert b'Param \'max_results\':\'0\' must be greater than 0' in rv.data
 
-    # list of max_result (will take just the first elem of the list)
-    rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version),
-                               command='dirbs-classify',
-                               run_id=1,
-                               status='success',
-                               max_results=[1, -2],
-                               show_details=False))
+        # list of max_result (will take just the first elem of the list)
+        rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version),
+                                   command='dirbs-classify',
+                                   run_id=1,
+                                   status='success',
+                                   max_results=[1, -2],
+                                   show_details=False))
 
-    assert rv.status_code == 200
+        assert rv.status_code == 200
 
-    # set max_result to 1 and check that only one record is returned
-    job_metadata_importer(db_conn=db_conn, command='dirbs-classify', run_id=1, subcommand='sub_one',
-                          status='success')
+        # set max_result to 1 and check that only one record is returned
+        job_metadata_importer(db_conn=db_conn, command='dirbs-classify', run_id=1, subcommand='sub_one',
+                              status='success')
 
-    job_metadata_importer(db_conn=db_conn, command='dirbs-classify', run_id=2, subcommand='sub_two',
-                          status='success')
+        job_metadata_importer(db_conn=db_conn, command='dirbs-classify', run_id=2, subcommand='sub_two',
+                              status='success')
 
-    rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version),
-                               run_id=1,
-                               db_user='test-user',
-                               subcommand=['sub_one', 'sub_two'],
-                               show_details=False,
-                               max_results=1))
+        rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version),
+                                   run_id=1,
+                                   db_user='test-user',
+                                   subcommand=['sub_one', 'sub_two'],
+                                   show_details=False,
+                                   max_results=1))
 
-    assert rv.status_code == 200
-    assert len(json.loads(rv.data.decode('utf-8'))) == 1
+        assert rv.status_code == 200
+        assert len(json.loads(rv.data.decode('utf-8'))) == 1
+    else:  # api version 2.0
+        # not numeric run_id
+        rv = flask_app.get(url_for('{0}.job_metadata_get_api'.format(api_version),
+                                   command='dirbs-classify',
+                                   run_id='aaa',
+                                   status='success',
+                                   show_details=False))
+
+        assert rv.status_code == 400
+        assert b'Bad \'run_id\':\'aaa\' argument format. Accepts only integer' in rv.data
+
+        # not positive run_id
+        rv = flask_app.get(url_for('{0}.job_metadata_get_api'.format(api_version),
+                                   command='dirbs-classify',
+                                   run_id=-1,
+                                   status='success',
+                                   show_details=False))
+
+        assert rv.status_code == 400
+        assert b'Param \'run_id\':\'-1\' must be greater than 0' in rv.data
+
+        # set max_result to 1 and check that only one record is returned
+        job_metadata_importer(db_conn=db_conn, command='dirbs-classify', run_id=1, subcommand='sub_one',
+                              status='success')
+
+        job_metadata_importer(db_conn=db_conn, command='dirbs-classify', run_id=2, subcommand='sub_two',
+                              status='success')
+
+        rv = flask_app.get(url_for('{0}.job_metadata_get_api'.format(api_version),
+                                   run_id=1,
+                                   db_user='test-user',
+                                   subcommand=['sub_one', 'sub_two'],
+                                   show_details=False,
+                                   max_results=1))
+
+        assert rv.status_code == 200
+        assert len(json.loads(rv.data.decode('utf-8'))['jobs']) == 1
 
 
 def test_job_metadata_bad_params(flask_app, api_version):
@@ -619,25 +796,46 @@ def test_job_metadata_bad_params(flask_app, api_version):
 
     Verify that job_metadata API returns a 400 status for unknown status or not boolean show_details.
     """
-    # unknown status
-    rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version), status='unknown'))
-    assert rv.status_code == 400
-    assert b'Bad \'status\':\'unknown\' argument format. ' \
-           b'Accepts only one of [\'running\', \'success\', \'error\']' in rv.data
+    if api_version == 'v1':
+        # unknown status
+        rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version), status='unknown'))
+        assert rv.status_code == 400
+        assert b'Bad \'status\':\'unknown\' argument format. ' \
+               b'Accepts only one of [\'running\', \'success\', \'error\']' in rv.data
 
-    # list of status containing an unknown status
-    rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version), status=['error', 'unknown']))
-    assert rv.status_code == 400
-    assert b'Bad \'status\':\'unknown\' argument format. ' \
-           b'Accepts only one of [\'running\', \'success\', \'error\']' in rv.data
+        # list of status containing an unknown status
+        rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version), status=['error', 'unknown']))
+        assert rv.status_code == 400
+        assert b'Bad \'status\':\'unknown\' argument format. ' \
+               b'Accepts only one of [\'running\', \'success\', \'error\']' in rv.data
 
-    # not boolean show_details
-    rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version),
-                               show_details='not_boolean'))
+        # not boolean show_details
+        rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version),
+                                   show_details='not_boolean'))
 
-    assert rv.status_code == 400
-    assert b'Bad \'show_details\':\'not_boolean\' argument format. ' \
-           b'Accepts only one of [\'0\', \'1\', \'true\', \'false\']' in rv.data
+        assert rv.status_code == 400
+        assert b'Bad \'show_details\':\'not_boolean\' argument format. ' \
+               b'Accepts only one of [\'0\', \'1\', \'true\', \'false\']' in rv.data
+    else:  # api version 2.0
+        # unknown status
+        rv = flask_app.get(url_for('{0}.job_metadata_get_api'.format(api_version), status='unknown'))
+        assert rv.status_code == 400
+        assert b'Bad \'status\':\'unknown\' argument format. ' \
+               b'Accepts only one of [\'running\', \'success\', \'error\']' in rv.data
+
+        # list of status containing an unknown status
+        rv = flask_app.get(url_for('{0}.job_metadata_get_api'.format(api_version), status=['error', 'unknown']))
+        assert rv.status_code == 400
+        assert b'Bad \'status\':\'unknown\' argument format. ' \
+               b'Accepts only one of [\'running\', \'success\', \'error\']' in rv.data
+
+        # not boolean show_details
+        rv = flask_app.get(url_for('{0}.job_metadata_get_api'.format(api_version),
+                                   show_details='not_boolean'))
+
+        assert rv.status_code == 400
+        assert b'Bad \'show_details\':\'not_boolean\' argument format. ' \
+               b'Accepts only one of [\'0\', \'1\', \'true\', \'false\']' in rv.data
 
 
 def test_json_show_details(flask_app, db_conn, api_version):
@@ -677,36 +875,68 @@ def test_json_show_details(flask_app, db_conn, api_version):
     job_metadata_importer(db_conn=db_conn, command='dirbs-classify', run_id=1, subcommand='',
                           status='success', extra_metadata=extra_metadata)
 
-    # Step 1 show_details=True
-    rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version),
-                               command='dirbs-classify',
-                               run_id=1,
-                               status='success',
-                               show_details=True))
+    if api_version == 'v1':
+        # Step 1 show_details=True
+        rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version),
+                                   command='dirbs-classify',
+                                   run_id=1,
+                                   status='success',
+                                   show_details=True))
 
-    assert rv.status_code == 200
-    data = json.loads(rv.data.decode('utf-8'))[0]
-    assert data['command'] == 'dirbs-classify'
-    assert data['run_id'] == 1
-    assert data['subcommand'] == ''
-    assert data['status'] == 'success'
-    assert data['extra_metadata'] == extra_metadata
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))[0]
+        assert data['command'] == 'dirbs-classify'
+        assert data['run_id'] == 1
+        assert data['subcommand'] == ''
+        assert data['status'] == 'success'
+        assert data['extra_metadata'] == extra_metadata
 
-    # Step 2 show_details=False
-    rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version),
-                               command='dirbs-classify',
-                               run_id=1,
-                               status='success',
-                               max_results=10,
-                               show_details=False))
+        # Step 2 show_details=False
+        rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version),
+                                   command='dirbs-classify',
+                                   run_id=1,
+                                   status='success',
+                                   max_results=10,
+                                   show_details=False))
 
-    assert rv.status_code == 200
-    data = json.loads(rv.data.decode('utf-8'))[0]
-    assert data['command'] == 'dirbs-classify'
-    assert data['run_id'] == 1
-    assert data['subcommand'] == ''
-    assert data['status'] == 'success'
-    assert 'extra_metadata' not in data
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))[0]
+        assert data['command'] == 'dirbs-classify'
+        assert data['run_id'] == 1
+        assert data['subcommand'] == ''
+        assert data['status'] == 'success'
+        assert 'extra_metadata' not in data
+    else:  # api version 2.0
+        # Step 1 show_details=True
+        rv = flask_app.get(url_for('{0}.job_metadata_get_api'.format(api_version),
+                                   command='dirbs-classify',
+                                   run_id=1,
+                                   status='success',
+                                   show_details=True))
+
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))['jobs'][0]
+        assert data['command'] == 'dirbs-classify'
+        assert data['run_id'] == 1
+        assert data['subcommand'] == ''
+        assert data['status'] == 'success'
+        assert data['extra_metadata'] == extra_metadata
+
+        # Step 2 show_details=False
+        rv = flask_app.get(url_for('{0}.job_metadata_get_api'.format(api_version),
+                                   command='dirbs-classify',
+                                   run_id=1,
+                                   status='success',
+                                   max_results=10,
+                                   show_details=False))
+
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))['jobs'][0]
+        assert data['command'] == 'dirbs-classify'
+        assert data['run_id'] == 1
+        assert data['subcommand'] == ''
+        assert data['status'] == 'success'
+        assert 'extra_metadata' not in data
 
 
 def test_json_no_record_for_get_params(flask_app, db_conn, api_version):
@@ -718,17 +948,30 @@ def test_json_no_record_for_get_params(flask_app, db_conn, api_version):
     job_metadata_importer(db_conn=db_conn, command='dirbs-classify', run_id=1, subcommand='',
                           status='success', extra_metadata={'metadata': 'metadata'})
 
-    # Add row into job_metadata table with run_id=1 and get url for param run_id=2.
-    rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version),
-                               command='dirbs-classify',
-                               run_id=2,
-                               db_user='test-user',
-                               status='success',
-                               max_results=10,
-                               show_details=True))
+    if api_version == 'v1':
+        # Add row into job_metadata table with run_id=1 and get url for param run_id=2.
+        rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version),
+                                   command='dirbs-classify',
+                                   run_id=2,
+                                   db_user='test-user',
+                                   status='success',
+                                   max_results=10,
+                                   show_details=True))
 
-    assert rv.status_code == 200
-    assert json.loads(rv.data.decode('utf-8')) == []
+        assert rv.status_code == 200
+        assert json.loads(rv.data.decode('utf-8')) == []
+    else:  # api version 2.0
+        # Add row into job_metadata table with run_id=1 and get url for param run_id=2.
+        rv = flask_app.get(url_for('{0}.job_metadata_get_api'.format(api_version),
+                                   command='dirbs-classify',
+                                   run_id=2,
+                                   db_user='test-user',
+                                   status='success',
+                                   max_results=10,
+                                   show_details=True))
+
+        assert rv.status_code == 200
+        assert json.loads(rv.data.decode('utf-8'))['jobs'] == []
 
 
 def test_json_unknown_command_param(flask_app, db_conn, api_version):
@@ -736,18 +979,31 @@ def test_json_unknown_command_param(flask_app, db_conn, api_version):
 
     Verify that job_metadata doesn't allow unknown command params.
     """
-    rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version),
-                               command='dirbs-unknown',
-                               run_id=2,
-                               db_user='test-user',
-                               status='success',
-                               max_results=10,
-                               show_details=True))
+    if api_version == 'v1':
+        rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version),
+                                   command='dirbs-unknown',
+                                   run_id=2,
+                                   db_user='test-user',
+                                   status='success',
+                                   max_results=10,
+                                   show_details=True))
 
-    assert rv.status_code == 400
-    assert b'Bad \'command\':\'dirbs-unknown\' argument format. ' \
-           b'Accepts only one of [\'dirbs-catalog\', \'dirbs-classify\', ' \
-           b'\'dirbs-db\', \'dirbs-import\', \'dirbs-listgen\', \'dirbs-prune\', \'dirbs-report\']' in rv.data
+        assert rv.status_code == 400
+        assert b'Bad \'command\':\'dirbs-unknown\' argument format. ' \
+               b'Accepts only one of [\'dirbs-catalog\', \'dirbs-classify\', ' \
+               b'\'dirbs-db\', \'dirbs-import\', \'dirbs-listgen\', \'dirbs-prune\', \'dirbs-report\']' in rv.data
+    else:  # api version 2.0
+        rv = flask_app.get(url_for('{0}.job_metadata_get_api'.format(api_version),
+                                   command='dirbs-unknown',
+                                   run_id=2,
+                                   db_user='test-user',
+                                   status='success',
+                                   show_details=True))
+
+        assert rv.status_code == 400
+        assert b'Bad \'command\':\'dirbs-unknown\' argument format. ' \
+               b'Accepts only one of [\'dirbs-catalog\', \'dirbs-classify\', ' \
+               b'\'dirbs-db\', \'dirbs-import\', \'dirbs-listgen\', \'dirbs-prune\', \'dirbs-report\']' in rv.data
 
 
 def test_json_multiple_values_same_param(flask_app, db_conn, api_version):
@@ -763,33 +1019,61 @@ def test_json_multiple_values_same_param(flask_app, db_conn, api_version):
     job_metadata_importer(db_conn=db_conn, command='dirbs-classify', run_id=2, subcommand='sub_two',
                           status='success')
 
-    rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version),
-                               run_id=[1, 2],
-                               db_user='test-user',
-                               subcommand=['sub_one', 'sub_two'],
-                               show_details=False))
+    if api_version == 'v1':
+        rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version),
+                                   run_id=[1, 2],
+                                   db_user='test-user',
+                                   subcommand=['sub_one', 'sub_two'],
+                                   show_details=False))
 
-    assert rv.status_code == 200
-    data = json.loads(rv.data.decode('utf-8'))[0]
-    assert data['subcommand'] == 'sub_one'
-    assert data['run_id'] == 1
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))[0]
+        assert data['subcommand'] == 'sub_one'
+        assert data['run_id'] == 1
 
-    data = json.loads(rv.data.decode('utf-8'))[1]
-    assert data['run_id'] == 2
-    assert data['subcommand'] == 'sub_two'
+        data = json.loads(rv.data.decode('utf-8'))[1]
+        assert data['run_id'] == 2
+        assert data['subcommand'] == 'sub_two'
 
-    # Step 2 list with invalid params: run_id=[1,-2];
-    rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version),
-                               command='dirbs-classify',
-                               run_id=[1, -2],
-                               db_user='test-user',
-                               subcommand=['sub_one', 'sub_two'],
-                               status=['success', 'error'],
-                               max_results=10,
-                               show_details=False))
+        # Step 2 list with invalid params: run_id=[1,-2];
+        rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version),
+                                   command='dirbs-classify',
+                                   run_id=[1, -2],
+                                   db_user='test-user',
+                                   subcommand=['sub_one', 'sub_two'],
+                                   status=['success', 'error'],
+                                   max_results=10,
+                                   show_details=False))
 
-    assert rv.status_code == 400
-    assert b'Param \'run_id\':\'-2\' must be greater than 0' in rv.data
+        assert rv.status_code == 400
+        assert b'Param \'run_id\':\'-2\' must be greater than 0' in rv.data
+    else:  # api version 2.0
+        rv = flask_app.get(url_for('{0}.job_metadata_get_api'.format(api_version),
+                                   run_id=[1, 2],
+                                   db_user='test-user',
+                                   subcommand=['sub_one', 'sub_two'],
+                                   show_details=False))
+
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))['jobs'][0]
+        assert data['subcommand'] == 'sub_one'
+        assert data['run_id'] == 1
+
+        data = json.loads(rv.data.decode('utf-8'))['jobs'][1]
+        assert data['run_id'] == 2
+        assert data['subcommand'] == 'sub_two'
+
+        # Step 2 list with invalid params: run_id=[1,-2];
+        rv = flask_app.get(url_for('{0}.job_metadata_get_api'.format(api_version),
+                                   command='dirbs-classify',
+                                   run_id=[1, -2],
+                                   db_user='test-user',
+                                   subcommand=['sub_one', 'sub_two'],
+                                   status=['success', 'error'],
+                                   show_details=False))
+
+        assert rv.status_code == 400
+        assert b'Param \'run_id\':\'-2\' must be greater than 0' in rv.data
 
 
 def test_json_no_run_id_param(flask_app, db_conn, api_version):
@@ -800,16 +1084,28 @@ def test_json_no_run_id_param(flask_app, db_conn, api_version):
     job_metadata_importer(db_conn=db_conn, command='dirbs-classify', run_id=1, subcommand='',
                           status='success')
 
-    rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version),
-                               run_id=[],
-                               show_details=False))
+    if api_version == 'v1':
+        rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version),
+                                   run_id=[],
+                                   show_details=False))
 
-    assert rv.status_code == 200
-    data = json.loads(rv.data.decode('utf-8'))[0]
-    assert data['command'] == 'dirbs-classify'
-    assert data['run_id'] == 1
-    assert data['subcommand'] == ''
-    assert data['status'] == 'success'
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))[0]
+        assert data['command'] == 'dirbs-classify'
+        assert data['run_id'] == 1
+        assert data['subcommand'] == ''
+        assert data['status'] == 'success'
+    else:  # api version 2.0
+        rv = flask_app.get(url_for('{0}.job_metadata_get_api'.format(api_version),
+                                   run_id=[],
+                                   show_details=False))
+
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))['jobs'][0]
+        assert data['command'] == 'dirbs-classify'
+        assert data['run_id'] == 1
+        assert data['subcommand'] == ''
+        assert data['status'] == 'success'
 
 
 def test_default_params(flask_app, db_conn, api_version):
@@ -821,15 +1117,26 @@ def test_default_params(flask_app, db_conn, api_version):
     job_metadata_importer(db_conn=db_conn, command='dirbs-classify', run_id=1, subcommand='',
                           status='success')
 
-    rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version)))
+    if api_version == 'v1':
+        rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version)))
 
-    assert rv.status_code == 200
-    data = json.loads(rv.data.decode('utf-8'))[0]
-    assert data['command'] == 'dirbs-classify'
-    assert data['run_id'] == 1
-    assert data['subcommand'] == ''
-    assert data['status'] == 'success'
-    assert data['extra_metadata'] == {}
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))[0]
+        assert data['command'] == 'dirbs-classify'
+        assert data['run_id'] == 1
+        assert data['subcommand'] == ''
+        assert data['status'] == 'success'
+        assert data['extra_metadata'] == {}
+    else:  # api version 2.0
+        rv = flask_app.get(url_for('{0}.job_metadata_get_api'.format(api_version)))
+
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))['jobs'][0]
+        assert data['command'] == 'dirbs-classify'
+        assert data['run_id'] == 1
+        assert data['subcommand'] == ''
+        assert data['status'] == 'success'
+        assert data['extra_metadata'] == {}
 
 
 def test_method_delete_not_allowed(flask_app, db_conn, api_version):
@@ -837,9 +1144,14 @@ def test_method_delete_not_allowed(flask_app, db_conn, api_version):
 
     Verify the job_metadata API does not support HTTP DELETE and returns HTTP 405 METHOD NOT ALLOWED.
     """
-    rv = flask_app.delete(url_for('{0}.job_metadata_api'.format(api_version)))
-    assert rv.status_code == 405
-    assert b'Method Not Allowed' in rv.data
+    if api_version == 'v1':
+        rv = flask_app.delete(url_for('{0}.job_metadata_api'.format(api_version)))
+        assert rv.status_code == 405
+        assert b'Method Not Allowed' in rv.data
+    else:  # api version 2.0
+        rv = flask_app.delete(url_for('{0}.job_metadata_get_api'.format(api_version)))
+        assert rv.status_code == 405
+        assert b'Method Not Allowed' in rv.data
 
 
 def test_method_post_not_allowed(flask_app, db_conn, api_version):
@@ -847,9 +1159,14 @@ def test_method_post_not_allowed(flask_app, db_conn, api_version):
 
     Verify the job_metadata API does not support HTTP POST and returns HTTP 405 METHOD NOT ALLOWED.
     """
-    rv = flask_app.delete(url_for('{0}.job_metadata_api'.format(api_version)))
-    assert rv.status_code == 405
-    assert b'Method Not Allowed' in rv.data
+    if api_version == 'v1':
+        rv = flask_app.delete(url_for('{0}.job_metadata_api'.format(api_version)))
+        assert rv.status_code == 405
+        assert b'Method Not Allowed' in rv.data
+    else:  # api version 2.0
+        rv = flask_app.delete(url_for('{0}.job_metadata_get_api'.format(api_version)))
+        assert rv.status_code == 405
+        assert b'Method Not Allowed' in rv.data
 
 
 def test_method_put_not_allowed(flask_app, db_conn, api_version):
@@ -857,9 +1174,14 @@ def test_method_put_not_allowed(flask_app, db_conn, api_version):
 
     Verify the job_metadata API does not support HTTP PUT and returns HTTP 405 METHOD NOT ALLOWED.
     """
-    rv = flask_app.delete(url_for('{0}.job_metadata_api'.format(api_version)))
-    assert rv.status_code == 405
-    assert b'Method Not Allowed' in rv.data
+    if api_version == 'v1':
+        rv = flask_app.delete(url_for('{0}.job_metadata_api'.format(api_version)))
+        assert rv.status_code == 405
+        assert b'Method Not Allowed' in rv.data
+    else:  # api version 2.0
+        rv = flask_app.delete(url_for('{0}.job_metadata_get_api'.format(api_version)))
+        assert rv.status_code == 405
+        assert b'Method Not Allowed' in rv.data
 
 
 def test_job_metadata_most_recent_successful_job_start_time(db_conn):
@@ -874,3 +1196,83 @@ def test_job_metadata_most_recent_successful_job_start_time(db_conn):
                           status='success', extra_metadata=extra_metadata)
     metadata.most_recent_job_start_time_by_command(db_conn, 'dirbs-import', subcommand='pairing-list',
                                                    successful_only=True)
+
+
+def test_job_metadata_v2_pagination(flask_app, db_conn):
+    """Test Depot ID not known yet.
+
+    Verify that results returned by metadata api version 2.0 are paginated.
+    """
+    # insert 20 records
+    for i in range(10):
+        job_metadata_importer(db_conn=db_conn, command='dirbs-classify', run_id=i, subcommand='',
+                              status='success')
+
+        job_metadata_importer(db_conn=db_conn, command='dirbs-prune',
+                              run_id=i, subcommand='triplets', status='success')
+
+    # test all records are fetched when no pagination params are given
+    rv = flask_app.get(url_for('v2.job_metadata_get_api'))
+    assert rv.status_code == 200
+    data = json.loads(rv.data.decode('utf-8'))
+    assert data['_keys']['result_size'] == 20
+    assert data['_keys']['previous_key'] == ''
+    assert data['_keys']['next_key'] == ''
+    assert len(data['jobs']) == 20
+
+    # test pagination, start from 1st record and 5 records per page
+    offset = 1
+    limit = 5
+    rv = flask_app.get(url_for('v2.job_metadata_get_api', offset=offset, limit=limit))
+    assert rv.status_code == 200
+    data = json.loads(rv.data.decode('utf-8'))
+    assert data['_keys']['result_size'] == 20
+    assert data['_keys']['previous_key'] == ''
+    assert data['_keys']['next_key'] == '?offset={0}&limit={1}'.format(offset + limit, limit)
+    assert len(data['jobs']) == 5
+
+    next_offset = offset + limit
+    rv = flask_app.get(url_for('v2.job_metadata_get_api', offset=next_offset, limit=limit))
+    assert rv.status_code == 200
+    data = json.loads(rv.data.decode('utf-8'))
+    assert data['_keys']['result_size'] == 20
+    assert data['_keys']['previous_key'] == '?offset={0}&limit={1}'.format(next_offset - limit, limit)
+    assert data['_keys']['next_key'] == '?offset={0}&limit={1}'.format(next_offset + limit, limit)
+
+    next_offset = next_offset + limit
+    rv = flask_app.get(url_for('v2.job_metadata_get_api', offset=next_offset, limit=limit))
+    assert rv.status_code == 200
+    data = json.loads(rv.data.decode('utf-8'))
+    assert data['_keys']['result_size'] == 20
+    assert data['_keys']['previous_key'] == '?offset={0}&limit={1}'.format(next_offset - limit, limit * 2)
+    assert data['_keys']['next_key'] == '?offset={0}&limit={1}'.format(next_offset + limit, limit)
+
+    # pagination with sorting order ascending based on run_id
+    offset = 1
+    limit = 5
+    order = 'Ascending'
+    rv = flask_app.get(url_for('v2.job_metadata_get_api', offset=offset, limit=limit, order=order))
+    assert rv.status_code == 200
+    data = json.loads(rv.data.decode('utf-8'))
+    assert data['_keys']['result_size'] == 20
+    assert data['_keys']['previous_key'] == ''
+    assert data['_keys']['next_key'] == '?offset={0}&limit={1}'.format(offset + limit, limit)
+    assert len(data['jobs']) == 5
+    assert data['jobs'][0]['run_id'] <= data['jobs'][1]['run_id']
+    assert data['jobs'][1]['run_id'] <= data['jobs'][2]['run_id']
+    assert data['jobs'][2]['run_id'] <= data['jobs'][3]['run_id']
+    assert data['jobs'][3]['run_id'] <= data['jobs'][4]['run_id']
+
+    # order Descending
+    order = 'Descending'
+    rv = flask_app.get(url_for('v2.job_metadata_get_api', offset=offset, limit=limit, order=order))
+    assert rv.status_code == 200
+    data = json.loads(rv.data.decode('utf-8'))
+    assert data['_keys']['result_size'] == 20
+    assert data['_keys']['previous_key'] == ''
+    assert data['_keys']['next_key'] == '?offset={0}&limit={1}'.format(offset + limit, limit)
+    assert len(data['jobs']) == 5
+    assert data['jobs'][0]['run_id'] >= data['jobs'][1]['run_id']
+    assert data['jobs'][1]['run_id'] >= data['jobs'][2]['run_id']
+    assert data['jobs'][2]['run_id'] >= data['jobs'][3]['run_id']
+    assert data['jobs'][3]['run_id'] >= data['jobs'][4]['run_id']

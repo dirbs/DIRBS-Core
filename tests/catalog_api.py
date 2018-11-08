@@ -28,7 +28,6 @@ Copyright (c) 2018 Qualcomm Technologies, Inc.
  OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
  TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
-
 """
 
 import json
@@ -39,7 +38,7 @@ import zipfile
 from flask import url_for
 from click.testing import CliRunner
 
-from _fixtures import *    # noqa: F403, F401
+from _fixtures import *  # noqa: F403, F401
 from dirbs.cli.catalog import CatalogAttributes
 from dirbs.cli.importer import cli as dirbs_import_cli
 from dirbs.cli.catalog import cli as dirbs_catalog_cli
@@ -90,70 +89,108 @@ def _dummy_data_generator(conn):
                                  first_seen='2017-12-12 00:00:00', last_seen='2017-12-12 00:00:00')
 
 
-def test_invalid_max_results(flask_app, api_version):
+def test_invalid_max_results(flask_app):
     """Verify the API returns 400 for non-numeric max_results argument."""
-    rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version), max_results='abc'))
+    rv = flask_app.get(url_for('v1.catalog_api', max_results='abc'))
     assert rv.status_code == 400
     assert b'Bad \'max_results\':\'abc\' argument format' in rv.data
 
 
 def test_invalid_file_type(flask_app, api_version):
     """Verify the API returns 400 for invalid file_type argument."""
-    rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version), file_type='invalid_file'))
-    assert rv.status_code == 400
-    assert b'Bad \'file_type\':\'invalid_file\' argument format' in rv.data
+    if api_version == 'v1':
+        rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version), file_type='invalid_file'))
+        assert rv.status_code == 400
+        assert b'Bad \'file_type\':\'invalid_file\' argument format' in rv.data
+    else:  # api version 2.0
+        rv = flask_app.get(url_for('{0}.catalog_get_api'.format(api_version), file_type='invalid_file'))
+        assert rv.status_code == 400
+        assert b'Bad \'file_type\':\'invalid_file\' argument format' in rv.data
 
 
 def test_invalid_is_valid_zip(flask_app, api_version):
     """Verify the API returns 400 for non-boolean is_valid_zip argument."""
-    rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version), is_valid_zip='10'))
-    assert rv.status_code == 400
-    assert b'Bad \'is_valid_zip\':\'10\' argument format' in rv.data
+    if api_version == 'v1':
+        rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version), is_valid_zip='10'))
+        assert rv.status_code == 400
+        assert b'Bad \'is_valid_zip\':\'10\' argument format' in rv.data
+    else:  # api version 2.0
+        rv = flask_app.get(url_for('{0}.catalog_get_api'.format(api_version), is_valid_zip='10'))
+        assert rv.status_code == 400
+        assert b'Bad \'is_valid_zip\':\'10\' argument format' in rv.data
 
 
 def test_invalid_modified_since(flask_app, api_version):
     """Verify the API returns 400 for invalid date in modified_since argument."""
-    rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version), modified_since='abc'))
-    assert rv.status_code == 400
-    assert b'Bad \'modified_since\':\'abc\' argument' in rv.data
-    rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version), modified_since='2016-01-01'))
-    assert rv.status_code == 400
-    assert b'Bad \'modified_since\':\'2016-01-01\' argument' in rv.data
-    rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version), modified_since='20170101 00:00:00'))
-    assert rv.status_code == 400
-    assert b'Bad \'modified_since\':\'20170101 00:00:00\' argument' in rv.data
-    rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version), modified_since='20161313'))
-    assert rv.status_code == 400
-    assert b'Bad \'modified_since\':\'20161313\' argument' in rv.data
+    if api_version == 'v1':
+        rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version), modified_since='abc'))
+        assert rv.status_code == 400
+        assert b'Bad \'modified_since\':\'abc\' argument' in rv.data
+        rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version), modified_since='2016-01-01'))
+        assert rv.status_code == 400
+        assert b'Bad \'modified_since\':\'2016-01-01\' argument' in rv.data
+        rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version), modified_since='20170101 00:00:00'))
+        assert rv.status_code == 400
+        assert b'Bad \'modified_since\':\'20170101 00:00:00\' argument' in rv.data
+        rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version), modified_since='20161313'))
+        assert rv.status_code == 400
+        assert b'Bad \'modified_since\':\'20161313\' argument' in rv.data
+    else:  # api version 2.0
+        rv = flask_app.get(url_for('{0}.catalog_get_api'.format(api_version), modified_since='abc'))
+        assert rv.status_code == 400
+        assert b'Bad \'modified_since\':\'abc\' argument' in rv.data
+        rv = flask_app.get(url_for('{0}.catalog_get_api'.format(api_version), modified_since='2016-01-01'))
+        assert rv.status_code == 400
+        assert b'Bad \'modified_since\':\'2016-01-01\' argument' in rv.data
+        rv = flask_app.get(url_for('{0}.catalog_get_api'.format(api_version), modified_since='20170101 00:00:00'))
+        assert rv.status_code == 400
+        assert b'Bad \'modified_since\':\'20170101 00:00:00\' argument' in rv.data
+        rv = flask_app.get(url_for('{0}.catalog_get_api'.format(api_version), modified_since='20161313'))
+        assert rv.status_code == 400
+        assert b'Bad \'modified_since\':\'20161313\' argument' in rv.data
 
 
 def test_invalid_cataloged_since(flask_app, api_version):
     """Verify the API returns 400 for invalid date in cataloged_since argument."""
-    rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version), cataloged_since='abc'))
-    assert rv.status_code == 400
-    assert b'Bad \'cataloged_since\':\'abc\' argument' in rv.data
-    rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version), cataloged_since='2016-01-01'))
-    assert rv.status_code == 400
-    assert b'Bad \'cataloged_since\':\'2016-01-01\' argument' in rv.data
-    rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version), cataloged_since='20170101 00:00:00'))
-    assert rv.status_code == 400
-    assert b'Bad \'cataloged_since\':\'20170101 00:00:00\' argument' in rv.data
-    rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version), cataloged_since='20161313'))
-    assert rv.status_code == 400
-    assert b'Bad \'cataloged_since\':\'20161313\' argument' in rv.data
+    if api_version == 'v1':
+        rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version), cataloged_since='abc'))
+        assert rv.status_code == 400
+        assert b'Bad \'cataloged_since\':\'abc\' argument' in rv.data
+        rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version), cataloged_since='2016-01-01'))
+        assert rv.status_code == 400
+        assert b'Bad \'cataloged_since\':\'2016-01-01\' argument' in rv.data
+        rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version), cataloged_since='20170101 00:00:00'))
+        assert rv.status_code == 400
+        assert b'Bad \'cataloged_since\':\'20170101 00:00:00\' argument' in rv.data
+        rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version), cataloged_since='20161313'))
+        assert rv.status_code == 400
+        assert b'Bad \'cataloged_since\':\'20161313\' argument' in rv.data
+    else:  # api version 2.0
+        rv = flask_app.get(url_for('{0}.catalog_get_api'.format(api_version), cataloged_since='abc'))
+        assert rv.status_code == 400
+        assert b'Bad \'cataloged_since\':\'abc\' argument' in rv.data
+        rv = flask_app.get(url_for('{0}.catalog_get_api'.format(api_version), cataloged_since='2016-01-01'))
+        assert rv.status_code == 400
+        assert b'Bad \'cataloged_since\':\'2016-01-01\' argument' in rv.data
+        rv = flask_app.get(url_for('{0}.catalog_get_api'.format(api_version), cataloged_since='20170101 00:00:00'))
+        assert rv.status_code == 400
+        assert b'Bad \'cataloged_since\':\'20170101 00:00:00\' argument' in rv.data
+        rv = flask_app.get(url_for('{0}.catalog_get_api'.format(api_version), cataloged_since='20161313'))
+        assert rv.status_code == 400
+        assert b'Bad \'cataloged_since\':\'20161313\' argument' in rv.data
 
 
-def test_valid_max_results(flask_app, db_conn, api_version):
-    """Verify the API returns 200 and valid JSON containing appropriate number of items.
+def test_valid_max_results(flask_app, db_conn):
+    """Verify the API (version 1.0) returns 200 and valid JSON containing appropriate number of items.
 
     Items returned are less than or equal to the max_results argument specified.
     """
     _dummy_data_generator(db_conn)
-    rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version), max_results=2))
+    rv = flask_app.get(url_for('v1.catalog_api', max_results=2))
     assert rv.status_code == 200
     data = json.loads(rv.data.decode('utf-8'))
     assert len(data) == 2
-    rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version), max_resultsZ=200))
+    rv = flask_app.get(url_for('v1.catalog_api', max_resultsZ=200))
     assert rv.status_code == 200
     data = json.loads(rv.data.decode('utf-8'))
     assert len(data) == 4
@@ -165,36 +202,65 @@ def test_valid_file_type(flask_app, db_conn, api_version):
     The files should belong to the file_type specified in the argument.
     """
     _dummy_data_generator(db_conn)
-    rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version), file_type='gsma_tac'))
-    assert rv.status_code == 200
-    data = json.loads(rv.data.decode('utf-8'))
-    assert len(data) == 1
-    assert data[0]['filename'] == 'gsma_file.zip'
-    assert data[0]['file_type'] == 'gsma_tac'
-    assert data[0]['compressed_size_bytes'] == 2342344
-    assert not data[0]['is_valid_zip']
-    assert not data[0]['is_valid_format']
-    assert data[0]['md5'] == '40a37f83-21cb-4ab4-bba5-4032b1347273'
+    if api_version == 'v1':
+        rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version), file_type='gsma_tac'))
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))
+        assert len(data) == 1
+        assert data[0]['filename'] == 'gsma_file.zip'
+        assert data[0]['file_type'] == 'gsma_tac'
+        assert data[0]['compressed_size_bytes'] == 2342344
+        assert not data[0]['is_valid_zip']
+        assert not data[0]['is_valid_format']
+        assert data[0]['md5'] == '40a37f83-21cb-4ab4-bba5-4032b1347273'
+    else:  # api version 2.0
+        rv = flask_app.get(url_for('{0}.catalog_get_api'.format(api_version), file_type='gsma_tac'))
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))['files']
+        assert len(data) == 1
+        assert data[0]['filename'] == 'gsma_file.zip'
+        assert data[0]['file_type'] == 'gsma_tac'
+        assert data[0]['compressed_size_bytes'] == 2342344
+        assert not data[0]['is_valid_zip']
+        assert not data[0]['is_valid_format']
+        assert data[0]['md5'] == '40a37f83-21cb-4ab4-bba5-4032b1347273'
 
 
 def test_valid_is_valid_zip(flask_app, db_conn, api_version):
     """Verify the API returns 200 and valid JSON containing only valid zips."""
     _dummy_data_generator(db_conn)
-    rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version), is_valid_zip=False))
-    assert rv.status_code == 200
-    data = json.loads(rv.data.decode('utf-8'))
-    assert len(data) == 1
-    assert data[0]['filename'] == 'gsma_file.zip'
-    assert data[0]['file_type'] == 'gsma_tac'
-    assert data[0]['compressed_size_bytes'] == 2342344
-    assert not data[0]['is_valid_zip']
-    assert not data[0]['is_valid_format']
-    assert data[0]['md5'] == '40a37f83-21cb-4ab4-bba5-4032b1347273'
-    rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version), is_valid_zip=True))
-    assert rv.status_code == 200
-    data = json.loads(rv.data.decode('utf-8'))
-    assert len(data) == 3
-    assert b'40a37f83-21cb-4ab4-bba5-4032b1347273' not in rv.data
+    if api_version == 'v1':
+        rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version), is_valid_zip=False))
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))
+        assert len(data) == 1
+        assert data[0]['filename'] == 'gsma_file.zip'
+        assert data[0]['file_type'] == 'gsma_tac'
+        assert data[0]['compressed_size_bytes'] == 2342344
+        assert not data[0]['is_valid_zip']
+        assert not data[0]['is_valid_format']
+        assert data[0]['md5'] == '40a37f83-21cb-4ab4-bba5-4032b1347273'
+        rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version), is_valid_zip=True))
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))
+        assert len(data) == 3
+        assert b'40a37f83-21cb-4ab4-bba5-4032b1347273' not in rv.data
+    else:  # api version 2.0
+        rv = flask_app.get(url_for('{0}.catalog_get_api'.format(api_version), is_valid_zip=False))
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))['files']
+        assert len(data) == 1
+        assert data[0]['filename'] == 'gsma_file.zip'
+        assert data[0]['file_type'] == 'gsma_tac'
+        assert data[0]['compressed_size_bytes'] == 2342344
+        assert not data[0]['is_valid_zip']
+        assert not data[0]['is_valid_format']
+        assert data[0]['md5'] == '40a37f83-21cb-4ab4-bba5-4032b1347273'
+        rv = flask_app.get(url_for('{0}.catalog_get_api'.format(api_version), is_valid_zip=True))
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))['files']
+        assert len(data) == 3
+        assert b'40a37f83-21cb-4ab4-bba5-4032b1347273' not in rv.data
 
 
 def test_valid_modified_since(flask_app, db_conn, api_version):
@@ -203,16 +269,28 @@ def test_valid_modified_since(flask_app, db_conn, api_version):
     The files returned should have modified time before the specified time.
     """
     _dummy_data_generator(db_conn)
-    rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version), modified_since='20170101'))
-    assert rv.status_code == 200
-    data = json.loads(rv.data.decode('utf-8'))
-    assert len(data) == 1
-    assert data[0]['filename'] == 'operator_file.zip'
-    assert data[0]['file_type'] == 'operator'
-    assert data[0]['compressed_size_bytes'] == 46445454332
-    assert data[0]['is_valid_zip']
-    assert data[0]['is_valid_format']
-    assert data[0]['md5'] == 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'
+    if api_version == 'v1':
+        rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version), modified_since='20170101'))
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))
+        assert len(data) == 1
+        assert data[0]['filename'] == 'operator_file.zip'
+        assert data[0]['file_type'] == 'operator'
+        assert data[0]['compressed_size_bytes'] == 46445454332
+        assert data[0]['is_valid_zip']
+        assert data[0]['is_valid_format']
+        assert data[0]['md5'] == 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'
+    else:  # api version 2.0
+        rv = flask_app.get(url_for('{0}.catalog_get_api'.format(api_version), modified_since='20170101'))
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))['files']
+        assert len(data) == 1
+        assert data[0]['filename'] == 'operator_file.zip'
+        assert data[0]['file_type'] == 'operator'
+        assert data[0]['compressed_size_bytes'] == 46445454332
+        assert data[0]['is_valid_zip']
+        assert data[0]['is_valid_format']
+        assert data[0]['md5'] == 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'
 
 
 def test_valid_cataloged_since(flask_app, db_conn, api_version):
@@ -221,29 +299,51 @@ def test_valid_cataloged_since(flask_app, db_conn, api_version):
     The files returned should have last_seen time before the specified time.
     """
     _dummy_data_generator(db_conn)
-    rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version), cataloged_since='20171101'))
-    assert rv.status_code == 200
-    data = json.loads(rv.data.decode('utf-8'))
-    assert len(data) == 1
-    assert data[0]['filename'] == 'pairing_file.zip'
-    assert data[0]['file_type'] == 'pairing_list'
-    assert data[0]['compressed_size_bytes'] == 1564624
-    assert data[0]['is_valid_zip']
-    assert not data[0]['is_valid_format']
-    assert data[0]['md5'] == 'd0481db2-bdc8-43da-a69e-ea7006bd7a7c'
+    if api_version == 'v1':
+        rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version), cataloged_since='20171101'))
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))
+        assert len(data) == 1
+        assert data[0]['filename'] == 'pairing_file.zip'
+        assert data[0]['file_type'] == 'pairing_list'
+        assert data[0]['compressed_size_bytes'] == 1564624
+        assert data[0]['is_valid_zip']
+        assert not data[0]['is_valid_format']
+        assert data[0]['md5'] == 'd0481db2-bdc8-43da-a69e-ea7006bd7a7c'
+    else:  # api version 2.0
+        rv = flask_app.get(url_for('{0}.catalog_get_api'.format(api_version), cataloged_since='20171101'))
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))['files']
+        assert len(data) == 1
+        assert data[0]['filename'] == 'pairing_file.zip'
+        assert data[0]['file_type'] == 'pairing_list'
+        assert data[0]['compressed_size_bytes'] == 1564624
+        assert data[0]['is_valid_zip']
+        assert not data[0]['is_valid_format']
+        assert data[0]['md5'] == 'd0481db2-bdc8-43da-a69e-ea7006bd7a7c'
 
 
 def test_api_with_no_arguments(flask_app, db_conn, api_version):
     """Verify the API returns 200 and all the specified files."""
     _dummy_data_generator(db_conn)
-    rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version)))
-    assert rv.status_code == 200
-    data = json.loads(rv.data.decode('utf-8'))
-    assert len(data) == 4
-    assert b'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11' in rv.data
-    assert b'40a37f83-21cb-4ab4-bba5-4032b1347273' in rv.data
-    assert b'014a3782-9826-4665-8830-534013b59cc5' in rv.data
-    assert b'd0481db2-bdc8-43da-a69e-ea7006bd7a7c' in rv.data
+    if api_version == 'v1':
+        rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version)))
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))
+        assert len(data) == 4
+        assert b'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11' in rv.data
+        assert b'40a37f83-21cb-4ab4-bba5-4032b1347273' in rv.data
+        assert b'014a3782-9826-4665-8830-534013b59cc5' in rv.data
+        assert b'd0481db2-bdc8-43da-a69e-ea7006bd7a7c' in rv.data
+    else:  # api version 2.0
+        rv = flask_app.get(url_for('{0}.catalog_get_api'.format(api_version)))
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))['files']
+        assert len(data) == 4
+        assert b'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11' in rv.data
+        assert b'40a37f83-21cb-4ab4-bba5-4032b1347273' in rv.data
+        assert b'014a3782-9826-4665-8830-534013b59cc5' in rv.data
+        assert b'd0481db2-bdc8-43da-a69e-ea7006bd7a7c' in rv.data
 
 
 def test_api_with_multiple_arguments(flask_app, db_conn, api_version):
@@ -252,44 +352,78 @@ def test_api_with_multiple_arguments(flask_app, db_conn, api_version):
     The files returned should satisfy all the specified arguments.
     """
     _dummy_data_generator(db_conn)
-    rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version), modified_since='20160901',
-                               is_valid_zip=True))
-    assert rv.status_code == 200
-    data = json.loads(rv.data.decode('utf-8'))
-    assert len(data) == 2
-    assert data[0]['filename'] == 'stolen_file.zip'
-    assert data[0]['file_type'] == 'stolen_list'
-    assert data[0]['compressed_size_bytes'] == 54543
-    assert data[0]['is_valid_zip']
-    assert data[0]['is_valid_format']
-    assert data[0]['md5'] == '014a3782-9826-4665-8830-534013b59cc5'
-    assert data[1]['filename'] == 'operator_file.zip'
-    assert data[1]['file_type'] == 'operator'
-    assert data[1]['compressed_size_bytes'] == 46445454332
-    assert data[1]['is_valid_zip']
-    assert data[1]['is_valid_format']
-    assert data[1]['md5'] == 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'
+    if api_version == 'v1':
+        rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version), modified_since='20160901',
+                                   is_valid_zip=True))
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))
+        assert len(data) == 2
+        assert data[0]['filename'] == 'stolen_file.zip'
+        assert data[0]['file_type'] == 'stolen_list'
+        assert data[0]['compressed_size_bytes'] == 54543
+        assert data[0]['is_valid_zip']
+        assert data[0]['is_valid_format']
+        assert data[0]['md5'] == '014a3782-9826-4665-8830-534013b59cc5'
+        assert data[1]['filename'] == 'operator_file.zip'
+        assert data[1]['file_type'] == 'operator'
+        assert data[1]['compressed_size_bytes'] == 46445454332
+        assert data[1]['is_valid_zip']
+        assert data[1]['is_valid_format']
+        assert data[1]['md5'] == 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'
+    else:  # api version 2.0
+        rv = flask_app.get(url_for('{0}.catalog_get_api'.format(api_version), modified_since='20160901',
+                                   is_valid_zip=True))
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))['files']
+        assert len(data) == 2
+        assert data[0]['filename'] == 'stolen_file.zip'
+        assert data[0]['file_type'] == 'stolen_list'
+        assert data[0]['compressed_size_bytes'] == 54543
+        assert data[0]['is_valid_zip']
+        assert data[0]['is_valid_format']
+        assert data[0]['md5'] == '014a3782-9826-4665-8830-534013b59cc5'
+        assert data[1]['filename'] == 'operator_file.zip'
+        assert data[1]['file_type'] == 'operator'
+        assert data[1]['compressed_size_bytes'] == 46445454332
+        assert data[1]['is_valid_zip']
+        assert data[1]['is_valid_format']
+        assert data[1]['md5'] == 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'
 
 
 def test_put_not_allowed(flask_app, db_conn, tmpdir, logger, api_version):
     """Verify the Catalog API does not support HTTP PUT and returns HTTP 405 METHOD NOT ALLOWED."""
-    rv = flask_app.put(url_for('{0}.catalog_api'.format(api_version), file_type='operator'))
-    assert rv.status_code == 405
-    assert b'The method is not allowed for the requested URL' in rv.data
+    if api_version == 'v1':
+        rv = flask_app.put(url_for('{0}.catalog_api'.format(api_version), file_type='operator'))
+        assert rv.status_code == 405
+        assert b'The method is not allowed for the requested URL' in rv.data
+    else:  # api version 2.0
+        rv = flask_app.put(url_for('{0}.catalog_get_api'.format(api_version), file_type='operator'))
+        assert rv.status_code == 405
+        assert b'The method is not allowed for the requested URL' in rv.data
 
 
 def test_post_not_allowed(flask_app, db_conn, tmpdir, logger, api_version):
     """Verify the Catalog API does not support HTTP POST and returns HTTP 405 METHOD NOT ALLOWED."""
-    rv = flask_app.post(url_for('{0}.catalog_api'.format(api_version), file_type='operator'))
-    assert rv.status_code == 405
-    assert b'The method is not allowed for the requested URL' in rv.data
+    if api_version == 'v1':
+        rv = flask_app.post(url_for('{0}.catalog_api'.format(api_version), file_type='operator'))
+        assert rv.status_code == 405
+        assert b'The method is not allowed for the requested URL' in rv.data
+    else:  # api version 2.0
+        rv = flask_app.post(url_for('{0}.catalog_get_api'.format(api_version), file_type='operator'))
+        assert rv.status_code == 405
+        assert b'The method is not allowed for the requested URL' in rv.data
 
 
 def test_delete_not_allowed(flask_app, db_conn, tmpdir, logger, api_version):
     """Verify the Catalog API does not support HTTP DELETE and returns HTTP 405 METHOD NOT ALLOWED."""
-    rv = flask_app.delete(url_for('{0}.catalog_api'.format(api_version), file_type='operator'))
-    assert rv.status_code == 405
-    assert b'The method is not allowed for the requested URL' in rv.data
+    if api_version == 'v1':
+        rv = flask_app.delete(url_for('{0}.catalog_api'.format(api_version), file_type='operator'))
+        assert rv.status_code == 405
+        assert b'The method is not allowed for the requested URL' in rv.data
+    else:  # api version 2.0
+        rv = flask_app.delete(url_for('{0}.catalog_get_api'.format(api_version), file_type='operator'))
+        assert rv.status_code == 405
+        assert b'The method is not allowed for the requested URL' in rv.data
 
 
 def test_import_status(db_conn, mocked_config, tmpdir, monkeypatch, flask_app, api_version,
@@ -346,59 +480,119 @@ def test_import_status(db_conn, mocked_config, tmpdir, monkeypatch, flask_app, a
     result = runner.invoke(dirbs_catalog_cli, obj={'APP_CONFIG': mocked_config})
     assert result.exit_code == 0
 
-    # call API
-    rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version)))
-    assert rv.status_code == 200
-    data = json.loads(rv.data.decode('utf-8'))
-    assert data[0]['import_status']['most_recent_import'] == 'success'
-    assert data[0]['import_status']['ever_imported_successfully'] is True
+    # call apis
+    if api_version == 'v1':
+        rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version)))
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))
+        assert data[0]['import_status']['most_recent_import'] == 'success'
+        assert data[0]['import_status']['ever_imported_successfully'] is True
 
-    with db_conn.cursor() as cursor:
-        cursor.execute('SELECT md5 FROM data_catalog')
-        md5 = cursor.fetchone().md5
+        with db_conn.cursor() as cursor:
+            cursor.execute('SELECT md5 FROM data_catalog')
+            md5 = cursor.fetchone().md5
 
-    # Step 2
-    with db_conn.cursor() as cursor:
-        cursor.execute('TRUNCATE TABLE job_metadata')
+        # Step 2
+        with db_conn.cursor() as cursor:
+            cursor.execute('TRUNCATE TABLE job_metadata')
 
-    # status error
-    job_metadata_importer(db_conn=db_conn, command='dirbs-import', run_id=10, subcommand='operator', status='error',
-                          start_time='2017-08-15 01:15:39.54785+00',
-                          extra_metadata={'input_file_md5': md5})
+        # status error
+        job_metadata_importer(db_conn=db_conn, command='dirbs-import',
+                              run_id=10, subcommand='operator',
+                              status='error',
+                              start_time='2017-08-15 01:15:39.54785+00',
+                              extra_metadata={'input_file_md5': md5})
 
-    # status in progress, most recent
-    job_metadata_importer(db_conn=db_conn, command='dirbs-import', run_id=11, subcommand='operator', status='running',
-                          start_time='2017-08-15 01:15:40.54785+00',
-                          extra_metadata={'input_file_md5': md5})
+        # status in progress, most recent
+        job_metadata_importer(db_conn=db_conn, command='dirbs-import', run_id=11, subcommand='operator',
+                              status='running',
+                              start_time='2017-08-15 01:15:40.54785+00',
+                              extra_metadata={'input_file_md5': md5})
 
-    # call API
-    rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version)))
-    assert rv.status_code == 200
-    data = json.loads(rv.data.decode('utf-8'))
-    assert data[0]['import_status']['most_recent_import'] == 'running'
-    assert data[0]['import_status']['ever_imported_successfully'] is False
-    assert len(data) == 1
+        # call API
+        rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version)))
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))
+        assert data[0]['import_status']['most_recent_import'] == 'running'
+        assert data[0]['import_status']['ever_imported_successfully'] is False
+        assert len(data) == 1
 
-    # Step 3 try a different order
-    with db_conn.cursor() as cursor:
-        cursor.execute('TRUNCATE TABLE job_metadata')
+        # Step 3 try a different order
+        with db_conn.cursor() as cursor:
+            cursor.execute('TRUNCATE TABLE job_metadata')
 
-    job_metadata_importer(db_conn=db_conn, command='dirbs-import', run_id=13, subcommand='gsma', status='success',
-                          start_time='2017-08-15 01:15:39.54785+00',
-                          extra_metadata={'input_file_md5': md5})
+        job_metadata_importer(db_conn=db_conn, command='dirbs-import', run_id=13, subcommand='gsma', status='success',
+                              start_time='2017-08-15 01:15:39.54785+00',
+                              extra_metadata={'input_file_md5': md5})
 
-    # status in progress, most recent
-    job_metadata_importer(db_conn=db_conn, command='dirbs-import', run_id=14, subcommand='gsma', status='error',
-                          start_time='2017-08-15 01:15:40.54785+00',
-                          extra_metadata={'input_file_md5': md5})
+        # status in progress, most recent
+        job_metadata_importer(db_conn=db_conn, command='dirbs-import', run_id=14, subcommand='gsma', status='error',
+                              start_time='2017-08-15 01:15:40.54785+00',
+                              extra_metadata={'input_file_md5': md5})
 
-    # call API
-    rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version)))
-    assert rv.status_code == 200
-    data = json.loads(rv.data.decode('utf-8'))
-    assert data[0]['import_status']['most_recent_import'] == 'error'
-    assert data[0]['import_status']['ever_imported_successfully'] is True
-    assert len(data) == 1
+        # call API
+        rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version)))
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))
+        assert data[0]['import_status']['most_recent_import'] == 'error'
+        assert data[0]['import_status']['ever_imported_successfully'] is True
+        assert len(data) == 1
+    else:  # api version 2.0
+        rv = flask_app.get(url_for('{0}.catalog_get_api'.format(api_version)))
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))['files']
+        assert data[0]['import_status']['most_recent_import'] == 'success'
+        assert data[0]['import_status']['ever_imported_successfully'] is True
+
+        with db_conn.cursor() as cursor:
+            cursor.execute('SELECT md5 FROM data_catalog')
+            md5 = cursor.fetchone().md5
+
+        # Step 2
+        with db_conn.cursor() as cursor:
+            cursor.execute('TRUNCATE TABLE job_metadata')
+
+        # status error
+        job_metadata_importer(db_conn=db_conn, command='dirbs-import',
+                              run_id=10, subcommand='operator',
+                              status='error',
+                              start_time='2017-08-15 01:15:39.54785+00',
+                              extra_metadata={'input_file_md5': md5})
+
+        # status in progress, most recent
+        job_metadata_importer(db_conn=db_conn, command='dirbs-import', run_id=11, subcommand='operator',
+                              status='running',
+                              start_time='2017-08-15 01:15:40.54785+00',
+                              extra_metadata={'input_file_md5': md5})
+
+        # call API
+        rv = flask_app.get(url_for('{0}.catalog_get_api'.format(api_version)))
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))['files']
+        assert data[0]['import_status']['most_recent_import'] == 'running'
+        assert data[0]['import_status']['ever_imported_successfully'] is False
+        assert len(data) == 1
+
+        # Step 3 try a different order
+        with db_conn.cursor() as cursor:
+            cursor.execute('TRUNCATE TABLE job_metadata')
+
+        job_metadata_importer(db_conn=db_conn, command='dirbs-import', run_id=13, subcommand='gsma', status='success',
+                              start_time='2017-08-15 01:15:39.54785+00',
+                              extra_metadata={'input_file_md5': md5})
+
+        # status in progress, most recent
+        job_metadata_importer(db_conn=db_conn, command='dirbs-import', run_id=14, subcommand='gsma', status='error',
+                              start_time='2017-08-15 01:15:40.54785+00',
+                              extra_metadata={'input_file_md5': md5})
+
+        # call API
+        rv = flask_app.get(url_for('{0}.catalog_get_api'.format(api_version)))
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))['files']
+        assert data[0]['import_status']['most_recent_import'] == 'error'
+        assert data[0]['import_status']['ever_imported_successfully'] is True
+        assert len(data) == 1
 
 
 def test_num_records_uncompressed_size(mocked_config, tmpdir, monkeypatch,
@@ -441,11 +635,54 @@ def test_num_records_uncompressed_size(mocked_config, tmpdir, monkeypatch,
     result = runner.invoke(dirbs_catalog_cli, obj={'APP_CONFIG': mocked_config})
     assert result.exit_code == 0
 
-    # call API
-    rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version)))
+    # call APIs
+    if api_version == 'v1':
+        rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version)))
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))
+        assert data[0]['filename'] == 'operator1_20160701_20160731.zip'
+        assert data[0]['num_records'] == 20
+        assert data[0]['uncompressed_size_bytes'] == 1066
+        assert data[0]['compressed_size_bytes'] == 400
+    else:  # api version 2.0
+        rv = flask_app.get(url_for('{0}.catalog_get_api'.format(api_version)))
+        assert rv.status_code == 200
+        data = json.loads(rv.data.decode('utf-8'))['files']
+        assert data[0]['filename'] == 'operator1_20160701_20160731.zip'
+        assert data[0]['num_records'] == 20
+        assert data[0]['uncompressed_size_bytes'] == 1066
+        assert data[0]['compressed_size_bytes'] == 400
+
+
+def test_catalog_pagination(flask_app, db_conn):
+    """Verify pagination support on Catalog API (version 2.0)."""
+    # populate data
+    _dummy_data_generator(db_conn)
+
+    # API call, starting from first result & 4 results per page
+    offset = 1
+    limit = 1
+    rv = flask_app.get(url_for('v2.catalog_get_api', offset=offset, limit=limit))
     assert rv.status_code == 200
     data = json.loads(rv.data.decode('utf-8'))
-    assert data[0]['filename'] == 'operator1_20160701_20160731.zip'
-    assert data[0]['num_records'] == 20
-    assert data[0]['uncompressed_size_bytes'] == 1066
-    assert data[0]['compressed_size_bytes'] == 400
+    keys = data['_keys']
+    files = data['files']
+
+    assert keys['result_size'] == 5
+    assert keys['previous_key'] == ''
+    assert keys['next_key'] == '?offset={new_offset}&limit={limit}'.format(
+        new_offset=offset + limit, limit=limit)
+    assert len(files) == limit
+
+    # 2nd call, offset=2, limit=2
+    offset = offset + limit
+    limit = 2
+    rv = flask_app.get(url_for('v2.catalog_get_api', offset=offset, limit=limit))
+    assert rv.status_code == 200
+    data = json.loads(rv.data.decode('utf-8'))
+    keys = data['_keys']
+    files = data['files']
+    assert keys['result_size'] == 5
+    assert keys['next_key'] == '?offset={new_offset}&limit={limit}'.format(
+        new_offset=offset + limit, limit=limit)
+    assert len(files) == limit

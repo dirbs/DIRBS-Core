@@ -1,5 +1,5 @@
 """
-Package for DIRBS dimension modules.
+DIRBS REST-ful Pagination module.
 
 Copyright (c) 2018 Qualcomm Technologies, Inc.
 
@@ -29,3 +29,47 @@ Copyright (c) 2018 Qualcomm Technologies, Inc.
  TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 """
+
+
+class Pagination:
+    """DIBRS Pagination module class implementation."""
+
+    @staticmethod
+    def paginate(data, offset=1, limit=10):
+        """Method to paginate data-set based on offset and limit."""
+        if offset is None:
+            offset = 1
+
+        if limit is None:
+            limit = 10
+        result_size = len(data)
+
+        keys = {
+            'offset': offset,
+            'limit': limit,
+            'previous_key': offset,
+            'next_key': '',
+            'result_size': result_size
+        }
+
+        if result_size is not 0:
+            if offset < 1 or offset > result_size:
+                return {'keys': keys, 'data': []}
+            else:
+                if result_size < offset:
+                    return {'keys': keys, 'data': data}
+                if offset == 1:
+                    keys['previous_key'] = ''
+                else:
+                    offset_copy = max(1, offset - limit)
+                    limit_copy = offset - 1
+                    keys['previous_key'] = '?offset={offset}&limit={limit}'.format(
+                        offset=offset_copy, limit=limit_copy)
+                if offset + limit > result_size:
+                    keys['next_key'] = ''
+                else:
+                    offset_copy = offset + limit
+                    keys['next_key'] = '?offset={offset}&limit={limit}'.format(offset=offset_copy, limit=limit)
+                paginated_data = data[(offset - 1):(offset - 1 + limit)]
+            return {'keys': keys, 'data': paginated_data}
+        return {'keys': keys, 'data': []}

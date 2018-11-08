@@ -28,7 +28,6 @@ Copyright (c) 2018 Qualcomm Technologies, Inc.
  OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
  TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
-
 """
 from datetime import datetime
 import csv
@@ -72,7 +71,12 @@ def historic_table_insert_params_from_dict(db_conn, importer_name, imei_norm_to_
                              'model': '',
                              'status': '',
                              'imsi': '11111111111111',
-                             'reporting_date': '20160420'}
+                             'reporting_date': '20160420',
+                             'model_number': '',
+                             'brand_name': '',
+                             'device_type': '',
+                             'radio_interface': '',
+                             'provisional_only': 'false'}
     for fn in extra_field_names:
         assert fn in extra_field_to_values.keys()
         extra_field_values.append(extra_field_to_values[fn])
@@ -119,7 +123,13 @@ def write_import_csv(tmpdir, importer_name, csv_imei_change_type_tuples, delta_i
                                      'model': '',
                                      'status': '',
                                      'imsi': '11111111111111',
-                                     'reporting_date': '20160420'}
+                                     'reporting_date': '20160420',
+                                     'model_number': '',
+                                     'brand_name': '',
+                                     'device_type': '',
+                                     'radio_interface': '',
+                                     'provisional_only': 'false'
+                                     }
             for e in extra_field_names:
                 row_dict.update({e: extra_field_to_values[e]})
             # in full_import mode change_type is Null
@@ -160,7 +170,9 @@ importer_to_fields_dict = {
 
     'registration_list': {'csv_imei_field_name': 'approved_imei',
                           'normalized_imei_field_name': 'imei_norm',
-                          'extra_field_names': ['make', 'model', 'status'],
+                          'extra_field_names': ['make', 'model', 'status',
+                                                'model_number', 'brand_name',
+                                                'device_type', 'radio_interface'],
                           'supports_imei_sharding': True}
 }
 

@@ -10,7 +10,7 @@ https://repo1.maven.org/maven2/uk/gov/nationalarchives/csv-validator-cmd/1.2-RC1
 To use schema on the command line fetch validator and run
 validate <csvfile> <schemafile>
 
- Copyright (c) 2018 Qualcomm Technologies, Inc.
+Copyright (c) 2018 Qualcomm Technologies, Inc.
 
  All rights reserved.
 

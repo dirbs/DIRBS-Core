@@ -106,11 +106,11 @@ setup(
     long_description=long_description,
 
     # The project's main homepage.
-    url='https://github.com/dirbs/DIRBS-Core',
+    url='https://github.qualcomm.com/Invictus/dirbs',
 
     # Author details
     author='Qualcomm Technologies Inc.',
-    author_email='',
+    author_email='dirbs.dev@qti.qualcomm.com',
 
     # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=[

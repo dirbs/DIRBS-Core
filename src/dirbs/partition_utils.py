@@ -28,7 +28,6 @@ Copyright (c) 2018 Qualcomm Technologies, Inc.
  OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
  TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
-
 """
 
 import hashlib
@@ -179,7 +178,7 @@ def rename_table_and_indices(conn, *, old_tbl_name, new_tbl_name, idx_metadata=N
                 old_idx_name = idx_metadatum.idx_name(old_tbl_name)
                 new_idx_name = idx_metadatum.idx_name(new_tbl_name)
                 cursor.execute(sql.SQL('ALTER INDEX {0} RENAME TO {1}').format(
-                               sql.Identifier(old_idx_name), sql.Identifier(new_idx_name)))
+                    sql.Identifier(old_idx_name), sql.Identifier(new_idx_name)))
         else:
             for child_tbl_name in utils.child_table_names(conn, new_tbl_name):
                 # Child tables should start with the old table name
@@ -350,8 +349,10 @@ def repartition_registration_list(conn, *, num_physical_shards):
         cursor.execute('DROP TABLE historic_registration_list CASCADE')
         rename_table_and_indices(conn, old_tbl_name='historic_registration_list_new',
                                  new_tbl_name='historic_registration_list', idx_metadata=idx_metadata)
-        cursor.execute("""CREATE VIEW registration_list AS
-                              SELECT imei_norm, make, model, status, virt_imei_shard
+
+        cursor.execute("""CREATE OR REPLACE VIEW registration_list AS
+                              SELECT imei_norm, make, model, status, virt_imei_shard, model_number, brand_name,
+                                     device_type, radio_interface
                                 FROM historic_registration_list
                                WHERE end_date IS NULL WITH CHECK OPTION""")
         cursor.execute("""GRANT SELECT ON registration_list

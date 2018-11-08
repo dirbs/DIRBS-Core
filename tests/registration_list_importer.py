@@ -28,7 +28,6 @@ Copyright (c) 2018 Qualcomm Technologies, Inc.
  OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
  TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
-
 """
 
 from os import path
@@ -87,8 +86,10 @@ def test_header_case_insensitivity(registration_list_importer, logger, db_conn):
     Verify that the Registration List data is not imported if a header column is missing.
     """
     expect_failure(registration_list_importer, exc_message='Metadata header, cannot find the column headers - '
-                                                           '10000000000000, model, status, make, '
-                                                           'approved_imei - .\\nFAIL')
+                                                           '10000000000000, model, '
+                                                           'device_type, model_number, '
+                                                           'status, brand_name, make, approved_imei, '
+                                                           'radio_interface - .\\nFAIL')
 
 
 @pytest.mark.parametrize('registration_list_importer',
@@ -189,7 +190,12 @@ def test_historical_check_percentage_fails(registration_list_importer, logger, m
 @pytest.mark.parametrize('registration_list_importer',
                          [RegistrationListParams(filename=data_file_to_test(100, imei_custom_header='approved_imei,'
                                                                                                     'make,model,'
-                                                                                                    'status'))],
+                                                                                                    'status,'
+                                                                                                    'model_number,'
+                                                                                                    'brand_name,'
+                                                                                                    'device_type,'
+                                                                                                    'radio_interface')
+                                                 )],
                          indirect=True)
 def test_historical_check_percentage_succeeds(registration_list_importer, logger, mocked_statsd,
                                               db_conn, metadata_db_conn, mocked_config, tmpdir):
@@ -207,9 +213,13 @@ def test_historical_check_percentage_succeeds(registration_list_importer, logger
                       tmpdir,
                       logger,
                       mocked_statsd,
-                      RegistrationListParams(filename=data_file_to_test(80, imei_custom_header='approved_imei,'
-                                                                                               'make,model,'
-                                                                                               'status'),
+                      RegistrationListParams(filename=data_file_to_test(80,
+                                                                        imei_custom_header='approved_imei,'
+                                                                                           'make,model,'
+                                                                                           'status,model_number,'
+                                                                                           'brand_name,device_type,'
+                                                                                           'radio_interface'
+                                                                        ),
                                              import_size_variation_percent=mocked_config.import_threshold_config.
                                              import_size_variation_percent,
                                              import_size_variation_absolute=mocked_config.import_threshold_config.
@@ -317,8 +327,10 @@ def test_override_historical_check(registration_list_importer, logger, mocked_st
 
 
 @pytest.mark.parametrize('registration_list_importer',
-                         [RegistrationListParams(content='approved_imei,make,model,status\n'
-                                                         '12345678901234,   ,   ,')],
+                         [RegistrationListParams(content='approved_imei,make,model,status,'
+                                                         'model_number,brand_name,device_type,'
+                                                         'radio_interface\n'
+                                                         '12345678901234,   ,   ,,,,,')],
                          indirect=True)
 def test_optional_fields_whitespace(logger, db_conn, registration_list_importer):
     """Test Depot not available yet.
@@ -328,14 +340,21 @@ def test_optional_fields_whitespace(logger, db_conn, registration_list_importer)
     """
     expect_success(registration_list_importer, 1, db_conn, logger)
     with db_conn, db_conn.cursor() as cursor:
-        cursor.execute('SELECT imei_norm, make, model FROM registration_list ORDER BY imei_norm')
-        assert [(x.imei_norm, x.make, x.model) for x in cursor.fetchall()] == [('12345678901234', None, None)]
+        cursor.execute('SELECT imei_norm, make, model, status, model_number, brand_name, '
+                       'device_type, radio_interface'
+                       ' FROM registration_list ORDER BY imei_norm')
+        assert [(x.imei_norm, x.make, x.model, x.status, x.model_number, x.brand_name,
+                 x.device_type, x.radio_interface)
+                for x in cursor.fetchall()] == [('12345678901234', None, None, None,
+                                                 None, None, None, None)]
 
 
 @pytest.mark.parametrize('registration_list_importer',
-                         [RegistrationListParams(content='approved_imei,make,model,status,change_type\n'
-                                                         '12345678901234,,,,add\n'
-                                                         '22345678901234,,,,update',
+                         [RegistrationListParams(content='approved_imei,make,model,status,'
+                                                         'model_number,brand_name,device_type,'
+                                                         'radio_interface,change_type\n'
+                                                         '12345678901234,,,,,,,,add\n'
+                                                         '22345678901234,,,,,,,,update',
                                                  delta=True)],
                          indirect=True)
 def test_delta_file_prevalidation(logger, db_conn, metadata_db_conn, mocked_config,
@@ -344,10 +363,6 @@ def test_delta_file_prevalidation(logger, db_conn, metadata_db_conn, mocked_conf
 
     Test pre-validation schemas.
     """
-    # update change-type is allowed only for stolen
-    expect_failure(registration_list_importer,
-                   exc_message='Pre-validation failed: b\'Error:   regex("^(add|remove)$") fails for line: 2, '
-                               'column: change_type, value: "update"\\nFAIL')
     # change_type must be lower case
     with get_importer(RegistrationListImporter,
                       db_conn,
@@ -356,11 +371,13 @@ def test_delta_file_prevalidation(logger, db_conn, metadata_db_conn, mocked_conf
                       tmpdir,
                       logger,
                       mocked_statsd,
-                      RegistrationListParams(content='approved_imei,make,model,status,change_type\n'
-                                                     '12345678901234,,,,ADD',
+                      RegistrationListParams(content='approved_imei,make,model,status,'
+                                                     'model_number,brand_name,device_type,'
+                                                     'radio_interface,change_type\n'
+                                                     '12345678901234,,,,,,,,ADD',
                                              delta=True)) as imp:
         expect_failure(imp,
-                       exc_message='Pre-validation failed: b\'Error:   regex("^(add|remove)$") fails for line: '
+                       exc_message='Pre-validation failed: b\'Error:   regex("^(add|remove|update)$") fails for line: '
                                    '1, column: change_type, value: "ADD"\\nFAIL')
 
 

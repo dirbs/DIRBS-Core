@@ -28,7 +28,6 @@ Copyright (c) 2018 Qualcomm Technologies, Inc.
  OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
  TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
-
 """
 import json
 import copy
@@ -51,7 +50,7 @@ from dirbs.importer.operator_data_importer import OperatorDataImporter
 from dirbs.importer.pairing_list_importer import PairingListImporter
 from dirbs.importer.registration_list_importer import RegistrationListImporter
 from _importer_params import OperatorDataParams, PairListParams, GSMADataParams, RegistrationListParams
-from _fixtures import *    # noqa: F403, F401
+from _fixtures import *  # noqa: F403, F401
 from _helpers import zip_files_to_tmpdir, get_importer
 
 
@@ -452,7 +451,8 @@ def test_imei_api(per_test_flask_app, per_test_postgres, logger, mocked_statsd, 
     """Test IMEI API call works with the security role created based on abstract role."""
     dsn = per_test_postgres.dsn()
     db_config = DBConfig(ignore_env=True, **dsn)
-    with create_db_connection(db_config) as conn, create_db_connection(db_config, autocommit=True) as metadata_conn:
+    with create_db_connection(db_config) as conn, \
+            create_db_connection(db_config, autocommit=True) as metadata_conn:
         with get_importer(OperatorDataImporter,
                           conn,
                           metadata_conn,
@@ -468,19 +468,43 @@ def test_imei_api(per_test_flask_app, per_test_postgres, logger, mocked_statsd, 
             imp.import_data()
 
     current_user = request.node.callspec.params['per_test_flask_app']
-    if current_user in ['dirbs_poweruser_login', 'dirbs_api_user']:
-        rv = per_test_flask_app.get(url_for('{0}.imei_api'.format(api_version),
-                                    imei='388260336982806', include_seen_with=1))
-        assert rv.status_code == 200
-        assert json.loads(rv.data.decode('utf-8'))['seen_with'] == \
-            [{'imsi': '11101400135251', 'msisdn': '22300825684694'},
-             {'imsi': '11101400135252', 'msisdn': '22300825684692'}]
-        assert json.loads(rv.data.decode('utf-8'))['realtime_checks']['ever_observed_on_network'] is True
 
-    else:
-        with pytest.raises(DatabaseRoleCheckException):
-            per_test_flask_app.get(url_for('{0}.imei_api'.format(api_version),
-                                   imei='388260336982806', include_seen_with=1))
+    if api_version == 'v1':
+        if current_user in ['dirbs_poweruser_login', 'dirbs_api_user']:
+            rv = per_test_flask_app.get(url_for('{0}.imei_api'.format(api_version),
+                                                imei='388260336982806', include_seen_with=1))
+            assert rv.status_code == 200
+            assert json.loads(rv.data.decode('utf-8'))['seen_with'] == \
+                                                      [{'imsi': '11101400135251', 'msisdn': '22300825684694'},
+                                                       {'imsi': '11101400135252', 'msisdn': '22300825684692'}]
+            assert json.loads(rv.data.decode('utf-8'))['realtime_checks']['ever_observed_on_network'] is True
+
+        else:
+            with pytest.raises(DatabaseRoleCheckException):
+                per_test_flask_app.get(url_for('{0}.imei_api'.format(api_version),
+                                               imei='388260336982806', include_seen_with=1))
+    else:  # api version 2.0
+        if current_user in ['dirbs_poweruser_login', 'dirbs_api_user']:
+            rv = per_test_flask_app.get(url_for('{0}.imei_get_subscribers_api'.format(api_version),
+                                                imei='388260336982806'))
+            assert rv.status_code == 200
+            data = json.loads(rv.data.decode('utf-8'))
+            assert len(data['subscribers']) is not 0
+            assert data['subscribers'] == [
+                {
+                    'imsi': '11101400135251',
+                    'last_seen': '2016-11-01',
+                    'msisdn': '22300825684694'
+                },
+                {
+                    'imsi': '11101400135252',
+                    'last_seen': '2016-11-02',
+                    'msisdn': '22300825684692'
+                }]
+        else:
+            with pytest.raises(DatabaseRoleCheckException):
+                per_test_flask_app.get(url_for('{0}.imei_get_subscribers_api'.format(api_version),
+                                               imei='388260336982806'))
 
 
 @pytest.mark.parametrize('per_test_flask_app', ['dirbs_api_user'],
@@ -490,7 +514,8 @@ def test_imei_api_registration_list(per_test_flask_app, per_test_postgres, logge
     """Test IMEI API call after registration list import."""
     dsn = per_test_postgres.dsn()
     db_config = DBConfig(ignore_env=True, **dsn)
-    with create_db_connection(db_config) as conn, create_db_connection(db_config, autocommit=True) as metadata_conn:
+    with create_db_connection(db_config) as conn, \
+            create_db_connection(db_config, autocommit=True) as metadata_conn:
         with get_importer(GSMADataImporter,
                           conn,
                           metadata_conn,
@@ -508,12 +533,17 @@ def test_imei_api_registration_list(per_test_flask_app, per_test_postgres, logge
                           tmpdir,
                           logger,
                           mocked_statsd,
-                          RegistrationListParams(content='APPROVED_IMEI,make,model,status\n'
-                                                         '21260934000003,,,')) as imp:
+                          RegistrationListParams(content='APPROVED_IMEI,make,model,status,model_number,brand_name,'
+                                                         'device_type,radio_interface\n'
+                                                         '21260934000003,,,,,,,')) as imp:
             imp.import_data()
 
-    rv = per_test_flask_app.get(url_for('{0}.imei_api'.format(api_version), imei='21260934000003'))
-    assert rv.status_code == 200
+    if api_version == 'v1':
+        rv = per_test_flask_app.get(url_for('{0}.imei_api'.format(api_version), imei='21260934000003'))
+        assert rv.status_code == 200
+    else:  # api version 2.0
+        rv = per_test_flask_app.get(url_for('{0}.imei_get_api'.format(api_version), imei='21260934000003'))
+        assert rv.status_code == 200
 
 
 @pytest.mark.parametrize('per_test_flask_app', ['dirbs_api_user'],
@@ -523,7 +553,8 @@ def test_imei_api_pairing_list(per_test_flask_app, per_test_postgres, logger, mo
     """Test IMEI API call after pairing list import."""
     dsn = per_test_postgres.dsn()
     db_config = DBConfig(ignore_env=True, **dsn)
-    with create_db_connection(db_config) as conn, create_db_connection(db_config, autocommit=True) as metadata_conn:
+    with create_db_connection(db_config) as conn, \
+            create_db_connection(db_config, autocommit=True) as metadata_conn:
         with get_importer(GSMADataImporter,
                           conn,
                           metadata_conn,
@@ -548,8 +579,12 @@ def test_imei_api_pairing_list(per_test_flask_app, per_test_postgres, logger, mo
                                       '357756065985824,111015113333333')) as imp:
             imp.import_data()
 
-    rv = per_test_flask_app.get(url_for('{0}.imei_api'.format(api_version), imei='21260934000003'))
-    assert rv.status_code == 200
+    if api_version == 'v1':
+        rv = per_test_flask_app.get(url_for('{0}.imei_api'.format(api_version), imei='21260934000003'))
+        assert rv.status_code == 200
+    else:  # api version 2.0
+        rv = per_test_flask_app.get(url_for('{0}.imei_get_pairings_api'.format(api_version), imei='21260934000003'))
+        assert rv.status_code == 200
 
 
 @pytest.mark.parametrize('per_test_flask_app', ['dirbs_poweruser_login', 'dirbs_api_user', 'dirbs_catalog_user'],
@@ -560,7 +595,8 @@ def test_tac_api(per_test_flask_app, per_test_postgres, logger, mocked_statsd, t
     dsn = per_test_postgres.dsn()
     dsn['user'] = 'dirbs_import_gsma_user'
     db_config = DBConfig(ignore_env=True, **dsn)
-    with create_db_connection(db_config) as conn, create_db_connection(db_config, autocommit=True) as metadata_conn:
+    with create_db_connection(db_config) as conn, \
+            create_db_connection(db_config, autocommit=True) as metadata_conn:
         with get_importer(GSMADataImporter,
                           conn,
                           metadata_conn,
@@ -572,14 +608,24 @@ def test_tac_api(per_test_flask_app, per_test_postgres, logger, mocked_statsd, t
             imp.import_data()
 
     current_user = request.node.callspec.params['per_test_flask_app']
-    if current_user in ['dirbs_poweruser_login', 'dirbs_api_user']:
-        rv = per_test_flask_app.get(url_for('{0}.tac_api'.format(api_version), tac='01234404'))
-        assert rv.status_code == 200
-        results = json.loads(rv.data.decode('utf-8'))
-        assert results['gsma'] is not None
-    else:
-        with pytest.raises(DatabaseRoleCheckException):
-            per_test_flask_app.get(url_for('{0}.tac_api'.format(api_version), tac='01234404'))
+
+    if api_version == 'v1':
+        if current_user in ['dirbs_poweruser_login', 'dirbs_api_user']:
+            rv = per_test_flask_app.get(url_for('{0}.tac_api'.format(api_version), tac='01234404'))
+            assert rv.status_code == 200
+            results = json.loads(rv.data.decode('utf-8'))
+            assert results['gsma'] is not None
+        else:
+            with pytest.raises(DatabaseRoleCheckException):
+                per_test_flask_app.get(url_for('{0}.tac_api'.format(api_version), tac='01234404'))
+    else:  # api version 2.0
+        if current_user in ['dirbs_poweruser_login', 'dirbs_api_user']:
+            rv = per_test_flask_app.get(url_for('{0}.tac_get_api'.format(api_version), tac='01234404'))
+            data = json.loads(rv.data.decode('utf-8'))
+            assert data['gsma'] is not None
+        else:
+            with pytest.raises(DatabaseRoleCheckException):
+                per_test_flask_app.get(url_for('{0}.tac_get_api'.format(api_version), tac='01234404'))
 
 
 @pytest.mark.parametrize('per_test_flask_app', ['dirbs_poweruser_login', 'dirbs_api_user', 'dirbs_catalog_user'],
@@ -587,13 +633,20 @@ def test_tac_api(per_test_flask_app, per_test_postgres, logger, mocked_statsd, t
 def test_catalog_api(per_test_flask_app, per_test_postgres, request, api_version):
     """Test catalog API call works with the security role created based on abstract role."""
     current_user = request.node.callspec.params['per_test_flask_app']
-
-    if current_user in ['dirbs_poweruser_login', 'dirbs_api_user']:
-        rv = per_test_flask_app.get(url_for('{0}.catalog_api'.format(api_version)))
-        assert rv.status_code == 200
-    else:
-        with pytest.raises(DatabaseRoleCheckException):
-            per_test_flask_app.get(url_for('{0}.catalog_api'.format(api_version)))
+    if api_version == 'v1':
+        if current_user in ['dirbs_poweruser_login', 'dirbs_api_user']:
+            rv = per_test_flask_app.get(url_for('{0}.catalog_api'.format(api_version)))
+            assert rv.status_code == 200
+        else:
+            with pytest.raises(DatabaseRoleCheckException):
+                per_test_flask_app.get(url_for('{0}.catalog_api'.format(api_version)))
+    else:  # api version 2.0
+        if current_user in ['dirbs_poweruser_login', 'dirbs_api_user']:
+            rv = per_test_flask_app.get(url_for('{0}.catalog_get_api'.format(api_version)))
+            assert rv.status_code == 200
+        else:
+            with pytest.raises(DatabaseRoleCheckException):
+                per_test_flask_app.get(url_for('{0}.catalog_get_api'.format(api_version)))
 
 
 @pytest.mark.parametrize('per_test_flask_app', ['dirbs_poweruser_login', 'dirbs_api_user', 'dirbs_catalog_user'],
@@ -610,11 +663,19 @@ def test_job_metadata_api(per_test_flask_app, per_test_postgres, request, api_ve
     assert result.exit_code == 0
     current_user = request.node.callspec.params['per_test_flask_app']
 
-    if current_user in ['dirbs_poweruser_login', 'dirbs_api_user']:
-        rv = per_test_flask_app.get(url_for('{0}.job_metadata_api'.format(api_version)))
-        assert rv.status_code == 200
-        results = json.loads(rv.data.decode('utf-8'))
-        assert results[0]['command'] == 'dirbs-classify'
-    else:
-        with pytest.raises(DatabaseRoleCheckException):
-            per_test_flask_app.get(url_for('{0}.job_metadata_api'.format(api_version)))
+    if api_version == 'v1':
+        if current_user in ['dirbs_poweruser_login', 'dirbs_api_user']:
+            rv = per_test_flask_app.get(url_for('{0}.job_metadata_api'.format(api_version)))
+            assert rv.status_code == 200
+            results = json.loads(rv.data.decode('utf-8'))
+            assert results[0]['command'] == 'dirbs-classify'
+        else:
+            with pytest.raises(DatabaseRoleCheckException):
+                per_test_flask_app.get(url_for('{0}.job_metadata_api'.format(api_version)))
+    else:  # api version 2.0
+        if current_user in ['dirbs_poweruser_login', 'dirbs_api_user']:
+            rv = per_test_flask_app.get(url_for('{0}.job_metadata_get_api'.format(api_version)))
+            assert rv.status_code == 200
+        else:
+            with pytest.raises(DatabaseRoleCheckException):
+                per_test_flask_app.get(url_for('{0}.job_metadata_get_api'.format(api_version)))

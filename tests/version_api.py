@@ -28,7 +28,6 @@ Copyright (c) 2018 Qualcomm Technologies, Inc.
  OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
  TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
-
 """
 
 import json
@@ -37,6 +36,8 @@ import pytest
 from flask import url_for
 
 from dirbs import db_schema_version as code_db_schema_version
+from dirbs import __version__ as dirbs_core_version
+from dirbs import report_schema_version
 from _importer_params import GSMADataParams
 from _fixtures import *    # noqa: F403, F401
 
@@ -55,8 +56,10 @@ def test_version_json_api(flask_app, db_conn, api_version):
     rv = flask_app.get(url_for('{0}.version_api'.format(api_version)))
     assert rv.status_code == 200
     data = json.loads(rv.data.decode('utf-8'))
-    assert data['schema_version'] == schema_version
+    assert data['db_schema_version'] == schema_version
     assert data['code_db_schema_version'] == code_db_schema_version
+    assert data['source_code_version'] == dirbs_core_version
+    assert data['report_schema_version'] == report_schema_version
 
 
 def test_method_delete_not_allowed(flask_app, db_conn, api_version):

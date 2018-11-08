@@ -28,8 +28,8 @@ Copyright (c) 2018 Qualcomm Technologies, Inc.
  OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
  TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
-
 """
+import operator
 from enum import Enum
 
 from psycopg2 import sql
@@ -37,6 +37,7 @@ from flask import jsonify
 from marshmallow import Schema, fields, pre_dump, validate
 
 from dirbs.api.common.db import get_db_connection
+from dirbs.api.common.pagination import Pagination
 
 
 def api(max_results=None, **kwargs):
@@ -90,7 +91,6 @@ def api(max_results=None, **kwargs):
 
     with get_db_connection() as conn, conn.cursor() as cursor:
         cursor.execute(cursor.mogrify(query.format(filters=where_clause), filter_params))
-
         resp = [CatalogFile().dump(rec._asdict()).data for rec in cursor]
         return jsonify(resp)
 
@@ -101,12 +101,13 @@ def _build_sql_query_filters(**kwargs):
     filter_params = []
 
     for param, param_value in kwargs.items():
-        if param in ['modified_time', 'last_seen']:
-            operator = '>='
-        else:
-            operator = '='
-        filters.append(sql.SQL('{0} {1} {2}').format(sql.Identifier(param), sql.SQL(operator), sql.Placeholder()))
-        filter_params.append(param_value)
+        if param not in ['order', 'offset', 'limit']:
+            if param in ['modified_time', 'last_seen']:
+                operator = '>='
+            else:
+                operator = '='
+            filters.append(sql.SQL('{0} {1} {2}').format(sql.Identifier(param), sql.SQL(operator), sql.Placeholder()))
+            filter_params.append(param_value)
     return filters, filter_params
 
 
@@ -175,3 +176,144 @@ class CatalogArgs(Schema):
     def fields_dict(self):
         """Convert declared fields to dictionary."""
         return self._declared_fields
+
+
+class CatalogApi:
+    """Defines class for Catalog API (version 2.0)."""
+
+    def get_catalog_data(self, **kwargs):
+        """Defines handler for Catalog API (version 2.0) GET method."""
+        sorting_order = kwargs.get('order')
+        offset_key = kwargs.get('offset')
+        per_page_limit = kwargs.get('limit')
+
+        # Build filters to be applied to the SQL query
+        filters, filter_params = _build_sql_query_filters(**kwargs)
+
+        query = sql.SQL("""SELECT array_agg(status ORDER BY run_id DESC)::TEXT[] AS status_list, dc.*
+                                         FROM (SELECT file_id,
+                                                      filename,
+                                                      file_type,
+                                                      compressed_size_bytes,
+                                                      modified_time,
+                                                      is_valid_zip,
+                                                      is_valid_format,
+                                                      md5,
+                                                      extra_attributes,
+                                                      first_seen,
+                                                      last_seen,
+                                                      uncompressed_size_bytes,
+                                                      num_records
+                                                 FROM data_catalog
+                                                      {filters}
+                                             ORDER BY last_seen DESC, file_id DESC
+                                                LIMIT ALL) dc
+                                    LEFT JOIN (SELECT run_id, status, extra_metadata
+                                                 FROM job_metadata
+                                                WHERE command = 'dirbs-import') jm
+                                               ON md5 = (extra_metadata->>'input_file_md5')::uuid
+                                     GROUP BY file_id,
+                                              filename,
+                                              file_type,
+                                              compressed_size_bytes,
+                                              modified_time,
+                                              is_valid_zip,
+                                              is_valid_format,
+                                              md5,
+                                              extra_attributes,
+                                              first_seen,
+                                              last_seen,
+                                              uncompressed_size_bytes,
+                                              num_records
+                                     ORDER BY last_seen DESC, file_id DESC""")  # noqa Q444
+
+        where_clause = sql.SQL('')
+        if len(filters) > 0:
+            where_clause = sql.SQL('WHERE {0}').format(sql.SQL(' AND ').join(filters))
+
+        with get_db_connection() as conn, conn.cursor() as cursor:
+            cursor.execute(cursor.mogrify(query.format(filters=where_clause), filter_params))
+            resp = [CatalogFile().dump(rec._asdict()).data for rec in cursor]
+
+            if sorting_order is not None or (offset_key is not None and per_page_limit is not None):
+                paginated_data = Pagination.paginate(resp, offset_key, per_page_limit)
+
+                if sorting_order == 'Ascending':
+                    paginated_data.get('data').sort(key=operator.itemgetter('file_id'))
+                    response = {
+                        '_keys': Keys().dump(dict(paginated_data.get('keys'))).data,
+                        'files': [file_data for file_data in paginated_data.get('data')]
+                    }
+
+                    return jsonify(response)
+
+                elif sorting_order == 'Descending':
+                    paginated_data.get('data').sort(key=operator.itemgetter('file_id'), reverse=True)
+                    response = {
+                        '_keys': Keys().dump(dict(paginated_data.get('keys'))).data,
+                        'files': [file_data for file_data in paginated_data.get('data')]
+                    }
+
+                    return jsonify(response)
+
+                response = {
+                    '_keys': Keys().dump(dict(paginated_data.get('keys'))).data,
+                    'files': [file_data for file_data in paginated_data.get('data')]
+                }
+                return jsonify(response)
+
+            keys = {'offset': '', 'limit': '', 'previous_key': '', 'next_key': '', 'result_size': len(resp)}
+            response = {
+                '_keys': Keys().dump(dict(keys)).data,
+                'files': resp
+            }
+            return jsonify(response)
+
+
+class SortingOrders(Enum):
+    """Enum for supported sorting orders."""
+
+    ASC = 'Ascending'
+    DESC = 'Descending'
+
+
+class CatalogArgsV2(Schema):
+    """Input arguments for Catalog API(version 2.0)."""
+
+    file_type = fields.String(required=False, validate=validate.OneOf([f.value for f in FileType]),
+                              description='Filter results to include only the specified file type')
+    is_valid_zip = fields.Boolean(required=False, description='Filter results to include only valid ZIP files')
+    modified_time = fields.DateTime(required=False, format='%Y%m%d',
+                                    load_from='modified_since', dump_to='modified_since',
+                                    description='Filter results to only include files '
+                                                'that were modified since the specified time')
+    last_seen = fields.DateTime(required=False, format='%Y%m%d',
+                                load_from='cataloged_since', dump_to='cataloged_since',
+                                description='Filter results to include only files that were '
+                                            'cataloged since the specified time')
+    offset = fields.Integer(required=False, description='Offset the results on the current page by the specified '
+                                                        'file_id. It should be the value of file_id for the '
+                                                        'last result on the previous page')
+    limit = fields.Integer(required=False, description='Number of results to return on the current page')
+    order = fields.String(required=False, validate=validate.OneOf([f.value for f in SortingOrders]),
+                          description='The sort order for the results using imsi-msisdn as the key')
+
+    @property
+    def fields_dict(self):
+        """Convert declared fields to dictionary."""
+        return self._declared_fields
+
+
+class Keys(Schema):
+    """Defines schema for keys of paginated result set."""
+
+    previous_key = fields.String()
+    next_key = fields.String()
+    result_size = fields.Integer()
+
+
+class CatalogV2(Schema):
+    """Defines the schema for data catalog API (version 2.0) response."""
+
+    _keys = fields.Nested(Keys, required=True)
+    files = fields.List(fields.Nested(CatalogFile, required=True))
