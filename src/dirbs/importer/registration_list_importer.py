@@ -28,7 +28,6 @@ Copyright (c) 2018 Qualcomm Technologies, Inc.
  OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
  TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
-
 """
 
 from dirbs.importer.base_delta_importer import BaseDeltaImporter
@@ -68,7 +67,11 @@ class RegistrationListImporter(BaseDeltaImporter):
                                              imei_norm    TEXT NOT NULL,
                                              make         TEXT,
                                              model        TEXT,
-                                             status       TEXT
+                                             status       TEXT,
+                                             model_number TEXT,
+                                             brand_name   TEXT,
+                                             device_type  TEXT,
+                                             radio_interface  TEXT
                                             )"""
 
     @property
@@ -79,12 +82,14 @@ class RegistrationListImporter(BaseDeltaImporter):
     @property
     def _input_csv_field_names(self):
         """Overrides BaseDeltaImporter._input_csv_field_names."""
-        return ['imei', 'make', 'model', 'status']
+        return ['imei', 'make', 'model', 'status',
+                'model_number', 'brand_name', 'device_type', 'radio_interface']
 
     @property
     def _extra_field_names(self):
         """Overrides BaseDeltaImporter._extra_field_names."""
-        return ['make', 'model', 'status']
+        return ['make', 'model', 'status', 'model_number',
+                'brand_name', 'device_type', 'radio_interface']
 
     @property
     def _supports_imei_shards(self):

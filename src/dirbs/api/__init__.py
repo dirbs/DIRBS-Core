@@ -28,20 +28,20 @@ Copyright (c) 2018 Qualcomm Technologies, Inc.
  OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
  TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
-
 """
-import time
-from datetime import datetime
 import sys
+import time
 import logging
+from datetime import datetime
 
 from flask import Flask, request, g
 from werkzeug.exceptions import HTTPException, InternalServerError, BadRequest, ServiceUnavailable
 
+import dirbs.utils as utils
 from dirbs.config import ConfigParser, ConfigParseException
 from dirbs.logging import StatsClient, setup_initial_logging, configure_logging, setup_file_logging
-import dirbs.utils as utils
 from dirbs.api.v1 import api, register_docs
+from dirbs.api.v2 import api as api_v2, register_docs as register_docs_v2
 from dirbs.api.common.db import close_db_connection, get_db_connection
 from dirbs.api.common.apidoc import ApiDoc
 
@@ -65,6 +65,7 @@ app.config.update(
 
 # Create ApiDoc object(s) to document the OpenAPI spec for each version of the API
 docs_v1 = ApiDoc(app, version='v1')
+docs_v2 = ApiDoc(app, version='v2')
 
 # Parse config
 try:
@@ -144,7 +145,7 @@ def add_no_cache(response):
 def log_api_successes(response):
     """Makes sure we record the number of successful API responses for each API."""
     code = response.status_code
-    if code >= 200 and code < 300:
+    if 200 <= code < 300:
         statsd.incr('dirbs.api.successes.{0}.{1}'.format(_metrics_type_from_req_ctxt(request), code))
     return response
 
@@ -214,6 +215,8 @@ def app_error_handler(error):
 
 # Register versioned blueprints on the app at the appropriate URL prefix
 app.register_blueprint(api, url_prefix='/api/v1')
+app.register_blueprint(api_v2, url_prefix='/api/v2')
 
 # Register endpoints for OpenAPI documentation
 register_docs(docs_v1)
+register_docs_v2(docs_v2)

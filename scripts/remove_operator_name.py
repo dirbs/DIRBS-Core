@@ -2,7 +2,7 @@
 """
 Script to remove the operator name column from 1B and earlier data.
 
-Copyright (c) 2018 Qualcomm Technologies, Inc.
+ Copyright (c) 2018 Qualcomm Technologies, Inc.
 
  All rights reserved.
 
@@ -29,7 +29,6 @@ Copyright (c) 2018 Qualcomm Technologies, Inc.
  OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
  TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
-
 """
 
 import csv

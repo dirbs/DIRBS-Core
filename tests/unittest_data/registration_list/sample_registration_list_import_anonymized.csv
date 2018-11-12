@@ -1,7 +1,7 @@
-APPROVED_IMEI,make,model,status
-10000000000000,make,model,
-10000000000001,make,model,
-10000000000002,make,model,
-10000000000003,make,model,
-10000000000004,make,model,
-10000000000005,make,model,
+APPROVED_IMEI,make,model,status,model_number,brand_name,device_type,radio_interface
+10000000000000,make,model,,,,,
+10000000000001,make,model,,,,,
+10000000000002,make,model,,,,,
+10000000000003,make,model,,,,,
+10000000000004,make,model,,,,,
+10000000000005,make,model,,,,,

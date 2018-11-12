@@ -8,7 +8,7 @@ Script to populate data_catalog and job_metadata table.
 - Specify the number of entries to add to job_metadata and catalog table as command line arguments in this order.
 The number of entries for job_metadata must be greater than the data_catalog ones.
 
-Copyright (c) 2018 Qualcomm Technologies, Inc.
+ Copyright (c) 2018 Qualcomm Technologies, Inc.
 
  All rights reserved.
 
@@ -35,7 +35,6 @@ Copyright (c) 2018 Qualcomm Technologies, Inc.
  OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
  TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
-
 """
 
 import json

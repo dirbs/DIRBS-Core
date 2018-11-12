@@ -28,7 +28,6 @@ Copyright (c) 2018 Qualcomm Technologies, Inc.
  OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
  TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
-
 """
 
 from os import path
@@ -299,8 +298,9 @@ def test_historical_check_percentage_fails(stolen_list_importer, logger, mocked_
 
 
 @pytest.mark.parametrize('stolen_list_importer',
-                         [StolenListParams(filename=data_file_to_test(100, imei_custom_header='imei,reporting_date,'
-                                                                                              'status',
+                         [StolenListParams(filename=data_file_to_test(100,
+                                                                      imei_custom_header='imei,reporting_date,'
+                                                                                         'status',
                                                                       imei_imsi=False))],
                          indirect=True)
 def test_historical_check_percentage_succeeds(stolen_list_importer, logger, mocked_statsd, db_conn, mocked_config,

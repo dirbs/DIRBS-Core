@@ -28,7 +28,6 @@ Copyright (c) 2018 Qualcomm Technologies, Inc.
  OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
  TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
-
 """
 
 from flask import url_for
@@ -53,32 +52,37 @@ def test_api_metrics(mocker, flask_app, api_version):
     # Can't import dirbs.api at top level as it configure logging
     import dirbs.api
 
-    mocker.patch.object(dirbs.api, 'statsd', auto_spec=True)
-    rv = flask_app.get(url_for('{0}.imei_api'.format(api_version), imei='0117220037002633'))
-    assert rv.status_code == 200
-    dirbs.api.statsd.timing.assert_any_call('dirbs.api.response_time.imei.{0}.GET.200'.format(api_version), mocker.ANY)
-    dirbs.api.statsd.incr.assert_any_call('dirbs.api.successes.imei.{0}.200'.format(api_version))
-
-    dirbs.api.statsd.reset_mock()
-    rv = flask_app.get(url_for('{0}.tac_api'.format(api_version), tac='12345678'))
-    assert rv.status_code == 200
-    dirbs.api.statsd.timing.assert_any_call('dirbs.api.response_time.tac.{0}.GET.200'.format(api_version), mocker.ANY)
-    dirbs.api.statsd.incr.assert_any_call('dirbs.api.successes.tac.{0}.200'.format(api_version))
-
-    for api in ['tac', 'imei']:
-        dirbs.api.statsd.reset_mock()
-        rv = flask_app.get(url_for('{0}.{1}_api'.format(api_version, api), **{api: 'aaaaaaaaaaaaaaaaaaaaaaa'}))
-        assert rv.status_code == 400
-        dirbs.api.statsd.timing.assert_any_call('dirbs.api.response_time.{0}.{1}.GET.400'.format(api, api_version),
+    if api_version == 'v1':
+        mocker.patch.object(dirbs.api, 'statsd', auto_spec=True)
+        rv = flask_app.get(url_for('{0}.imei_api'.format(api_version), imei='0117220037002633'))
+        assert rv.status_code == 200
+        dirbs.api.statsd.timing.assert_any_call('dirbs.api.response_time.imei.{0}.GET.200'.format(api_version),
                                                 mocker.ANY)
-        dirbs.api.statsd.incr.assert_any_call('dirbs.api.failures.{0}.{1}.400'.format(api, api_version))
+        dirbs.api.statsd.incr.assert_any_call('dirbs.api.successes.imei.{0}.200'.format(api_version))
 
         dirbs.api.statsd.reset_mock()
-        rv = flask_app.post(url_for('{0}.{1}_api'.format(api_version, api), **{api: 'a'}))
-        assert rv.status_code == 405
-        dirbs.api.statsd.timing.assert_any_call('dirbs.api.response_time.{0}.{1}.POST.405'.format(api, api_version),
+        rv = flask_app.get(url_for('{0}.tac_api'.format(api_version), tac='12345678'))
+        assert rv.status_code == 200
+        dirbs.api.statsd.timing.assert_any_call('dirbs.api.response_time.tac.{0}.GET.200'.format(api_version),
                                                 mocker.ANY)
-        dirbs.api.statsd.incr.assert_any_call('dirbs.api.failures.{0}.{1}.405'.format(api, api_version))
+        dirbs.api.statsd.incr.assert_any_call('dirbs.api.successes.tac.{0}.200'.format(api_version))
+
+        for api in ['tac', 'imei']:
+            dirbs.api.statsd.reset_mock()
+            rv = flask_app.get(url_for('{0}.{1}_api'.format(api_version, api), **{api: 'aaaaaaaaaaaaaaaaaaaaaaa'}))
+            assert rv.status_code == 400
+            dirbs.api.statsd.timing.assert_any_call('dirbs.api.response_time.{0}.{1}.GET.400'.format(api, api_version),
+                                                    mocker.ANY)
+            dirbs.api.statsd.incr.assert_any_call('dirbs.api.failures.{0}.{1}.400'.format(api, api_version))
+
+            dirbs.api.statsd.reset_mock()
+            rv = flask_app.post(url_for('{0}.{1}_api'.format(api_version, api), **{api: 'a'}))
+            assert rv.status_code == 405
+            dirbs.api.statsd.timing.assert_any_call('dirbs.api.response_time.{0}.{1}.POST.405'.format(
+                api, api_version), mocker.ANY)
+            dirbs.api.statsd.incr.assert_any_call('dirbs.api.failures.{0}.{1}.405'.format(api, api_version))
+    else:  # TODO: add api version 2 test cases
+        pass
 
 
 def test_exception_metrics(mocker, mocked_statsd, flask_app):

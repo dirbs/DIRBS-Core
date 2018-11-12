@@ -28,7 +28,6 @@ Copyright (c) 2018 Qualcomm Technologies, Inc.
  OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
  TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
-
 """
 
 from psycopg2 import sql
@@ -48,8 +47,8 @@ class StolenList(Dimension):
 
         return sql.SQL("""SELECT imei_norm
                             FROM {stolen_list_shard}
-                           WHERE status IS NULL
-                              OR status = 'blacklist'
+                           WHERE (status IS NULL
+                              OR status = 'blacklist')
                              AND end_date IS NULL
                        """).format(stolen_list_shard=sql.Identifier(stolen_list_shard)).as_string(conn)
 

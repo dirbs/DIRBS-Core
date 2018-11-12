@@ -28,7 +28,6 @@ Copyright (c) 2018 Qualcomm Technologies, Inc.
  OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
  TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
-
 """
 
 import os
@@ -45,7 +44,7 @@ from dirbs.dimensions.duplicate_daily_avg import DuplicateAverageThreshold
 from dirbs.condition import Condition
 from dirbs.config import GSMAThresholdConfig, PairingListThresholdConfig, StolenListThresholdConfig, \
     RegistrationListThresholdConfig, AppConfig, ConfigParseException, ConfigParser, ConditionConfig
-from _fixtures import *    # noqa: F403, F401
+from _fixtures import *  # noqa: F403, F401
 from _importer_params import GSMADataParams, PairListParams, StolenListParams, RegistrationListParams
 from _helpers import get_importer, data_file_to_test, expect_success, expect_failure
 
@@ -102,7 +101,6 @@ def historic_threshold_check_function_success(first_file_size, second_file_size,
                                       import_size_variation_percent=threshold_config.import_size_variation_percent,
                                       import_size_variation_absolute=threshold_config.import_size_variation_absolute,
                                       extract=False)) as small_importer:
-
         expect_success(small_importer, second_file_size, db_conn, logger)
 
 
@@ -149,7 +147,6 @@ def historic_threshold_check_function_fails(first_file_size, second_file_size, d
                                       import_size_variation_percent=threshold_config.import_size_variation_percent,
                                       import_size_variation_absolute=threshold_config.import_size_variation_absolute,
                                       extract=False)) as small_importer:
-
         expect_failure(small_importer, exc_message=exc_message)
 
 
@@ -285,7 +282,6 @@ def test_stolen_list_historical_thresholds_success_with_abs_threshold(logger, mo
     stolen_list_instance = StolenListThresholdConfig(ignore_env=True,
                                                      import_size_variation_absolute=48,
                                                      import_size_variation_percent=0.5)
-
     historic_threshold_check_function_fails(100, 51, db_conn, metadata_db_conn, mocked_config, tmpdir,
                                             logger, mocked_statsd,
                                             StolenListImporter, StolenListParams,
@@ -316,7 +312,9 @@ def test_registration_list_historical_thresholds_failure(logger, mocked_statsd, 
                                             logger, mocked_statsd,
                                             RegistrationListImporter, RegistrationListParams,
                                             import_list_instance,
-                                            imei_custom_header='approved_imei,make,model,status',
+                                            imei_custom_header='approved_imei,make,model,status,'
+                                                               'model_number,brand_name,device_type,'
+                                                               'radio_interface',
                                             exc_message='Failed import size historic check, historic '
                                                         'value is: 100.00, imported data has: 49.00 and '
                                                         'minimum required is 50.00')
@@ -342,7 +340,10 @@ def test_registration_list_historical_thresholds_success(logger, mocked_statsd, 
                                               logger, mocked_statsd,
                                               RegistrationListImporter, RegistrationListParams,
                                               import_list_instance, imei_custom_header='approved_imei,make,model,'
-                                                                                       'status')
+                                                                                       'status,model_number,'
+                                                                                       'brand_name,device_type,'
+                                                                                       'radio_interface'
+                                              )
 
 
 def test_registration_list_historical_thresholds_success_with_abs_threshold(logger, mocked_statsd, db_conn,
@@ -367,7 +368,8 @@ def test_registration_list_historical_thresholds_success_with_abs_threshold(logg
                                             logger, mocked_statsd,
                                             RegistrationListImporter, RegistrationListParams,
                                             import_list_instance,
-                                            imei_custom_header='approved_imei,make,model,status',
+                                            imei_custom_header='approved_imei,make,model,status,model_number,'
+                                                               'brand_name,device_type,radio_interface',
                                             exc_message='Failed import size historic check, '
                                                         'historic value is: 100.00, imported data has: '
                                                         '51.00 and minimum required is 52.00')
@@ -1014,7 +1016,6 @@ def test_config_duplicate_dim_period(logger):
     min_days_param_dict = {'threshold': 100, 'min_seen_days': 5}
 
     for cls in [DuplicateAverageThreshold, DuplicateThreshold]:
-
         param_dict = common_param_dict if cls is DuplicateThreshold else min_days_param_dict
 
         # Case 1

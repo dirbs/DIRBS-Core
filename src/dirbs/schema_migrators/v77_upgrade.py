@@ -45,6 +45,50 @@ class RepartitionTablesMigrator(dirbs.schema_migrators.AbstractMigrator):
     Implemented in Python simply for notification of progress, since this can't easily be done using pure SQL.
     """
 
+    def partition_registration_list(self, conn, *, num_physical_shards):
+        """Method to repartition registration_list for v47 upgrade."""
+        with conn.cursor() as cursor, utils.db_role_setter(conn, role_name='dirbs_core_power_user'):
+            # Create parent partition
+            cursor.execute(
+                """CREATE TABLE historic_registration_list_new (
+                                   LIKE historic_registration_list INCLUDING DEFAULTS
+                                                                   INCLUDING IDENTITY
+                                                                   INCLUDING CONSTRAINTS
+                                                                   INCLUDING STORAGE
+                                                                   INCLUDING COMMENTS
+                               )
+                               PARTITION BY RANGE (virt_imei_shard)
+                            """
+            )
+            part_utils._grant_perms_registration_list(conn, part_name='historic_registration_list_new')
+            # Create child partitions
+            part_utils.create_imei_shard_partitions(conn, tbl_name='historic_registration_list_new',
+                                                    num_physical_shards=num_physical_shards,
+                                                    perms_func=part_utils._grant_perms_registration_list,
+                                                    fillfactor=80)
+            # Insert data from original partition
+            cursor.execute("""INSERT INTO historic_registration_list_new
+                                   SELECT *
+                                     FROM historic_registration_list""")
+
+            # Add in indexes to each partition
+            idx_metadata = [part_utils.IndexMetadatum(idx_cols=['imei_norm'],
+                                                      is_unique=True,
+                                                      partial_sql='WHERE end_date IS NULL')]
+            part_utils.add_indices(conn, tbl_name='historic_registration_list_new', idx_metadata=idx_metadata)
+
+            # Drop old view + table, rename tables, indexes and constraints
+            cursor.execute('DROP VIEW registration_list')
+            cursor.execute('DROP TABLE historic_registration_list CASCADE')
+            part_utils.rename_table_and_indices(conn, old_tbl_name='historic_registration_list_new',
+                                                new_tbl_name='historic_registration_list', idx_metadata=idx_metadata)
+            cursor.execute("""CREATE OR REPLACE VIEW registration_list AS
+                                   SELECT imei_norm, make, model, status, virt_imei_shard
+                                     FROM historic_registration_list
+                                    WHERE end_date IS NULL WITH CHECK OPTION""")
+            cursor.execute("""GRANT SELECT ON registration_list
+                                      TO dirbs_core_classify, dirbs_core_api, dirbs_core_import_registration_list""")
+
     def upgrade(self, db_conn):  # noqa: C901
         """Overrides AbstractMigrator upgrade method."""
         logger = logging.getLogger('dirbs.db')
@@ -73,7 +117,7 @@ class RepartitionTablesMigrator(dirbs.schema_migrators.AbstractMigrator):
             cursor.execute('ALTER TABLE historic_registration_list ADD COLUMN virt_imei_shard SMALLINT')
             cursor.execute('UPDATE historic_registration_list SET virt_imei_shard = calc_virt_imei_shard(imei_norm)')
             cursor.execute('ALTER TABLE historic_registration_list ALTER COLUMN virt_imei_shard SET NOT NULL')
-            part_utils.repartition_registration_list(db_conn, num_physical_shards=num_initial_shards)
+            self.partition_registration_list(db_conn, num_physical_shards=num_initial_shards)
             logger.info('Re-partitioned registration_list table')
 
             logger.info('Re-partitioning pairing_list table...')

@@ -28,13 +28,12 @@ Copyright (c) 2018 Qualcomm Technologies, Inc.
  OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
  TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
-
 """
 
-__version__ = '8.0.1'
+__version__ = '9.0.0'
 
 # Bump this version everytime the schema is modified
-db_schema_version = 81
+db_schema_version = 82
 
 # Bump this version everytime the reports change in an incompatible way
 report_schema_version = 8

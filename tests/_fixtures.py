@@ -28,7 +28,6 @@ Copyright (c) 2018 Qualcomm Technologies, Inc.
  OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
  TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
-
 """
 
 from os import path
@@ -64,7 +63,7 @@ def mocked_config():
     yield mocked_config
 
 
-@pytest.fixture(params=['v1'])
+@pytest.fixture(params=['v1', 'v2'])
 def api_version(request):
     """Fixture for parameterizing API tests based on the API version."""
     yield request.param

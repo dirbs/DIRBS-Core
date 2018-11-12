@@ -2,7 +2,7 @@
 """
 Script to extract pre-DIRBS 5.0.0 JSON compliance data and save as a CSV file in DIRBS 5.0.0 format.
 
-Copyright (c) 2018 Qualcomm Technologies, Inc.
+ Copyright (c) 2018 Qualcomm Technologies, Inc.
 
  All rights reserved.
 
@@ -29,7 +29,6 @@ Copyright (c) 2018 Qualcomm Technologies, Inc.
  OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
  TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
-
 """
 
 from os import path

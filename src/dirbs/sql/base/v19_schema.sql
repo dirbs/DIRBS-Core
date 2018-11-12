@@ -1,6 +1,10 @@
 --
 -- PostgreSQL database dump
 --
+
+-- Dumped from database version 9.6.1
+-- Dumped by pg_dump version 9.6.2
+--
 -- Copyright (c) 2018 Qualcomm Technologies, Inc.
 --
 --  All rights reserved.
@@ -29,10 +33,6 @@
 --  TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 --  POSSIBILITY OF SUCH DAMAGE.
 --
-
--- Dumped from database version 9.6.1
--- Dumped by pg_dump version 9.6.2
-
 -- Started on 2017-05-16 16:10:36 AEST
 
 SET statement_timeout = 0;

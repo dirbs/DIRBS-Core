@@ -3,26 +3,7 @@
 --This version takes all the 5 months data for one operator = currently written as Tigo, mapping to ufone
 --Note due to subtle differences in the datasets, can't just replace the table names with other Colombian operators - need to examine how data was uploaded
 --remember to set the $mylimit variable to ALL when you are ready to do all the data!
-
---Source Tables
---NV_TABLE_DECLARE_BEGIN
---NV_TABLE_DECLARE_TABLE = $src_511,NV_COLOMBIA_MOVILE_SA_ESP_QTLBASICRAW_ROBERTT_20160107_164211882
---NV_TABLE_DECLARE_TABLE = $src_512,NV_COLOMBIA_MOVILE_SA_ESP_QTLBASICRAW_TOMASG_20160212_223601473
---NV_TABLE_DECLARE_TABLE = $src_601,NV_TIGO_MILLICOM_COLOMBIA_QTLCALLRECORDS_OP_TOMASG_20160328_092803025
---NV_TABLE_DECLARE_TABLE = $src_602,NV_TIGO_MILLICOM_COLOMBIA_QTLCALLRECORDS_OP_DSALEK_20160417_081005115
---NV_TABLE_DECLARE_TABLE = $src_603,NV_TIGO_MILLICOM_COLOMBIA_QTLCALLRECORDS_OP_DSALEK_20160515_001119813
---NV_TABLE_DECLARE_END
-
-
---Config Variables
---NV_VARIABLE_DECLARE_BEGIN
---NVN variable syntax doesn't support commas, so add multiple options for plmnid separately. Must be same length as each other and new plmnid:
---NV_VARIABLE_DECLARE_VARIABLE = $existing_plmnid1,string,'732103'
---NV_VARIABLE_DECLARE_VARIABLE = $existing_plmnid2,string,'732111'
---NV_VARIABLE_DECLARE_VARIABLE = $new_plmnid,string,'410030'
---NV_VARIABLE_DECLARE_VARIABLE = $msisdn_pre,string,'92'
---NV_VARIABLE_DECLARE_VARIABLE = $mylimit,string,100
---NV_VARIABLE_DECLARE_END
+--
 -- Copyright (c) 2018 Qualcomm Technologies, Inc.
 --
 --  All rights reserved.
@@ -51,6 +32,26 @@
 --  TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 --  POSSIBILITY OF SUCH DAMAGE.
 --
+
+--Source Tables
+--NV_TABLE_DECLARE_BEGIN
+--NV_TABLE_DECLARE_TABLE = $src_511,NV_COLOMBIA_MOVILE_SA_ESP_QTLBASICRAW_ROBERTT_20160107_164211882
+--NV_TABLE_DECLARE_TABLE = $src_512,NV_COLOMBIA_MOVILE_SA_ESP_QTLBASICRAW_TOMASG_20160212_223601473
+--NV_TABLE_DECLARE_TABLE = $src_601,NV_TIGO_MILLICOM_COLOMBIA_QTLCALLRECORDS_OP_TOMASG_20160328_092803025
+--NV_TABLE_DECLARE_TABLE = $src_602,NV_TIGO_MILLICOM_COLOMBIA_QTLCALLRECORDS_OP_DSALEK_20160417_081005115
+--NV_TABLE_DECLARE_TABLE = $src_603,NV_TIGO_MILLICOM_COLOMBIA_QTLCALLRECORDS_OP_DSALEK_20160515_001119813
+--NV_TABLE_DECLARE_END
+
+
+--Config Variables
+--NV_VARIABLE_DECLARE_BEGIN
+--NVN variable syntax doesn't support commas, so add multiple options for plmnid separately. Must be same length as each other and new plmnid:
+--NV_VARIABLE_DECLARE_VARIABLE = $existing_plmnid1,string,'732103'
+--NV_VARIABLE_DECLARE_VARIABLE = $existing_plmnid2,string,'732111'
+--NV_VARIABLE_DECLARE_VARIABLE = $new_plmnid,string,'410030'
+--NV_VARIABLE_DECLARE_VARIABLE = $msisdn_pre,string,'92'
+--NV_VARIABLE_DECLARE_VARIABLE = $mylimit,string,100
+--NV_VARIABLE_DECLARE_END
 
 --log outputs table
 create temp table loggy (

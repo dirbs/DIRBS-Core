@@ -28,7 +28,6 @@ Copyright (c) 2018 Qualcomm Technologies, Inc.
  OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
  TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
-
 """
 
 import os
@@ -107,7 +106,7 @@ def test_all_files_are_harvested(postgres, db_conn, tmpdir, logger, monkeypatch,
                 {'filename_check': True}) in res
         assert ('sample_gsma_import_list_anonymized.zip', 'gsma_tac', 1083, True, True, {}) in res
         assert ('sample_stolen_list.zip', 'stolen_list', 529, True, True, {}) in res
-        assert ('sample_registration_list.zip', 'registration_list', 726, True, True, {}) in res
+        assert ('sample_registration_list.zip', 'registration_list', 858, True, True, {}) in res
         assert ('sample_pairinglist.zip', 'pairing_list', 312, True, True, {}) in res
         assert ('sample_golden_list.zip', 'golden_list', 474, True, True, {}) in res
 

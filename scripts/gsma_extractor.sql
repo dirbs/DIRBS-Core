@@ -1,5 +1,6 @@
 --NetVision SQL script for extracting data from GSMA table, in as close to CACF/PTA format as we can get
 --still need to clean up after exporting from NVN
+--
 -- Copyright (c) 2018 Qualcomm Technologies, Inc.
 --
 --  All rights reserved.
@@ -28,7 +29,6 @@
 --  TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 --  POSSIBILITY OF SUCH DAMAGE.
 --
-
 
 create temp table gsma as 
 (

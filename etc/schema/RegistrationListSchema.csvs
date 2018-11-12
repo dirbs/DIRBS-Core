@@ -1,5 +1,5 @@
 version 1.2
-@totalColumns 4 @separator ',' @ignoreColumnNameCase @permitEmpty
+@totalColumns 8 @separator ',' @ignoreColumnNameCase @permitEmpty
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 This schema is for the validation of the Registration list.
 
@@ -59,3 +59,11 @@ model:  @optional
 //         is complete. If the value is NULL, it is treated as if it is 'whitelist' to allow backwards
 //         compatibility with registration systems which do not store a status and cannot supply one in this file.
 status: @optional
+// model_number: validator accepts any string
+model_number: @optional
+// brand_name: validator accepts any string
+brand_name: @optional
+// device_type: validator accepts any string
+device_type: @optional
+// radio_interface: validator accepts any string
+radio_interface: @optional

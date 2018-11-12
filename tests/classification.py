@@ -28,7 +28,6 @@ Copyright (c) 2018 Qualcomm Technologies, Inc.
  OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
  TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
-
 """
 
 import datetime
@@ -2394,10 +2393,11 @@ def test_blocking_condition_with_status(db_conn, logger, stolen_list_importer, m
                          )],
                          indirect=True)
 @pytest.mark.parametrize('registration_list_importer',
-                         [RegistrationListParams(content='approved_imei,make,model,status\n'
-                                                         '10000000000000,   ,   ,whiTelist\n'
-                                                         '025896314741025,   ,   ,\n'
-                                                         '645319782302145,   ,   ,any_other_status')],
+                         [RegistrationListParams(content='approved_imei,make,model,status,'
+                                                         'model_number,brand_name,device_type,radio_interface\n'
+                                                         '10000000000000,   ,   ,whiTelist,,,,\n'
+                                                         '025896314741025,   ,   ,,,,,\n'
+                                                         '645319782302145,   ,   ,any_other_status,,,,')],
                          indirect=True)
 def test_registration_list_with_status(db_conn, operator_data_importer, registration_list_importer, mocked_config,
                                        monkeypatch):
@@ -2441,10 +2441,12 @@ def test_registration_list_with_status(db_conn, operator_data_importer, registra
                          )],
                          indirect=True)
 @pytest.mark.parametrize('registration_list_importer',
-                         [RegistrationListParams(content='approved_imei,make,model,status\n'
-                                                         '10000000000000,   ,   ,whiTelist\n'
-                                                         '025896314741025,   ,   ,\n'
-                                                         '645319782302145,   ,   ,any_other_status')],
+                         [RegistrationListParams(content='approved_imei,make,model,status,'
+                                                         'model_number,brand_name,'
+                                                         'device_type,radio_interface\n'
+                                                         '10000000000000,   ,   ,whiTelist,,,,\n'
+                                                         '025896314741025,   ,   ,,,,,\n'
+                                                         '645319782302145,   ,   ,any_other_status,,,,')],
                          indirect=True)
 def test_amnesty_conditions(db_conn, operator_data_importer, registration_list_importer, mocked_config, monkeypatch):
     """Verify that the conditions' amnesty parameters are stored appropriately."""

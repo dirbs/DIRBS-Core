@@ -28,7 +28,6 @@ Copyright (c) 2018 Qualcomm Technologies, Inc.
  OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
  TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
-
 """
 
 import os
@@ -2341,8 +2340,9 @@ def test_cli_arg_no_cleanup(tmpdir, db_conn, mocked_config):
                              cc=['22', '74'],
                              mcc_mnc_pairs=[{'mcc': '111', 'mnc': '01'}, {'mcc': '310', 'mnc': '03'}],
                              extract=False),
-                           RegistrationListParams(content='approved_imei,make,model,status\n'
-                                                          '35900000000000,   ,   ,whitelist'),
+                           RegistrationListParams(content='approved_imei,make,model,status,model_number,'
+                                                          'brand_name,device_type,radio_interface\n'
+                                                          '35900000000000,   ,   ,whitelist,,,,'),
                            StolenListParams(content='IMEI,reporting_date,status\n'
                                                     '35111111111110,20160930,blacklist\n'
                                                     '35900000000000,20160930,blacklist\n'))],
