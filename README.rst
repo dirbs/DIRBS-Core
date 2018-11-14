@@ -39,8 +39,6 @@ This repository contains code forming the "core" part of DIRBS. It contains:
     machines. SQL files are included in here as they are distributed as package data.
   * ``docker/`` -- Dockerfiles and shell scripts related to Docker containers.
   * ``etc/`` -- Config files, crontabs, etc. to be deployed to ``/opt/dirbs/etc/``.
-  * ``scripts/`` -- Utility scripts that are useful for team members but which
-    will NOT be distributed.
   * ``tests/`` -- Unit test scripts and data.
 
 Prerequisites
