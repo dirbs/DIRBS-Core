@@ -33,7 +33,9 @@ DIRBS
 Documentation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 `DIRBS Core Release_9.0.0_Installation_Guide.pdf <https://github.com/dirbs/Documentation/blob/master/Core/DIRBS%20Core%20Release_9.0.0_Installation_Guide.pdf>`_
+
 `DIRBS Core Release_9.0.0_User_Guide.pdf <https://github.com/dirbs/Documentation/blob/master/Core/DIRBS%20Core%20Release_9.0.0_User_Guide.pdf>`_
+
 `DIRBS_Core_API_Specification.pdf <https://github.com/dirbs/Documentation/blob/master/Core/DIRBS_Core_API_Specification.pdf>`_
 
 
