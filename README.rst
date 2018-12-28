@@ -27,21 +27,13 @@ POSSIBILITY OF SUCH DAMAGE.
  
 The Device Identification, Registration, Blocking, System (DIRBS) consists of a Core component, classification engine, and list generation capability along with a collection of subsystem components providing functions that include reporting, registration of IMEIs, verification of IMEI status, pairing of IMEIs with IMSIs to avoid blocking, and reporting of lost & stolen IMEIs. Repositories are provided for each of these components; please see each respective repository for further details on installation and usage. To support Identity & Access Management (IAM) and API gateway functionality, open-source options such as Keycloak (www.keycloak.org) and Apiman (http://www.apiman.io) are available and may be integrated for a DIRBS deployment.
 
-
-
-
 DIRBS
 ====================
 
-Documentation
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-`Semantic Versioning <http://semver.org/>`_
-
-`DIRBS Core Release 9.0.0 Installation Guide <https://github.com/dirbs/Documentation/blob/master/Core/DIRBS%20Core%20Release_9.0.0_Installation_Guide.pdf/>`_
-
-`DIRBS_Core_Release_9.0.0_User_Guide <https://github.com/dirbs/Documentation/blob/master/Core/DIRBS%20Core%20Release_9.0.0_User_Guide.pdf/>`_
-
-`DIRBS Core API Specification <https://github.com/dirbs/Documentation/blob/master/Core/DIRBS_Core_API_Specification.pdf/>`_
+#### Documentation
+[DIRBS Core Release_9.0.0_Installation_Guide.pdf](https://github.com/dirbs/Documentation/blob/master/Core/DIRBS%20Core%20Release_9.0.0_Installation_Guide.pdf)<br />
+[DIRBS Core Release_9.0.0_User_Guide.pdf](https://github.com/dirbs/Documentation/blob/master/Core/DIRBS%20Core%20Release_9.0.0_User_Guide.pdf)<br />
+[DIRBS_Core_API_Specification.pdf](https://github.com/dirbs/Documentation/blob/master/Core/DIRBS_Core_API_Specification.pdf)<br />
 
 
 Directory structure
