@@ -38,11 +38,12 @@ from marshmallow import fields, validate
 from dirbs.api.v2.resources import imei as imei_resource
 from dirbs.api.v2.schemas.imei import IMEI, BatchIMEI, IMEIBatchArgs, IMEISubscribers, \
     SubscriberArgs, IMEIPairings, IMEIInfo
-from dirbs.api.common.job_metadata import JobMetadataArgsV2, Jobs, JobsApi
 from dirbs.api.v2.resources import catalog as catalog_resource
 from dirbs.api.v2.resources import msisdn as msisdn_resource
+from dirbs.api.v2.resources import job_metadata as job_resource
 from dirbs.api.v2.resources import tac as tac_resource
 from dirbs.api.v2.resources import version as version_resource
+from dirbs.api.v2.schemas.job_metadata import JobMetadataArgs, Jobs
 from dirbs.api.v2.schemas.catalog import Catalog, CatalogArgs
 from dirbs.api.v2.schemas.msisdn import MSISDNResp
 from dirbs.api.v2.schemas.tac import TacInfo, TacArgs, BatchTacInfo
@@ -201,13 +202,13 @@ def imei_batch_api(**kwargs):
                  'It is intended to be used by operational staff to generate data '
                  'for the admin panel.', tags=['Jobs'])
 @api.route('/job_metadata', methods=['GET'])
-@use_kwargs(JobMetadataArgsV2().fields_dict, locations=['query'])
+@use_kwargs(JobMetadataArgs().fields_dict, locations=['query'])
 @marshal_with(Jobs, code=200, description='On success')
 @marshal_with(None, code=400, description='Bad parameter value')
 @disable_options_method()
 def job_metadata_get_api(**kwargs):
     """Job Metadata API GET route."""
-    return JobsApi().get_job_metadata(**kwargs)
+    return job_resource.job_metadata_api(**kwargs)
 
 
 @doc(description='Information Core knows about the cataloged data files.'
