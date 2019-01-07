@@ -43,8 +43,8 @@ from dirbs.api.v2.schemas.imei import IMEI, BatchIMEI, IMEIBatchArgs, IMEISubscr
 from dirbs.api.common.job_metadata import JobMetadataArgsV2, Jobs, JobsApi
 from dirbs.api.common.catalog import CatalogArgsV2, CatalogV2, CatalogApi
 from dirbs.api.common.tac import TacInfo, TacArgs, BatchTacInfo
-from dirbs.api.common import version as version_
-from dirbs.api.common.version import Version
+from dirbs.api.v2.resources import version as version_resource
+from dirbs.api.v2.schemas.version import Version
 
 api = Blueprint('v2', __name__.split('.')[0])
 
@@ -228,4 +228,4 @@ def catalog_get_api(**kwargs):
 @disable_options_method()
 def version_api():
     """Version API (version 2) route."""
-    return version_.api()
+    return version_resource.version()

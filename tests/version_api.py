@@ -58,11 +58,13 @@ def test_version_json_api(flask_app, db_conn, api_version):
     data = json.loads(rv.data.decode('utf-8'))
     assert data['db_schema_version'] == schema_version
     assert data['code_db_schema_version'] == code_db_schema_version
-    assert data['source_code_version'] == dirbs_core_version
-    assert data['report_schema_version'] == report_schema_version
+
+    if api_version == 'v2':
+        assert data['source_code_version'] == dirbs_core_version
+        assert data['report_schema_version'] == report_schema_version
 
 
-def test_method_delete_not_allowed(flask_app, db_conn, api_version):
+def test_method_delete_not_allowed(flask_app, api_version):
     """Test Depot ID not known yet.
 
     Verify the version API does not support HTTP DELETE and returns HTTP 405 METHOD NOT ALLOWED.
@@ -72,7 +74,7 @@ def test_method_delete_not_allowed(flask_app, db_conn, api_version):
     assert b'Method Not Allowed' in rv.data
 
 
-def test_method_post_not_allowed(flask_app, db_conn, api_version):
+def test_method_post_not_allowed(flask_app, api_version):
     """Test Depot ID not known yet.
 
     Verify the version API does not support HTTP POST and returns HTTP 405 METHOD NOT ALLOWED.
@@ -82,7 +84,7 @@ def test_method_post_not_allowed(flask_app, db_conn, api_version):
     assert b'Method Not Allowed' in rv.data
 
 
-def test_method_put_not_allowed(flask_app, db_conn, api_version):
+def test_method_put_not_allowed(flask_app, api_version):
     """Test Depot ID not known yet.
 
     Verify the version API does not support HTTP PUT and returns HTTP 405 METHOD NOT ALLOWED.

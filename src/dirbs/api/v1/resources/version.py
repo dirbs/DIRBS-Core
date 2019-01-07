@@ -1,5 +1,5 @@
 """
-DIRBS REST-ful db_metadata API module.
+DIRBS REST-ful version API module.
 
 Copyright (c) 2018 Qualcomm Technologies, Inc.
 
@@ -31,30 +31,17 @@ Copyright (c) 2018 Qualcomm Technologies, Inc.
 """
 
 from flask import jsonify
-from marshmallow import Schema, fields
 
 from dirbs.api.common.db import get_db_connection
 import dirbs.utils as utils
 from dirbs import db_schema_version as code_db_schema_version
-from dirbs import __version__ as dirbs_core_version
-from dirbs import report_schema_version
+from dirbs.api.v1.schemas.version import Version
 
 
-def api():
+def version():
     """DB metadata API endpoint."""
     with get_db_connection() as db_conn:
         return jsonify(
             Version().dump(
-                dict(source_code_version=dirbs_core_version,
-                     code_db_schema_version=code_db_schema_version,
-                     db_schema_version=utils.query_db_schema_version(db_conn),
-                     report_schema_version=report_schema_version)).data)
-
-
-class Version(Schema):
-    """Defines the Version schema."""
-
-    source_code_version = fields.String()
-    code_db_schema_version = fields.Integer()
-    db_schema_version = fields.Integer()
-    report_schema_version = fields.Integer()
+                dict(code_db_schema_version=code_db_schema_version,
+                     db_schema_version=utils.query_db_schema_version(db_conn))).data)

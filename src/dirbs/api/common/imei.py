@@ -114,9 +114,6 @@ def get_subscribers(cursor, imei_norm):
         return [{'imsi': x.imsi, 'msisdn': x.msisdn, 'last_seen': x.last_seen} for x in cursor]
     return []
 
-def get_pairs(cursor, imei_norm):
-    """Method to get """
-
 
 def is_paired(cursor, imei_norm):
     """Method to check if an IMEI is paired."""
