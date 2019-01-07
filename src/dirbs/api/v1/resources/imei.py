@@ -39,7 +39,7 @@ from dirbs.api.common.imei import validate_imei, get_conditions, ever_observed_o
     get_subscribers, is_paired
 
 
-def api(imei, include_seen_with=False, include_paired_with=False):
+def imei_api(imei, include_seen_with=False, include_paired_with=False):
     """IMEI API handler."""
     imei_norm = validate_imei(imei)
 

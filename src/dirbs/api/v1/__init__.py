@@ -35,15 +35,15 @@ from flask_apispec import use_kwargs, marshal_with, doc
 from werkzeug.exceptions import BadRequest
 from marshmallow import fields, validate
 
-from dirbs.api.common import catalog as catalog_common, \
-    job_metadata as job_metadata_common
+from dirbs.api.common import job_metadata as job_metadata_common
 from dirbs.api.v1.resources import imei as imei_resource
 from dirbs.api.v1.resources import version as version_resource
 from dirbs.api.v1.resources import tac as tac_resource
 from dirbs.api.v1.resources import msisdn as msisdn_resource
+from dirbs.api.v1.resources import catalog as catalog_resource
 from dirbs.api.v1.schemas.msisdn import MSISDN
 from dirbs.api.v1.schemas.tac import GSMATacInfo
-from dirbs.api.common.catalog import Catalog, CatalogArgs
+from dirbs.api.v1.schemas.catalog import Catalog, CatalogArgs
 from dirbs.api.v1.schemas.version import Version
 from dirbs.api.v1.schemas.imei import IMEI, IMEIArgs
 from dirbs.api.common.job_metadata import JobMetadata, JobMetadataArgs
@@ -113,7 +113,7 @@ def register_docs(apidoc):
 @disable_options_method()
 def imei_api(imei, **kwargs):
     """IMEI API route."""
-    return imei_resource.api(imei, **kwargs)
+    return imei_resource.imei_api(imei, **kwargs)
 
 
 @doc(description='Fetch GSMA TAC information', tags=['TAC'])
@@ -135,7 +135,7 @@ def tac_api(tac):
 @disable_options_method()
 def catalog_api(**kwargs):
     """Catalog API route."""
-    return catalog_common.api(**kwargs)
+    return catalog_resource.catalog_api(**kwargs)
 
 
 @doc(description='Information Core knows about the DIRBS jobs run on the system. It is intended '

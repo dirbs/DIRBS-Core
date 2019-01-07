@@ -35,14 +35,15 @@ from flask_apispec import use_kwargs, marshal_with, doc
 from werkzeug.exceptions import BadRequest
 from marshmallow import fields, validate
 
-from dirbs.api.v2.resources import imei as imei_api
+from dirbs.api.v2.resources import imei as imei_resource
 from dirbs.api.v2.schemas.imei import IMEI, BatchIMEI, IMEIBatchArgs, IMEISubscribers, \
     SubscriberArgs, IMEIPairings, IMEIInfo
 from dirbs.api.common.job_metadata import JobMetadataArgsV2, Jobs, JobsApi
-from dirbs.api.common.catalog import CatalogArgsV2, CatalogV2, CatalogApi
+from dirbs.api.v2.resources import catalog as catalog_resource
 from dirbs.api.v2.resources import msisdn as msisdn_resource
 from dirbs.api.v2.resources import tac as tac_resource
 from dirbs.api.v2.resources import version as version_resource
+from dirbs.api.v2.schemas.catalog import Catalog, CatalogArgs
 from dirbs.api.v2.schemas.msisdn import MSISDNResp
 from dirbs.api.v2.schemas.tac import TacInfo, TacArgs, BatchTacInfo
 from dirbs.api.v2.schemas.version import Version
@@ -146,7 +147,7 @@ def msisdn_get_api(msisdn):
 @disable_options_method()
 def imei_get_api(imei):
     """IMEI API (version 2.0) GET route."""
-    return imei_api.imei(imei)
+    return imei_resource.imei_api(imei)
 
 
 @doc(description='Information Core knows about the IMSI-MSISDN pairs the IMEI has been '
@@ -158,7 +159,7 @@ def imei_get_api(imei):
 @disable_options_method()
 def imei_get_subscribers_api(imei, **kwargs):
     """IMEI Subscribers API (version 2.0) GET route."""
-    return imei_api.imei_subscribers(imei, **kwargs)
+    return imei_resource.imei_subscribers_api(imei, **kwargs)
 
 
 @doc(description='Information Core knows about the IMSIs paired with the IMEI in the '
@@ -170,7 +171,7 @@ def imei_get_subscribers_api(imei, **kwargs):
 @disable_options_method()
 def imei_get_pairings_api(imei, **kwargs):
     """IMEI Pairings API (version 2.0) GET route."""
-    return imei_api.imei_pairings(imei, **kwargs)
+    return imei_resource.imei_pairings_api(imei, **kwargs)
 
 
 @doc(description='Information (such as make, model, brand etc) Core knows about an IMEI in the '
@@ -181,7 +182,7 @@ def imei_get_pairings_api(imei, **kwargs):
 @disable_options_method()
 def imei_info_api(imei):
     """IMEI-Info API (Version 2.0) GET route."""
-    return imei_api.imei_info(imei)
+    return imei_resource.imei_info_api(imei)
 
 
 @doc(description='Information Core knows about each IMEI (max:1000) in the batch request, '
@@ -193,7 +194,7 @@ def imei_info_api(imei):
 @disable_options_method()
 def imei_batch_api(**kwargs):
     """IMEI Batch API (version 2.0) POST route."""
-    return imei_api.imei_batch(**kwargs)
+    return imei_resource.imei_batch_api(**kwargs)
 
 
 @doc(description='Information Core knows about the DIRBS jobs run on the system.'
@@ -213,13 +214,13 @@ def job_metadata_get_api(**kwargs):
                  'It returns a list of files along with their properties'
                  'and state of validation checks run by Core.', tags=['Catalog'])
 @api.route('/catalog', methods=['GET'])
-@use_kwargs(CatalogArgsV2().fields_dict, locations=['query'])
-@marshal_with(CatalogV2, code=200, description='On success')
+@use_kwargs(CatalogArgs().fields_dict, locations=['query'])
+@marshal_with(Catalog, code=200, description='On success')
 @marshal_with(None, code=400, description='Bad parameter value')
 @disable_options_method()
 def catalog_get_api(**kwargs):
     """Catalog API GET route."""
-    return CatalogApi().get_catalog_data(**kwargs)
+    return catalog_resource.catalog_api(**kwargs)
 
 
 @doc(description='Information about the code and DB schema version used by Core and presence of potential whitespace '

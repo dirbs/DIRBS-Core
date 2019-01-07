@@ -135,7 +135,7 @@ def is_exempted_device(cursor, imei_norm):
     return False
 
 
-def imei_info(imei):
+def imei_info_api(imei):
     """IMEI-Info API method handler."""
     imei_norm = validate_imei(imei)
 
@@ -152,7 +152,7 @@ def imei_info(imei):
         return {}
 
 
-def imei(imei):
+def imei_api(imei):
     """IMEI API handler."""
     imei_norm = validate_imei(imei)
 
@@ -189,7 +189,7 @@ def imei(imei):
         return jsonify(IMEI().dump(response).data)
 
 
-def imei_subscribers(imei, **kwargs):
+def imei_subscribers_api(imei, **kwargs):
     """IMEI-Subscribers API handler."""
     imei_norm = validate_imei(imei)
     offset = kwargs.get('offset')
@@ -230,7 +230,7 @@ def imei_subscribers(imei, **kwargs):
         return jsonify(IMEISubscribers().dump(dict(imei_norm=imei_norm, subscribers=None, _keys=keys)))
 
 
-def imei_pairings(imei, **kwargs):
+def imei_pairings_api(imei, **kwargs):
     """IMEI-Pairings API handler."""
     imei_norm = validate_imei(imei)
     offset = kwargs.get('offset')
@@ -274,7 +274,7 @@ def imei_pairings(imei, **kwargs):
         return jsonify(IMEIPairings().dump(dict(imei_norm=imei_norm, pairs=None, _keys=keys)))
 
 
-def imei_batch(**kwargs):
+def imei_batch_api(**kwargs):
     """IMEI API POST method handler for IMEI-Batch request."""
     if bool(kwargs):
         imeis = kwargs.get('imeis')
