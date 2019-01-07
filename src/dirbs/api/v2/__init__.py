@@ -35,15 +35,16 @@ from flask_apispec import use_kwargs, marshal_with, doc
 from werkzeug.exceptions import BadRequest
 from marshmallow import fields, validate
 
-from dirbs.api.common.msisdn import MsisdnApi, MSISDNResp
 from dirbs.api.v2.resources import imei as imei_api
 from dirbs.api.v2.schemas.imei import IMEI, BatchIMEI, IMEIBatchArgs, IMEISubscribers, \
     SubscriberArgs, IMEIPairings, IMEIInfo
 from dirbs.api.common.job_metadata import JobMetadataArgsV2, Jobs, JobsApi
 from dirbs.api.common.catalog import CatalogArgsV2, CatalogV2, CatalogApi
+from dirbs.api.v2.resources import msisdn as msisdn_resource
 from dirbs.api.v2.resources import tac as tac_resource
-from dirbs.api.v2.schemas.tac import TacInfo, TacArgs, BatchTacInfo
 from dirbs.api.v2.resources import version as version_resource
+from dirbs.api.v2.schemas.msisdn import MSISDNResp
+from dirbs.api.v2.schemas.tac import TacInfo, TacArgs, BatchTacInfo
 from dirbs.api.v2.schemas.version import Version
 
 api = Blueprint('v2', __name__.split('.')[0])
@@ -133,7 +134,7 @@ def tac_get_api(tac):
 @disable_options_method()
 def msisdn_get_api(msisdn):
     """MSISDN API (version 2) GET route."""
-    return MsisdnApi().get(msisdn)
+    return msisdn_resource.msisdn_api(msisdn)
 
 
 @doc(description='Information Core knows about the IMEI, as well as the results of '

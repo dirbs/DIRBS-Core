@@ -36,14 +36,15 @@ from werkzeug.exceptions import BadRequest
 from marshmallow import fields, validate
 
 from dirbs.api.common import catalog as catalog_common, \
-    job_metadata as job_metadata_common, msisdn as msisdn_common
+    job_metadata as job_metadata_common
 from dirbs.api.v1.resources import imei as imei_resource
 from dirbs.api.v1.resources import version as version_resource
 from dirbs.api.v1.resources import tac as tac_resource
+from dirbs.api.v1.resources import msisdn as msisdn_resource
+from dirbs.api.v1.schemas.msisdn import MSISDN
 from dirbs.api.v1.schemas.tac import GSMATacInfo
 from dirbs.api.common.catalog import Catalog, CatalogArgs
 from dirbs.api.v1.schemas.version import Version
-from dirbs.api.common.msisdn import MSISDN
 from dirbs.api.v1.schemas.imei import IMEI, IMEIArgs
 from dirbs.api.common.job_metadata import JobMetadata, JobMetadataArgs
 
@@ -166,4 +167,4 @@ def version_api():
 @disable_options_method()
 def msisdn_api(msisdn):
     """MSISDN API route."""
-    return msisdn_common.api(msisdn)
+    return msisdn_resource.msisdn_api(msisdn)
