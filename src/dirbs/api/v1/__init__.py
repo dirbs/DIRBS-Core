@@ -35,11 +35,12 @@ from flask_apispec import use_kwargs, marshal_with, doc
 from werkzeug.exceptions import BadRequest
 from marshmallow import fields, validate
 
-from dirbs.api.common import catalog as catalog_common, tac as tac_common, \
+from dirbs.api.common import catalog as catalog_common, \
     job_metadata as job_metadata_common, msisdn as msisdn_common
 from dirbs.api.v1.resources import imei as imei_resource
 from dirbs.api.v1.resources import version as version_resource
-from dirbs.api.common.tac import GSMATacInfo
+from dirbs.api.v1.resources import tac as tac_resource
+from dirbs.api.v1.schemas.tac import GSMATacInfo
 from dirbs.api.common.catalog import Catalog, CatalogArgs
 from dirbs.api.v1.schemas.version import Version
 from dirbs.api.common.msisdn import MSISDN
@@ -121,7 +122,7 @@ def imei_api(imei, **kwargs):
 @disable_options_method()
 def tac_api(tac):
     """TAC API route."""
-    return tac_common.api(tac)
+    return tac_resource.api(tac)
 
 
 @doc(description='Information Core knows about the cataloged data files. It returns a list of files '

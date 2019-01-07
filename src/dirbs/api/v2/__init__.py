@@ -35,14 +35,14 @@ from flask_apispec import use_kwargs, marshal_with, doc
 from werkzeug.exceptions import BadRequest
 from marshmallow import fields, validate
 
-from dirbs.api.common.tac import TacApi
 from dirbs.api.common.msisdn import MsisdnApi, MSISDNResp
 from dirbs.api.v2.resources import imei as imei_api
 from dirbs.api.v2.schemas.imei import IMEI, BatchIMEI, IMEIBatchArgs, IMEISubscribers, \
     SubscriberArgs, IMEIPairings, IMEIInfo
 from dirbs.api.common.job_metadata import JobMetadataArgsV2, Jobs, JobsApi
 from dirbs.api.common.catalog import CatalogArgsV2, CatalogV2, CatalogApi
-from dirbs.api.common.tac import TacInfo, TacArgs, BatchTacInfo
+from dirbs.api.v2.resources import tac as tac_resource
+from dirbs.api.v2.schemas.tac import TacInfo, TacArgs, BatchTacInfo
 from dirbs.api.v2.resources import version as version_resource
 from dirbs.api.v2.schemas.version import Version
 
@@ -112,7 +112,7 @@ def register_docs(api_doc):
 @disable_options_method()
 def tac_post_api(**kwargs):
     """Batch TAC API (version 2) POST route."""
-    return TacApi().post(**kwargs)
+    return tac_resource.tac_batch_api(**kwargs)
 
 
 @doc(description='Fetch TAC information from both the GSMA database and the device registration system.', tags=['TAC'])
@@ -122,7 +122,7 @@ def tac_post_api(**kwargs):
 @disable_options_method()
 def tac_get_api(tac):
     """TAC API (version 2) GET route."""
-    return TacApi().get(tac)
+    return tac_resource.tac_api(tac)
 
 
 @doc(description='Information Core knows about the MSISDN. It returns a list of IMEI, '

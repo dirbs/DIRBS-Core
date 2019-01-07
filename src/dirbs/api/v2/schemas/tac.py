@@ -1,5 +1,5 @@
 """
-DIRBS REST-ful TAC API module.
+DIRBS REST-ful TAC API schema module.
 
 Copyright (c) 2018 Qualcomm Technologies, Inc.
 
@@ -29,16 +29,54 @@ Copyright (c) 2018 Qualcomm Technologies, Inc.
  TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 """
+from marshmallow import Schema, fields, pre_dump
 
-from flask import abort
+from dirbs.api.common.tac import validate_tac
 
 
-def validate_tac(val):
-    """Validate TAC input argument format."""
-    if len(val) != 8:
-        abort(400, 'Bad TAC format')
+class GSMA(Schema):
+    """Defines the GSMA schema for API V2."""
 
-    try:
-        int(val)
-    except ValueError:
-        abort(400, 'Bad Tac format')
+    allocation_date = fields.String()
+    bands = fields.String()
+    brand_name = fields.String()
+    device_type = fields.String()
+    internal_model_name = fields.String()
+    manufacturer = fields.String()
+    marketing_name = fields.String()
+    model_name = fields.String()
+    bluetooth = fields.String()
+    nfc = fields.String()
+    wlan = fields.String()
+    radio_interface = fields.String()
+
+    @pre_dump(pass_many=False)
+    def extract_fields(self, data):
+        """Map optional fields to corresponding schema fields."""
+        for key in data['optional_fields']:
+            data[key] = data['optional_fields'][key]
+
+
+class TacInfo(Schema):
+    """Defines the schema for TAC API(version 2) response."""
+
+    tac = fields.String(required=True)
+    gsma = fields.Nested(GSMA, required=True)
+
+
+class BatchTacInfo(Schema):
+    """Defines schema for Batch TAC API version 2 response."""
+
+    results = fields.List(fields.Nested(TacInfo, required=True))
+
+
+class TacArgs(Schema):
+    """Input args for TAC POST API (version 2)."""
+
+    # noinspection PyProtectedMember
+    tacs = fields.List(fields.String(required=True, validate=validate_tac))
+
+    @property
+    def fields_dict(self):
+        """Convert declared fields to dictionary."""
+        return self._declared_fields

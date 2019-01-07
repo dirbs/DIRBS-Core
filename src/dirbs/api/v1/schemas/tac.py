@@ -1,5 +1,5 @@
 """
-DIRBS REST-ful TAC API module.
+DIRBS REST-ful TAC API schema module.
 
 Copyright (c) 2018 Qualcomm Technologies, Inc.
 
@@ -29,16 +29,38 @@ Copyright (c) 2018 Qualcomm Technologies, Inc.
  TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 """
+from marshmallow import Schema, fields, pre_dump
 
-from flask import abort
+
+class GSMA(Schema):
+    """Defines the GSMA schema for API V1."""
+
+    marketing_name = fields.String()
+    internal_model_name = fields.String()
+    manufacturer = fields.String()
+    bands = fields.String()
+    allocation_date = fields.String()
+    country_code = fields.String()
+    fixed_code = fields.String()
+    manufacturer_code = fields.String()
+    radio_interface = fields.String()
+    brand_name = fields.String()
+    model_name = fields.String()
+    operating_system = fields.String()
+    nfc = fields.String()
+    bluetooth = fields.String()
+    wlan = fields.String()
+    device_type = fields.String()
+
+    @pre_dump(pass_many=False)
+    def extract_fields(self, data):
+        """Flatten the optional_fields to schema fields."""
+        for key in data['optional_fields']:
+            data[key] = data['optional_fields'][key]
 
 
-def validate_tac(val):
-    """Validate TAC input argument format."""
-    if len(val) != 8:
-        abort(400, 'Bad TAC format')
+class GSMATacInfo(Schema):
+    """Defines the schema for TAC API(version 1) response."""
 
-    try:
-        int(val)
-    except ValueError:
-        abort(400, 'Bad Tac format')
+    tac = fields.String(required=True)
+    gsma = fields.Nested(GSMA, required=True)

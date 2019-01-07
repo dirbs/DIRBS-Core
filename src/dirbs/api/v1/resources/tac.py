@@ -30,15 +30,26 @@ Copyright (c) 2018 Qualcomm Technologies, Inc.
  POSSIBILITY OF SUCH DAMAGE.
 """
 
-from flask import abort
+from flask import abort, jsonify
+
+from dirbs.api.common.db import get_db_connection
+from dirbs.api.v1.schemas.tac import GSMATacInfo
 
 
-def validate_tac(val):
-    """Validate TAC input argument format."""
-    if len(val) != 8:
+def api(tac):
+    """TAC API endpoint (version 1)."""
+    if len(tac) != 8:
         abort(400, 'Bad TAC format')
 
     try:
-        int(val)
+        int(tac)
     except ValueError:
-        abort(400, 'Bad Tac format')
+        abort(400, 'Bad TAC format')
+
+    with get_db_connection() as db_conn, db_conn.cursor() as cursor:
+        cursor.execute('SELECT * FROM gsma_data WHERE tac = %s', [tac])
+        rec = cursor.fetchone()
+
+        if rec is None:
+            return jsonify(GSMATacInfo().dump(dict(tac=tac, gsma=None)).data)
+        return jsonify(GSMATacInfo().dump(dict(tac=tac, gsma=rec._asdict())).data)
