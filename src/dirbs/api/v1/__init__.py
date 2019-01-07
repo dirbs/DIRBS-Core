@@ -35,13 +35,14 @@ from flask_apispec import use_kwargs, marshal_with, doc
 from werkzeug.exceptions import BadRequest
 from marshmallow import fields, validate
 
-from dirbs.api.common import catalog as catalog_common, imei as imei_common, tac as tac_common, \
+from dirbs.api.common import catalog as catalog_common, tac as tac_common, \
     job_metadata as job_metadata_common, version as version_common, msisdn as msisdn_common
+from dirbs.api.v1.resources import imei as imei_resource
 from dirbs.api.common.tac import GSMATacInfo
 from dirbs.api.common.catalog import Catalog, CatalogArgs
 from dirbs.api.common.version import Version
 from dirbs.api.common.msisdn import MSISDN
-from dirbs.api.common.imei import IMEI, IMEIArgs
+from dirbs.api.v1.schemas.imei import IMEI, IMEIArgs
 from dirbs.api.common.job_metadata import JobMetadata, JobMetadataArgs
 
 
@@ -109,7 +110,7 @@ def register_docs(apidoc):
 @disable_options_method()
 def imei_api(imei, **kwargs):
     """IMEI API route."""
-    return imei_common.api(imei, **kwargs)
+    return imei_resource.api(imei, **kwargs)
 
 
 @doc(description='Fetch GSMA TAC information', tags=['TAC'])

@@ -37,7 +37,8 @@ from marshmallow import fields, validate
 
 from dirbs.api.common.tac import TacApi
 from dirbs.api.common.msisdn import MsisdnApi, MSISDNResp
-from dirbs.api.common.imei import ImeiApi, IMEIV2, BatchIMEI, IMEIBatchArgs, IMEISubscribers, \
+from dirbs.api.v2.resources import imei as imei_api
+from dirbs.api.v2.schemas.imei import IMEI, BatchIMEI, IMEIBatchArgs, IMEISubscribers, \
     SubscriberArgs, IMEIPairings, IMEIInfo
 from dirbs.api.common.job_metadata import JobMetadataArgsV2, Jobs, JobsApi
 from dirbs.api.common.catalog import CatalogArgsV2, CatalogV2, CatalogApi
@@ -139,12 +140,12 @@ def msisdn_get_api(msisdn):
                  'all conditions evaluated as part of DIRBS core. Calling systems should expose as '
                  'little or as much of this information to the end user as is appropriate.', tags=['IMEI'])
 @api.route('/imei/<imei>', methods=['GET'])
-@marshal_with(IMEIV2, code=200, description='On success (IMEI info found in Core)')
+@marshal_with(IMEI, code=200, description='On success (IMEI info found in Core)')
 @marshal_with(None, code=400, description='Bad IMEI format')
 @disable_options_method()
 def imei_get_api(imei):
     """IMEI API (version 2.0) GET route."""
-    return ImeiApi().get(imei)
+    return imei_api.imei(imei)
 
 
 @doc(description='Information Core knows about the IMSI-MSISDN pairs the IMEI has been '
@@ -156,7 +157,7 @@ def imei_get_api(imei):
 @disable_options_method()
 def imei_get_subscribers_api(imei, **kwargs):
     """IMEI Subscribers API (version 2.0) GET route."""
-    return ImeiApi().get_subscribers(imei, **kwargs)
+    return imei_api.imei_subscribers(imei, **kwargs)
 
 
 @doc(description='Information Core knows about the IMSIs paired with the IMEI in the '
@@ -168,7 +169,7 @@ def imei_get_subscribers_api(imei, **kwargs):
 @disable_options_method()
 def imei_get_pairings_api(imei, **kwargs):
     """IMEI Pairings API (version 2.0) GET route."""
-    return ImeiApi().get_pairings(imei, **kwargs)
+    return imei_api.imei_pairings(imei, **kwargs)
 
 
 @doc(description='Information (such as make, model, brand etc) Core knows about an IMEI in the '
@@ -179,7 +180,7 @@ def imei_get_pairings_api(imei, **kwargs):
 @disable_options_method()
 def imei_info_api(imei):
     """IMEI-Info API (Version 2.0) GET route."""
-    return ImeiApi().get_info(imei)
+    return imei_api.imei_info(imei)
 
 
 @doc(description='Information Core knows about each IMEI (max:1000) in the batch request, '
@@ -191,7 +192,7 @@ def imei_info_api(imei):
 @disable_options_method()
 def imei_batch_api(**kwargs):
     """IMEI Batch API (version 2.0) POST route."""
-    return ImeiApi().get_batch(**kwargs)
+    return imei_api.imei_batch(**kwargs)
 
 
 @doc(description='Information Core knows about the DIRBS jobs run on the system.'
