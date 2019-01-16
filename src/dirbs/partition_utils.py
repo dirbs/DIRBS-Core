@@ -352,7 +352,7 @@ def repartition_registration_list(conn, *, num_physical_shards):
 
         cursor.execute("""CREATE OR REPLACE VIEW registration_list AS
                               SELECT imei_norm, make, model, status, virt_imei_shard, model_number, brand_name,
-                                     device_type, radio_interface
+                                     device_type, radio_interface, device_id
                                 FROM historic_registration_list
                                WHERE end_date IS NULL WITH CHECK OPTION""")
         cursor.execute("""GRANT SELECT ON registration_list

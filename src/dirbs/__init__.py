@@ -33,7 +33,7 @@ Copyright (c) 2018 Qualcomm Technologies, Inc.
 __version__ = '9.0.0'
 
 # Bump this version everytime the schema is modified
-db_schema_version = 82
+db_schema_version = 83
 
 # Bump this version everytime the reports change in an incompatible way
 report_schema_version = 8

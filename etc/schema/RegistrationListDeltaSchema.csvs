@@ -68,5 +68,7 @@ brand_name: @optional
 device_type: @optional
 // radio_interface: validator accepts any string
 radio_interface: @optional
+// device_id: validator accepts any combination of valid numbers and characters
+device_id: regex("[a-zA-Z0-9]+")
 change_type: regex("^(add|remove|update)$")
 
