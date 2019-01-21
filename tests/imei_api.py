@@ -171,10 +171,10 @@ def test_check_in_registration_list(flask_app, registration_list_importer, gsma_
 @pytest.mark.parametrize('registration_list_importer',
                          [RegistrationListParams(content='approved_imei,make,model,status,'
                                                          'model_number,brand_name,device_type,'
-                                                         'radio_interface\n'
-                                                         '10000000000000,,,whitelist,,,,\n'
-                                                         '10000000000001,,,whitelist,,,,\n'
-                                                         '10000000000002,,,something_else,,,,\n')],
+                                                         'radio_interface,device_id\n'
+                                                         '10000000000000,,,whitelist,,,,,1\n'
+                                                         '10000000000001,,,whitelist,,,,,2\n'
+                                                         '10000000000002,,,something_else,,,,,3\n')],
                          indirect=True)
 def test_registration_list_status_filter(flask_app, registration_list_importer, api_version):
     """Test Depot not known yet.
@@ -771,10 +771,10 @@ def test_imei_normalisation_on_pairings_api(flask_app):
 @pytest.mark.parametrize('registration_list_importer',
                          [RegistrationListParams(content='approved_imei,make,model,status,'
                                                          'model_number,brand_name,device_type,'
-                                                         'radio_interface\n'
-                                                         '38847733370026,,,whitelist,,,,\n'
-                                                         '38847733370020,,,whitelist,,,,\n'
-                                                         '10000000000002,,,something_else,,,,\n')],
+                                                         'radio_interface,device_id\n'
+                                                         '38847733370026,,,whitelist,,,,,1\n'
+                                                         '38847733370020,,,whitelist,,,,,2\n'
+                                                         '10000000000002,,,something_else,,,,,3\n')],
                          indirect=True)
 def test_pagination_on_pairings_api(flask_app, registration_list_importer, pairing_list_importer):
     """Test Depot not known yet.
@@ -817,10 +817,10 @@ def test_pagination_on_pairings_api(flask_app, registration_list_importer, pairi
 @pytest.mark.parametrize('registration_list_importer',
                          [RegistrationListParams(content='approved_imei,make,model,status,'
                                                          'model_number,brand_name,device_type,'
-                                                         'radio_interface\n'
-                                                         '38847733370026,,,whitelist,,,,\n'
-                                                         '38847733370020,,,,,,,\n'
-                                                         '10000000000002,,,something_else,,,,\n')],
+                                                         'radio_interface,device_id\n'
+                                                         '38847733370026,,,whitelist,,,,,1\n'
+                                                         '38847733370020,,,,,,,,2\n'
+                                                         '10000000000002,,,something_else,,,,,3\n')],
                          indirect=True)
 def test_imei_api_registration_status(flask_app, registration_list_importer):
     """Test Depot not known yet.
@@ -1333,9 +1333,9 @@ def test_imei_info_api_response(flask_app, registration_list_importer):
 @pytest.mark.parametrize('registration_list_importer',
                          [RegistrationListParams(content='approved_imei,make,model,status,'
                                                          'model_number,brand_name,device_type,'
-                                                         'radio_interface\n'
+                                                         'radio_interface,device_id\n'
                                                          '10000000000000,samsung,s9,whitelist,'
-                                                         'sw928,galaxy,smart phone,2g 3g 4g\n')],
+                                                         'sw928,galaxy,smart phone,2g 3g 4g,23e\n')],
                          indirect=True)
 def test_imei_info_api(flask_app, registration_list_importer):
     """Test Depot ID not known yet.

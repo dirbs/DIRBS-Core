@@ -534,8 +534,8 @@ def test_imei_api_registration_list(per_test_flask_app, per_test_postgres, logge
                           logger,
                           mocked_statsd,
                           RegistrationListParams(content='APPROVED_IMEI,make,model,status,model_number,brand_name,'
-                                                         'device_type,radio_interface\n'
-                                                         '21260934000003,,,,,,,')) as imp:
+                                                         'device_type,radio_interface,device_id\n'
+                                                         '21260934000003,,,,,,,,1')) as imp:
             imp.import_data()
 
     if api_version == 'v1':

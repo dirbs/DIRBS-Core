@@ -1,5 +1,5 @@
 version 1.2
-@totalColumns 9 @separator ',' @ignoreColumnNameCase @permitEmpty
+@totalColumns 10 @separator ',' @ignoreColumnNameCase @permitEmpty
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 This schema is for the validation of the Registration list.
 

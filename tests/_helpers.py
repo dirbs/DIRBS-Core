@@ -133,9 +133,13 @@ def data_file_to_test(length, imei_imsi=False, imei_custom_header='imei'):
         with open(data_file_to_test, 'w') as f:
             f.write('{0}\n'.format(imei_custom_header))
             # if more than one field, add a comma for null field per each col
+            csv_columns = imei_custom_header.split(',')
             for i in range(0, length):
-                num_cols = len(imei_custom_header.split(','))
-                if num_cols > 1:
+                num_cols = len(csv_columns)
+                if num_cols > 1 and 'device_id' in csv_columns:
+                    # if registration_list and have device_id
+                    f.write('{0:d}{1}dev1\n'.format(imei_start + i, ',' * (num_cols - 1)))
+                elif num_cols > 1:
                     f.write('{0:d}{1}\n'.format(imei_start + i, ',' * (num_cols - 1)))
                 else:
                     f.write('{0:d}\n'.format(imei_start + i))

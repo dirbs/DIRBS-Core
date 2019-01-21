@@ -2341,8 +2341,8 @@ def test_cli_arg_no_cleanup(tmpdir, db_conn, mocked_config):
                              mcc_mnc_pairs=[{'mcc': '111', 'mnc': '01'}, {'mcc': '310', 'mnc': '03'}],
                              extract=False),
                            RegistrationListParams(content='approved_imei,make,model,status,model_number,'
-                                                          'brand_name,device_type,radio_interface\n'
-                                                          '35900000000000,   ,   ,whitelist,,,,'),
+                                                          'brand_name,device_type,radio_interface,device_id\n'
+                                                          '35900000000000,   ,   ,whitelist,,,,,23422'),
                            StolenListParams(content='IMEI,reporting_date,status\n'
                                                     '35111111111110,20160930,blacklist\n'
                                                     '35900000000000,20160930,blacklist\n'))],

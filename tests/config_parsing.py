@@ -314,7 +314,7 @@ def test_registration_list_historical_thresholds_failure(logger, mocked_statsd, 
                                             import_list_instance,
                                             imei_custom_header='approved_imei,make,model,status,'
                                                                'model_number,brand_name,device_type,'
-                                                               'radio_interface',
+                                                               'radio_interface,device_id',
                                             exc_message='Failed import size historic check, historic '
                                                         'value is: 100.00, imported data has: 49.00 and '
                                                         'minimum required is 50.00')
@@ -342,7 +342,7 @@ def test_registration_list_historical_thresholds_success(logger, mocked_statsd, 
                                               import_list_instance, imei_custom_header='approved_imei,make,model,'
                                                                                        'status,model_number,'
                                                                                        'brand_name,device_type,'
-                                                                                       'radio_interface'
+                                                                                       'radio_interface,device_id'
                                               )
 
 
@@ -369,7 +369,7 @@ def test_registration_list_historical_thresholds_success_with_abs_threshold(logg
                                             RegistrationListImporter, RegistrationListParams,
                                             import_list_instance,
                                             imei_custom_header='approved_imei,make,model,status,model_number,'
-                                                               'brand_name,device_type,radio_interface',
+                                                               'brand_name,device_type,radio_interface,device_id',
                                             exc_message='Failed import size historic check, '
                                                         'historic value is: 100.00, imported data has: '
                                                         '51.00 and minimum required is 52.00')

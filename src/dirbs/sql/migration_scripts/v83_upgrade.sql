@@ -64,3 +64,8 @@ BEGIN
     RETURN NEW;
 END
 $$;
+
+--
+-- grant necessary permissions
+--
+GRANT SELECT ON registration_list TO dirbs_core_api, dirbs_core_classify, dirbs_core_import_registration_list;
