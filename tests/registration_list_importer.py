@@ -181,9 +181,9 @@ def test_historical_check_percentage_fails(registration_list_importer, logger, m
                       mocked_statsd,
                       RegistrationListParams(filename='sample_registration_list_historicalcheck.csv',
                                              import_size_variation_percent=mocked_config.import_threshold_config.
-                                                     import_size_variation_percent,
+                                             import_size_variation_percent,
                                              import_size_variation_absolute=mocked_config.import_threshold_config.
-                                                     import_size_variation_absolute)) as imp:
+                                             import_size_variation_absolute)) as imp:
         expect_failure(imp, exc_message='Failed import size historic check')
 
 
@@ -223,9 +223,9 @@ def test_historical_check_percentage_succeeds(registration_list_importer, logger
                                                                                            'device_id'
                                                                         ),
                                              import_size_variation_percent=mocked_config.import_threshold_config.
-                                                     import_size_variation_percent,
+                                             import_size_variation_percent,
                                              import_size_variation_absolute=mocked_config.import_threshold_config.
-                                                     import_size_variation_absolute)) as imp:
+                                             import_size_variation_absolute)) as imp:
         expect_success(imp, 80, db_conn, logger)
 
 
@@ -361,6 +361,7 @@ def test_optional_fields_whitespace(logger, db_conn, registration_list_importer)
 def test_device_id_required_field(logger, db_conn, metadata_db_conn, mocked_config,
                                   tmpdir, mocked_statsd, registration_list_importer):
     """Test Depot not available yet.
+
     Verify that the data in device_id is required.
     """
     with get_importer(RegistrationListImporter,
