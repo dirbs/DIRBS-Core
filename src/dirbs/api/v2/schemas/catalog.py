@@ -29,15 +29,9 @@ Copyright (c) 2018 Qualcomm Technologies, Inc.
  TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 """
-import operator
 from enum import Enum
 
-from psycopg2 import sql
-from flask import jsonify
 from marshmallow import Schema, fields, pre_dump, validate
-
-from dirbs.api.common.db import get_db_connection
-from dirbs.api.common.pagination import Pagination
 
 
 class FileType(Enum):

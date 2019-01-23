@@ -30,8 +30,8 @@ Copyright (c) 2018 Qualcomm Technologies, Inc.
  POSSIBILITY OF SUCH DAMAGE.
 """
 import re
-
 from enum import Enum
+
 from flask import abort
 from marshmallow import Schema, fields, validate, post_dump
 

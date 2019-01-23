@@ -30,6 +30,7 @@ Copyright (c) 2018 Qualcomm Technologies, Inc.
  POSSIBILITY OF SUCH DAMAGE.
 """
 from enum import Enum
+
 from marshmallow import Schema, fields, validate
 
 
