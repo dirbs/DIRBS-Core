@@ -38,7 +38,7 @@ from click.testing import CliRunner
 from dirbs.cli.prune import cli as dirbs_prune_cli
 from dirbs.cli.classify import cli as dirbs_classify_cli
 from dirbs.importer.gsma_data_importer import GSMADataImporter
-from _fixtures import *    # noqa: F403, F401
+from _fixtures import *  # noqa: F403, F401
 from _helpers import get_importer, expect_success, from_cond_dict_list_to_cond_list
 from _importer_params import OperatorDataParams, StolenListParams, GSMADataParams
 
@@ -317,3 +317,91 @@ def test_prune_classification_state(db_conn, metadata_db_conn, tmpdir, logger, m
                                                 ('8888#888622222', 'not_on_registration_list', None),
                                                 ('88888862222209', 'not_on_registration_list', None),
                                                 ('88888888622222', 'not_on_registration_list', None)]
+
+
+@pytest.mark.parametrize('operator_data_importer',
+                         [OperatorDataParams(
+                             content='date,imei,imsi,msisdn\n'
+                                     '20110101,88888888622222,123456789012345,123456789012345\n'
+                                     '20110101,21111111111111,125456789012345,123456789012345\n'
+                                     '20110101,21111111111112,125456789012345,123456789012345\n'
+                                     '20110101,88888862222209,123456789012345,123456789012345',
+                             extract=False,
+                             perform_unclean_checks=False,
+                             perform_region_checks=False,
+                             perform_home_network_check=False,
+                             operator='operator1'
+                         )],
+                         indirect=True)
+@pytest.mark.parametrize('gsma_tac_db_importer',
+                         [GSMADataParams(filename='gsma_dump_emptynontac_july_2016.txt')],
+                         indirect=True)
+@pytest.mark.parametrize('stolen_list_importer',
+                         [StolenListParams(filename='testData1-sample_stolen_list-anonymized.csv')],
+                         indirect=True)
+def test_prune_blacklist(db_conn, metadata_db_conn, tmpdir, logger, mocked_config,
+                         operator_data_importer, stolen_list_importer, monkeypatch,
+                         gsma_tac_db_importer, postgres, mocked_statsd):
+    """Verify that the blacklist prune command prune entries related to a specified condition only."""
+    operator_data_importer.import_data()
+    stolen_list_importer.import_data()
+    gsma_tac_db_importer.import_data()
+
+    runner = CliRunner()
+    db_conn.commit()
+    runner.invoke(dirbs_classify_cli, ['--no-safety-check', '--curr-date', '20170713'],
+                  obj={'APP_CONFIG': mocked_config})
+
+    with db_conn.cursor() as cur:
+        cur.execute('SELECT imei_norm, cond_name, end_date FROM classification_state ORDER BY cond_name, imei_norm')
+        res_list = cur.fetchall()
+        assert len(res_list) == 29
+        assert [(x.imei_norm, x.cond_name, x.end_date) for x in res_list] == \
+               [('21111111111111', 'gsma_not_found', None),
+                ('21111111111112', 'gsma_not_found', None),
+                ('88888862222209', 'gsma_not_found', None),
+                ('88888888622222', 'gsma_not_found', None),
+                ('12432807272315', 'local_stolen', None),
+                ('12640904324427', 'local_stolen', None),
+                ('12640904372723', 'local_stolen', None),
+                ('12727231272313', 'local_stolen', None),
+                ('12875502464321', 'local_stolen', None),
+                ('12875502572723', 'local_stolen', None),
+                ('12875507272312', 'local_stolen', None),
+                ('12904502843271', 'local_stolen', None),
+                ('12909602432585', 'local_stolen', None),
+                ('12909602872723', 'local_stolen', None),
+                ('12922902206948', 'local_stolen', None),
+                ('12922902243260', 'local_stolen', None),
+                ('12922902432742', 'local_stolen', None),
+                ('12922902432776', 'local_stolen', None),
+                ('12957272313271', 'local_stolen', None),
+                ('17272317272723', 'local_stolen', None),
+                ('56773605727231', 'local_stolen', None),
+                ('64220204327947', 'local_stolen', None),
+                ('64220297727231', 'local_stolen', None),
+                ('72723147267231', 'local_stolen', None),
+                ('72723147267631', 'local_stolen', None),
+                ('21111111111111', 'not_on_registration_list', None),
+                ('21111111111112', 'not_on_registration_list', None),
+                ('88888862222209', 'not_on_registration_list', None),
+                ('88888888622222', 'not_on_registration_list', None)]
+
+        # invoke condition based pruning for local_stolen
+        runner.invoke(dirbs_prune_cli, ['blacklist', 'local_stolen'], obj={'APP_CONFIG': mocked_config})
+        cur.execute('SELECT imei_norm, cond_name, end_date FROM classification_state ORDER BY cond_name, imei_norm')
+        res_list = cur.fetchall()
+        assert len(res_list) == 29
+        for x in res_list:
+            if x.cond_name == 'local_stolen':
+                assert x.end_date is not None
+            else:
+                assert x.end_date is None
+
+        # invoke runner to prune all
+        runner.invoke(dirbs_prune_cli, ['blacklist', '--prune-all'], obj={'APP_CONFIG': mocked_config})
+        cur.execute('SELECT imei_norm, cond_name, end_date FROM classification_state ORDER BY cond_name, imei_norm')
+        res_list = cur.fetchall()
+        assert len(res_list) == 29
+        for x in res_list:
+            assert x.end_date is not None
