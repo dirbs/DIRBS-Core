@@ -123,6 +123,15 @@ data_retention:
   # The IMEI will continue to be stored after this date as it is needed for continued
   # list generation, etc. All references to IMSI and MSISDN will be pruned after this date.
   months_retention: 6
+  # The number of days for which an IMEI in blacklist have not been active on the network
+  # will be removed/pruned from blacklist. The IMEI will be allowed to function on the network
+  # again. If it meets a condition again after being pruned from the blacklist, it will be given
+  # a new grace period and then put back on the blacklist. The default value of blacklist retention is
+  # 0 which means nothing will expire from blacklist ever. For safety this period (in days) should be longer than
+  # the grace periods on all conditions
+
+  # uncomment the below line to set the retention period for blacklist
+  # blacklist_retention: <enable me>
 
 # Definitions of configuration variables used by DIRBS Core in the list generation process.
 list_generation:
@@ -267,7 +276,7 @@ conditions:
     grace_period_days: 30
     blocking: true
     reason: Violated simple dimension
-    max_allowed_matching_ratio: 0.1
+    max_allowed_matching_ratio: 1.0
   - label: compound_dimension
     dimensions:
       - module: stolen_list

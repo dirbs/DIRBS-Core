@@ -878,6 +878,7 @@ class RetentionConfig(ConfigSection):
         """Constructor which parses the data retention config."""
         super(RetentionConfig, self).__init__(**retention_config)
         self.months_retention = self._parse_positive_int('months_retention')
+        self.blacklist_retention = self._parse_positive_int('blacklist_retention')
 
     @property
     def section_name(self):
@@ -889,6 +890,7 @@ class RetentionConfig(ConfigSection):
         """Property describing defaults for config values."""
         return {
             'months_retention': 3,
+            'blacklist_retention': 0,
         }
 
 
