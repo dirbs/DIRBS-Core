@@ -276,7 +276,7 @@ conditions:
     grace_period_days: 30
     blocking: true
     reason: Violated simple dimension
-    max_allowed_matching_ratio: 1.0
+    max_allowed_matching_ratio: 0.1
   - label: compound_dimension
     dimensions:
       - module: stolen_list

@@ -30,7 +30,7 @@ Copyright (c) 2018 Qualcomm Technologies, Inc.
  POSSIBILITY OF SUCH DAMAGE.
 """
 
-__version__ = '9.0.0'
+__version__ = '10.0.0'
 
 # Bump this version everytime the schema is modified
 db_schema_version = 83
