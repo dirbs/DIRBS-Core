@@ -350,3 +350,28 @@ def blacklist(ctx, config, statsd, logger, run_id, conn, metadata_conn, command,
                          'in classification_state table')
             statsd.gauge('{0}rows_after'.format(metrics_run_root), rows_after)
             metadata.add_optional_job_metadata(metadata_conn, command, run_id, rows_after=rows_after)
+
+
+@cli.command()
+@click.pass_context
+@common.unhandled_exception_handler
+@common.cli_wrapper(command='dirbs-prune', subcommand='lists', required_role='dirbs_core_power_user')
+def lists(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root, metrics_run_root):
+    """Prune obsolete lists data."""
+    curr_date = ctx.obj['CURR_DATE']
+
+    # store metadata
+    metadata.add_optional_job_metadata(metadata_conn, command, run_id,
+                                       retention_months=config.retention_config.months_retention)
+
+    logger.info('Pruning lists tables to remove any obsolete data with end_date outside the retention window..')
+    retention_months = config.retention_config.months_retention
+
+    if curr_date is None:
+        curr_date = datetime.date.today()
+
+    first_month_to_drop = datetime.date(curr_date.year, curr_date.month, 1) - relativedelta.relativedelta(
+        months=retention_months)
+    logger.info('Lists data with end_date earlier than {0} will be pruned'.format(first_month_to_drop))
+    
+    pass
