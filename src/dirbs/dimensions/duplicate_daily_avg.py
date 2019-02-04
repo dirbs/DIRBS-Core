@@ -38,9 +38,9 @@ from .duplicate_abstract_base import DuplicateAbstractBase
 class DuplicateAverageThreshold(DuplicateAbstractBase):
     """Implementation of the DuplicateAverageThreshold classification dimension."""
 
-    def __init__(self, *, threshold, period_days=None, period_months=None, min_seen_days, **kwargs):
+    def __init__(self, *, threshold, period_days=None, period_months=None, min_seen_days, use_msisdn=False, **kwargs):
         """Constructor."""
-        super().__init__(period_days=period_days, period_months=period_months, **kwargs)
+        super().__init__(period_days=period_days, period_months=period_months, use_msisdn=use_msisdn, **kwargs)
 
         try:
             self._threshold = float(threshold)

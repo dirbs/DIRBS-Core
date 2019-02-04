@@ -69,3 +69,30 @@ $$;
 -- grant necessary permissions
 --
 GRANT SELECT ON registration_list TO dirbs_core_api, dirbs_core_classify, dirbs_core_import_registration_list;
+
+--
+-- function to check un-clean MSISDN
+--
+CREATE FUNCTION is_unclean_msisdn(msisdn TEXT)
+    RETURNS BOOLEAN
+    LANGUAGE sql IMMUTABLE PARALLEL SAFE
+AS $$
+  --
+  -- A NULL MSISDN value is not considered unclean. During validation, NULL checks are conducted
+  -- separately and we don't treat NULL as unclean so that we can have independent checks
+  --
+  SELECT msisdn IS NOT NULL AND NOT LENGTH(msisdn) BETWEEN 12 AND 15;
+$$;
+
+--
+-- function to check validity of MSISDN
+--
+CREATE FUNCTION is_valid_msisdn(msisdn TEXT)
+    RETURNS BOOLEAN
+    LANGUAGE sql IMMUTABLE PARALLEL SAFE
+AS $$
+  --
+  -- A valid MSISDN is one that is both non-NULL and clean
+  --
+  SELECT msisdn IS NOT NULL and NOT is_unclean_msisdn(msisdn)
+$$;

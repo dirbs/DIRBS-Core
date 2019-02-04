@@ -39,7 +39,7 @@ from .base import Dimension
 class DuplicateAbstractBase(Dimension):
     """Abstract base class that all duplicate dimensions should inherit from."""
 
-    def __init__(self, *, period_days, period_months, **kwargs):
+    def __init__(self, *, period_days, period_months, use_msisdn, **kwargs):
         """Constructor."""
         super().__init__(**kwargs)
 
@@ -49,8 +49,12 @@ class DuplicateAbstractBase(Dimension):
         if period_days is None and period_months is None:
             raise ValueError('Both period_days and period_months in duplicate dimension are NULL. Check config...')
 
+        if not isinstance(use_msisdn, bool):
+            raise ValueError('use_msisdn should be a boolean value (True/False). Check config...')
+
         self._period_days = int(period_days) if period_days is not None else None
         self._period_months = int(period_months) if period_months is not None else None
+        self._use_msisdn = True if use_msisdn else False
 
         if self._period_months is not None and self._period_months < 0:
             raise ValueError('Negative value for period_months passed to duplicate dimension. Check config...')
