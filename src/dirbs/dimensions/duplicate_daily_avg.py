@@ -72,6 +72,46 @@ class DuplicateAverageThreshold(DuplicateAbstractBase):
         To not penalize IMEIs that have limited data, the min_seen_days parameter value is used to skip IMEIs that have
         number of days they were observed on less than the specified value.
         """
+        if self._use_msisdn:
+            # if use_msisdn is True than use MSISDN instead IMSI for analysis
+            return sql.SQL(
+                """SELECT imei_norm
+                     FROM (SELECT imei_norm,
+                                  bitcount(bit_or(combined_date_bitmask)) AS days_seen,
+                                  SUM(bitcount(combined_date_bitmask)) AS msisdn_per_imei
+                             FROM (SELECT imei_norm,
+                                          msisdn,
+                                          triplet_year,
+                                          triplet_month,
+                                          bit_or(get_bitmask_within_window(date_bitmask,
+                                                                           first_seen,
+                                                                           last_seen,
+                                                                           {analysis_start_date},
+                                                                           {analysis_start_dom},
+                                                                           {analysis_end_date},
+                                                                           {analysis_end_dom})
+                                                ) AS combined_date_bitmask
+                                     FROM monthly_network_triplets_country
+                                    WHERE imei_norm IS NOT NULL
+                                      AND last_seen >= {analysis_start_date}
+                                      AND first_seen < {analysis_end_date}
+                                      AND virt_imei_shard >= {virt_imei_range_start}
+                                      AND virt_imei_shard < {virt_imei_range_end}
+                                      AND is_valid_msisdn(msisdn)
+                                 GROUP BY imei_norm, msisdn, triplet_year,
+                                          triplet_month) all_seen_triplets
+                         GROUP BY imei_norm, triplet_month, triplet_year) triplet_monthly_days
+                 GROUP BY imei_norm
+                          HAVING SUM(days_seen) >= {min_seen_days_threshold}
+                                 AND (SUM(msisdn_per_imei)/SUM(days_seen)) >= {threshold}
+                """).format(analysis_start_date=sql.Literal(analysis_start_date),  # noqa: Q447
+                            analysis_start_dom=sql.Literal(analysis_start_date.day),
+                            analysis_end_date=sql.Literal(analysis_end_date),
+                            analysis_end_dom=sql.Literal(analysis_end_date.day),
+                            virt_imei_range_start=sql.Literal(virt_imei_range_start),
+                            virt_imei_range_end=sql.Literal(virt_imei_range_end),
+                            min_seen_days_threshold=sql.Literal(self._min_seen_days),
+                            threshold=sql.Literal(self._threshold)).as_string(conn)
         return sql.SQL(
             """SELECT imei_norm
                  FROM (SELECT imei_norm,
