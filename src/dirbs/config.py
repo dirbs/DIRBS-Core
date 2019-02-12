@@ -492,6 +492,14 @@ class OperatorConfig(ConfigSection):
             'mcc_mnc_pairs': []
         }
 
+    def as_dict(self):
+        """Method to turn this config into a dict for serialization purposes."""
+        return {
+            'operator_id': self.id,
+            'operator_name': self.name,
+            'mcc_mnc_pairs': self.mcc_mnc_pairs
+        }
+
 
 class LoggingConfig(ConfigSection):
     """Class representing the 'logging' section of the config."""
@@ -1087,4 +1095,12 @@ class AmnestyConfig(ConfigSection):
             'amnesty_enabled': False,
             'evaluation_period_end_date': '19700101',
             'amnesty_period_end_date': '19700102'
+        }
+
+    def as_dict(self):
+        """Method to turn this config into a dict for serialization purposes."""
+        return {
+            'amnesty_enabled': self.amnesty_enabled,
+            'evaluation_period_end_date': self.evaluation_period_end_date.isoformat(),
+            'amnesty_period_end_date': self.amnesty_period_end_date.isoformat()
         }

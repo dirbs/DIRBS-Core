@@ -55,6 +55,8 @@ from dirbs.listgen import ListsGenerator
               help='If set, intermediate tables used to calculate lists will not be deleted so that they can be '
                    'inspected.')
 @click.option('--base', type=int, default=-1, help='If set, will use this run ID as the base for the delta CSV lists.')
+@click.option('--disable-sanity-checks', is_flag=True,
+              help='If set sanity checks on list generation will be disabled (might cause large delta generation)')
 @click.argument('output_dir',
                 type=click.Path(exists=True, file_okay=False, writable=True))
 @click.pass_context
@@ -62,7 +64,7 @@ from dirbs.listgen import ListsGenerator
 @common.configure_logging
 @common.cli_wrapper(command='dirbs-listgen', required_role='dirbs_core_listgen')
 def cli(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root, metrics_run_root,
-        curr_date, no_full_lists, no_cleanup, base, output_dir):
+        curr_date, no_full_lists, no_cleanup, base, disable_sanity_checks, output_dir):
     """DIRBS script to output CSV lists (blacklist, exception, notification) for the current classification state."""
     if curr_date is not None:
         logger.warn('*************************************************************************')
@@ -82,5 +84,6 @@ def cli(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metri
 
     list_generator = ListsGenerator(config=config, logger=logger, run_id=run_id, conn=conn,
                                     metadata_conn=metadata_conn, curr_date=curr_date, no_full_lists=no_full_lists,
-                                    no_cleanup=no_cleanup, base_run_id=base, output_dir=output_dir)
+                                    no_cleanup=no_cleanup, base_run_id=base,
+                                    disable_sanity_checks=disable_sanity_checks, output_dir=output_dir)
     list_generator.generate_lists()

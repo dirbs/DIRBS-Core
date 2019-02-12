@@ -115,7 +115,7 @@ def add_time_metadata(conn, job_command, run_id, path):
         assert cursor.rowcount == 1
 
 
-def query_for_command_runs(conn, job_command, subcommand=None, successful_only=False):
+def query_for_command_runs(conn, job_command, subcommand=None, successful_only=False, run_id=None):
     """Get all the metadata for all the invocations of a job commands, sorted most recent runs first."""
     with conn.cursor() as cursor:
         if successful_only:
@@ -130,13 +130,21 @@ def query_for_command_runs(conn, job_command, subcommand=None, successful_only=F
         else:
             subcommand_filter_sql = sql.SQL('')
 
+        if run_id:
+            run_id_filter_sql = sql.SQL('AND run_id = %s')
+            query_params.append(run_id)
+        else:
+            run_id_filter_sql = sql.SQL('')
+
         cursor.execute(sql.SQL("""SELECT *
                                     FROM job_metadata
                                    WHERE command = %s
                                      AND {status_filter_sql}
                                          {subcommand_filter_sql}
+                                         {run_id_filter_sql}
                                 ORDER BY start_time DESC""").format(status_filter_sql=status_filter_sql,
-                                                                    subcommand_filter_sql=subcommand_filter_sql),
+                                                                    subcommand_filter_sql=subcommand_filter_sql,
+                                                                    run_id_filter_sql=run_id_filter_sql),
                        query_params)
         return cursor.fetchall()
 
