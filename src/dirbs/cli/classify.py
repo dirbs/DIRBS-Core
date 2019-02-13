@@ -73,6 +73,8 @@ class ClassifySanityCheckFailedException(Exception):
               help='DANGEROUS: Sets current date in YYYYMMDD format for testing. By default, '
                    'uses system current date.',
               callback=common.validate_date)
+@click.option('--disable-sanity-checks', is_flag=True,
+              help='If set sanity checks on classification will be disabled')
 @click.version_option()
 @common.parse_verbosity_option
 @common.parse_db_options
@@ -83,7 +85,7 @@ class ClassifySanityCheckFailedException(Exception):
 @common.configure_logging
 @common.cli_wrapper(command='dirbs-classify', required_role='dirbs_core_classify')
 def cli(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root, metrics_run_root,
-        conditions, safety_check, curr_date):
+        conditions, safety_check, curr_date, disable_sanity_checks):
     """DIRBS script to classify IMEIs.
 
     Iterates through all configured conditions and write to the classification_state table.
@@ -97,7 +99,7 @@ def cli(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metri
 
     # Query the job metadata table for all successful classification runs
     successful_job_runs = metadata.query_for_command_runs(metadata_conn, 'dirbs-classify', successful_only=True)
-    if successful_job_runs:
+    if successful_job_runs and not disable_sanity_checks:
         if not _perform_sanity_checks(config, successful_job_runs[0].extra_metadata):
             raise ClassifySanityCheckFailedException(
                 'Sanity checks failed, configurations are not identical to the last successful classification'
