@@ -50,6 +50,12 @@ class ClassifyLockException(Exception):
     pass
 
 
+class ClassifySanityCheckFailedException(Exception):
+    """Indicates that the sanity checks failed for classification."""
+
+    pass
+
+
 @click.command()
 @common.setup_initial_logging
 @click.option('--conditions',
@@ -89,12 +95,22 @@ def cli(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metri
     if conditions is None:
         conditions = config.conditions
 
+    # Query the job metadata table for all successful classification runs
+    successful_job_runs = metadata.query_for_command_runs(metadata_conn, 'dirbs-classify', successful_only=True)
+    if successful_job_runs:
+        if not _perform_sanity_checks(config, successful_job_runs[0].extra_metadata):
+            raise ClassifySanityCheckFailedException(
+                'Sanity checks failed, configurations are not identical to the last successful classification'
+            )
+
     logger.info('Classifying using conditions: {0}'.format(','.join([c.label for c in conditions])))
 
     # Store metadata
     metadata.add_optional_job_metadata(metadata_conn, command, run_id,
                                        curr_date=curr_date.isoformat() if curr_date is not None else None,
-                                       conditions=[c.as_dict() for c in conditions])
+                                       conditions=[c.as_dict() for c in conditions],
+                                       operators=[op.as_dict() for op in config.region_config.operators],
+                                       amnesty=config.amnesty_config.as_dict())
 
     # Per-condition intermediate tables
     intermediate_tables = []
@@ -260,6 +276,18 @@ def _completed_update_jobs(futures_to_condition, per_condition_state, logger):
             logger.info('Finished updating classification_state table for condition \'{0}\''
                         .format(condition.label))
             yield condition, state
+
+def _perform_sanity_checks(config, extra_metadata):
+    """Method to perform sanity checks on current classification run."""
+    curr_conditions = [c.as_dict() for c in config.conditions]
+    curr_operators = [op.as_dict() for op in config.region_config.operators]
+    curr_amnesty = config.amnesty_config.as_dict()
+
+    if curr_conditions == extra_metadata['conditions'] and \
+            curr_operators == extra_metadata['operators'] and \
+        curr_amnesty == extra_metadata['amnesty']:
+        return True
+    return False
 
 
 def _do_final_cleanup(conn, logger, is_locked, tables_to_delete):
