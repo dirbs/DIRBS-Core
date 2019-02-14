@@ -102,7 +102,9 @@ def test_classification_table_structure_after_pruning(postgres,
     stolen_list_importer.import_data()
     db_conn.commit()
 
-    result = runner.invoke(dirbs_classify_cli, ['--no-safety-check', '--disable-sanity-checks', '--curr-date', '20171130'],
+    result = runner.invoke(dirbs_classify_cli, ['--no-safety-check',
+                                                '--disable-sanity-checks',
+                                                '--curr-date', '20171130'],
                            obj={'APP_CONFIG': mocked_config})
     assert result.exit_code == 0
 

@@ -75,8 +75,7 @@ def _cli_listgen_helper(db_conn, tmpdir, sub_temp_dir, mocked_config, date=None,
         options_list.extend(['--no-full-lists'])
     if no_clean_up:
         options_list.extend(['--no-cleanup'])
-    if disable_sanity_checks:
-        options_list.extend(['--disable-sanity-checks'])
+    options_list.extend(['--disable-sanity-checks'])
     output_dir = str(tmpdir.mkdir(sub_temp_dir))
     options_list.append(output_dir)
     runner = CliRunner()

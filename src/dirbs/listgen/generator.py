@@ -112,8 +112,8 @@ class ListsGenerator:
             run_ids = [r.run_id for r in successful_job_runs]
             if base_run_id not in run_ids:
                 raise ListGenerationInvalidBaseException(
-                    'Specified base run id {0:d} not found in list of successful dirbs-listgen runs'
-                        .format(base_run_id))
+                    'Specified base run id {0:d} not found in list of successful dirbs-listgen runs'.format(
+                        base_run_id))
             if not disable_sanity_checks and not self._perform_sanity_checks(base_run_id):
                 raise ListGenerationSanityChecksFailedException(
                     'Sanity checks failed, configurations are not identical to the last successful list generation')
@@ -1851,9 +1851,8 @@ class ListsGenerator:
                 csv_writer.writerow(row_data_dict)
                 metrics[delta_reason]['num_records'] += 1
 
-        return [self._gen_metadata_for_list(fn, **metrics[r]) for r, fn in fnames.items()], \
-               'blacklist_delta', \
-               cp.duration
+        return [self._gen_metadata_for_list(
+            fn, **metrics[r]) for r, fn in fnames.items()], 'blacklist_delta', cp.duration
 
     def _write_full_csv_notifications_list(self, operator_id):
         """Write full CSV, per-MNO notifications list for a given MNO from the intermediate tables."""
@@ -1939,9 +1938,8 @@ class ListsGenerator:
                 csv_writer.writerow(row_data_dict)
                 metrics[delta_reason]['num_records'] += 1
 
-        return [self._gen_metadata_for_list(fn, **metrics[r]) for r, fn in fnames.items()], \
-               'notifications_lists_delta', \
-               cp.duration
+        return [self._gen_metadata_for_list(
+            fn, **metrics[r]) for r, fn in fnames.items()], 'notifications_lists_delta', cp.duration
 
     def _write_full_csv_exceptions_list(self, operator_id):
         """Write full CSV, per-MNO exceptions list for a given MNO from the intermediate tables."""
@@ -2012,9 +2010,8 @@ class ListsGenerator:
                 csv_writer.writerow(row_data_dict)
                 metrics[delta_reason]['num_records'] += 1
 
-        return [self._gen_metadata_for_list(fn, **metrics[r]) for r, fn in fnames.items()], \
-               'exceptions_lists_delta', \
-               cp.duration
+        return [self._gen_metadata_for_list(
+            fn, **metrics[r]) for r, fn in fnames.items()], 'exceptions_lists_delta', cp.duration
 
     def _gen_metadata_for_list(self, filename, **extra_data):
         """Function to generate a metadata dictionary for a list filename and any extra metadata."""
