@@ -218,7 +218,7 @@ def from_cond_dict_list_to_cond_list(conditions_list):
 
 def invoke_cli_classify_with_conditions_helper(conditions_list, mocked_config, monkeypatch,
                                                classify_options=None, curr_date=None, db_conn=None,
-                                               expect_success=True):
+                                               expect_success=True, disable_sanity_checks=True):
     """Helper function used to set mocked_config conditon attribute and run the classification command."""
     if not classify_options:
         classify_options = []
@@ -227,6 +227,9 @@ def invoke_cli_classify_with_conditions_helper(conditions_list, mocked_config, m
         classify_options.extend(['--curr-date', '20161130'])
     else:
         classify_options.extend(['--curr-date', curr_date])
+
+    if disable_sanity_checks:
+        classify_options.extend(['--disable-sanity-checks'])
 
     cond_list = from_cond_dict_list_to_cond_list(conditions_list)
 

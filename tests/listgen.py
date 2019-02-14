@@ -63,7 +63,7 @@ def _verify_per_operator_lists_generated(dir_path, type_list):
 
 
 def _cli_listgen_helper(db_conn, tmpdir, sub_temp_dir, mocked_config, date=None, base_run_id=None, no_full_list=None,
-                        no_clean_up=None, unzip_files=True, combine_deltas=True):
+                        no_clean_up=None, unzip_files=True, combine_deltas=True, disable_sanity_checks=True):
     """Helper function for CLI list-gen."""
     options_list = []
     if date:
@@ -74,6 +74,8 @@ def _cli_listgen_helper(db_conn, tmpdir, sub_temp_dir, mocked_config, date=None,
         options_list.extend(['--no-full-lists'])
     if no_clean_up:
         options_list.extend(['--no-cleanup'])
+    if disable_sanity_checks:
+        options_list.extend(['--disable-sanity-checks'])
     output_dir = str(tmpdir.mkdir(sub_temp_dir))
     options_list.append(output_dir)
     runner = CliRunner()

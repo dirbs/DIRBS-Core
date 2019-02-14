@@ -102,7 +102,7 @@ def test_classification_table_structure_after_pruning(postgres,
     stolen_list_importer.import_data()
     db_conn.commit()
 
-    result = runner.invoke(dirbs_classify_cli, ['--no-safety-check', '--curr-date', '20171130'],
+    result = runner.invoke(dirbs_classify_cli, ['--no-safety-check', '--disable-sanity-checks', '--curr-date', '20171130'],
                            obj={'APP_CONFIG': mocked_config})
     assert result.exit_code == 0
 
@@ -2317,7 +2317,7 @@ def test_safety_check(db_conn, tmpdir, logger, mocked_config, monkeypatch,
 
     # Run dirbs-classify using db args from the temp postgres instance
     runner = CliRunner()  # noqa
-    result = runner.invoke(dirbs_classify_cli, ['--conditions', 'gsma_not_found'],
+    result = runner.invoke(dirbs_classify_cli, ['--disable-sanity-checks', '--conditions', 'gsma_not_found'],
                            obj={'APP_CONFIG': mocked_config})
 
     # Program should not exit succesfully
@@ -2334,7 +2334,8 @@ def test_safety_check(db_conn, tmpdir, logger, mocked_config, monkeypatch,
     logger_stream_reset(logger)
 
     # Try again with safety check disable
-    result = runner.invoke(dirbs_classify_cli, ['--no-safety-check', '--conditions', 'gsma_not_found'],
+    result = runner.invoke(dirbs_classify_cli, ['--no-safety-check', '--disable-sanity-checks',
+                                                '--conditions', 'gsma_not_found'],
                            obj={'APP_CONFIG': mocked_config})
     assert result.exit_code == 0
 
@@ -2351,7 +2352,7 @@ def test_safety_check(db_conn, tmpdir, logger, mocked_config, monkeypatch,
     logger_stream_reset(logger)
 
     # Now re-classify (5 out of 9 should fail, which is above config default of 10%)
-    result = runner.invoke(dirbs_classify_cli, ['--conditions', 'gsma_not_found'],
+    result = runner.invoke(dirbs_classify_cli, ['--disable-sanity-checks', '--conditions', 'gsma_not_found'],
                            obj={'APP_CONFIG': mocked_config})
     # Program should exit successfully
     assert result.exit_code != 0
@@ -2371,7 +2372,7 @@ def test_safety_check(db_conn, tmpdir, logger, mocked_config, monkeypatch,
     monkeypatch.setattr(mocked_config, 'conditions', from_cond_dict_list_to_cond_list(cond_dict_list))
 
     # Now re-classify (5 out of 9 should again fail, but should now be below safety check value of 56%)
-    result = runner.invoke(dirbs_classify_cli, ['--conditions', 'gsma_not_found'],
+    result = runner.invoke(dirbs_classify_cli, ['--disable-sanity-checks', '--conditions', 'gsma_not_found'],
                            obj={'APP_CONFIG': mocked_config})
     # Program should exit successfully
     assert result.exit_code == 0
