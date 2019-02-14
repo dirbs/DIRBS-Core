@@ -50,7 +50,8 @@ from _helpers import job_metadata_importer, expect_success
 from _importer_params import OperatorDataParams, PairListParams, GoldenListParams,\
     StolenListParams, RegistrationListParams
 from _helpers import get_importer, from_cond_dict_list_to_cond_list, find_file_in_dir, find_subdirectory_in_dir, \
-    import_data, invoke_cli_classify_with_conditions_helper
+    import_data, invoke_cli_classify_with_conditions_helper, from_op_dict_list_to_op_list, \
+    from_amnesty_dict_to_amnesty_conf
 from _fixtures import *    # noqa: F403, F401
 from dirbs.metadata import query_for_command_runs
 
@@ -2498,3 +2499,112 @@ def test_amnesty_enabled_listgen(postgres, operator_data_importer, stolen_list_i
     assert len(rows) == 3
     assert ('86222222222226', '20170201', 'not_registered', 'blocked\n') in rows
     assert ('35111111111110', '20170121', 'not_registered|stolen', 'changed\n') in rows
+
+
+def test_sanity_checks_operators(per_test_postgres, mocked_config, tmpdir, logger, monkeypatch):
+    """Verify that the sanity checks are performed on operators."""
+    options_list = []
+    options_list.extend(['--curr-date', '20161130'])
+    options_list.extend(['--disable-sanity-checks'])  # we disable sanity checks first to establish base for next one
+    output_dir = str(tmpdir.mkdir('sanity_operators'))
+    options_list.append(output_dir)
+    runner = CliRunner()
+    result = runner.invoke(dirbs_listgen_cli, options_list, obj={'APP_CONFIG': mocked_config})
+    assert result.exit_code == 0
+
+    # monkey patch operators config
+    options_list = []
+    options_list.extend(['--curr-date', '20161130'])
+    options_list.append(output_dir)
+    operator_conf = [{
+        'id': 'op_listgen',
+        'name': 'First Operator',
+        'mcc_mnc_pairs': [{
+            'mcc': '112',
+            'mnc': '09'
+        }]
+    }]
+
+    operator_conf = from_op_dict_list_to_op_list(operator_conf)
+    monkeypatch.setattr(mocked_config.region_config, 'operators', operator_conf)
+    result = runner.invoke(dirbs_listgen_cli, options_list, obj={'APP_CONFIG': mocked_config})
+    assert result.exit_code == -1
+
+
+def test_sanity_checks_amnesty(per_test_postgres, mocked_config, tmpdir, logger, monkeypatch):
+    """Verify that sanity checks are performed on amnesty configs."""
+    options_list = []
+    options_list.extend(['--curr-date', '20161130'])
+    options_list.extend(['--disable-sanity-checks'])  # we disable sanity checks first to establish base for next one
+    output_dir = str(tmpdir.mkdir('sanity_amnesty'))
+    options_list.append(output_dir)
+    runner = CliRunner()
+    result = runner.invoke(dirbs_listgen_cli, options_list, obj={'APP_CONFIG': mocked_config})
+    assert result.exit_code == 0
+
+    # monkey patch operators config
+    options_list = []
+    options_list.extend(['--curr-date', '20161130'])
+    options_list.append(output_dir)
+    amnesty_config = {
+        'amnesty_enabled': False,
+        'evaluation_period_end_date': 19400202,
+        'amnesty_period_end_date': 19400302
+    }
+
+    amnesty_config = from_amnesty_dict_to_amnesty_conf(amnesty_config)
+    monkeypatch.setattr(mocked_config, 'amnesty_config', amnesty_config)
+    result = runner.invoke(dirbs_listgen_cli, options_list, obj={'APP_CONFIG': mocked_config})
+    assert result.exit_code == -1
+
+
+def test_sanity_checks_conditions(per_test_postgres, mocked_config, tmpdir, logger, monkeypatch):
+    """Verify that the sanity checks are performed on blocking conditions."""
+    options_list = []
+    options_list.extend(['--curr-date', '20161130'])
+    options_list.extend(['--disable-sanity-checks'])  # we disable sanity checks first to establish base for next one
+    output_dir = str(tmpdir.mkdir('sanity_conditions'))
+    options_list.append(output_dir)
+    runner = CliRunner()
+    result = runner.invoke(dirbs_listgen_cli, options_list, obj={'APP_CONFIG': mocked_config})
+    assert result.exit_code == 0
+
+    # monkey patch operators config
+    options_list = []
+    options_list.extend(['--curr-date', '20161130'])
+    options_list.append(output_dir)
+    cond_list = [{
+        'label': 'duplicate_daily_avg',
+        'reason': 'duplicate daily avg',
+        'dimensions': [{
+            'module': 'duplicate_daily_avg',
+            'parameters': {
+                'threshold': 2.1,
+                'period_days': 5,
+                'min_seen_days': 5,
+                'use_msisdn': True}}]
+    }]
+    cond_list = from_cond_dict_list_to_cond_list(cond_list)
+    monkeypatch.setattr(mocked_config, 'conditions', cond_list)
+    result = runner.invoke(dirbs_listgen_cli, options_list, obj={'APP_CONFIG': mocked_config})
+    assert result.exit_code == -1
+
+
+def test_sanity_checks_loopback_days(per_test_postgres, mocked_config, tmpdir, logger, monkeypatch):
+    """Verify that sanity checks are performed on loopback days."""
+    options_list = []
+    options_list.extend(['--curr-date', '20161130'])
+    options_list.extend(['--disable-sanity-checks'])  # we disable sanity checks first to establish base for next one
+    output_dir = str(tmpdir.mkdir('sanity_conditions'))
+    options_list.append(output_dir)
+    runner = CliRunner()
+    result = runner.invoke(dirbs_listgen_cli, options_list, obj={'APP_CONFIG': mocked_config})
+    assert result.exit_code == 0
+
+    # monkey patch operators config
+    options_list = []
+    options_list.extend(['--curr-date', '20161130'])
+    options_list.append(output_dir)
+    monkeypatch.setattr(mocked_config.listgen_config, 'lookback_days', 90)
+    result = runner.invoke(dirbs_listgen_cli, options_list, obj={'APP_CONFIG': mocked_config})
+    assert result.exit_code == -1
