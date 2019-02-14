@@ -48,7 +48,7 @@ from dirbs.cli.listgen import cli as dirbs_listgen_cli
 from _fixtures import *  # noqa: F403, F401
 from _helpers import get_importer, expect_success, matching_imeis_for_cond_name, find_subdirectory_in_dir, \
     logger_stream_contents, logger_stream_reset, invoke_cli_classify_with_conditions_helper, \
-    from_cond_dict_list_to_cond_list, find_file_in_dir
+    from_cond_dict_list_to_cond_list, find_file_in_dir, from_op_dict_list_to_op_list, from_amnesty_dict_to_amnesty_conf
 from _importer_params import GSMADataParams, OperatorDataParams, StolenListParams, \
     RegistrationListParams, GoldenListParams
 
@@ -2623,3 +2623,83 @@ def test_duplicate_daily_avg_with_msisdn(db_conn, operator_data_importer, mocked
                                                                classify_options=['--no-safety-check'],
                                                                db_conn=db_conn, curr_date='20161121')
     assert len(matched_imeis) == 0
+
+
+def test_sanity_checks_conditions(db_conn, mocked_config, tmpdir, logger, monkeypatch):
+    """Verify that the sanity checks are performed on conditions."""
+    classify_options = []
+    classify_options.extend(['--curr-date', '20161130'])
+    classify_options.extend(['--disable-sanity-checks'])
+    runner = CliRunner()
+    result = runner.invoke(dirbs_classify_cli, classify_options, obj={'APP_CONFIG': mocked_config})
+    assert result.exit_code == 0
+
+    # monkey patch conditions
+    classify_options = []
+    classify_options.extend(['--curr-date', '20161130'])
+    cond_list = [{
+        'label': 'duplicate_daily_avg',
+        'reason': 'duplicate daily avg',
+        'dimensions': [{
+            'module': 'duplicate_daily_avg',
+            'parameters': {
+                'threshold': 2.1,
+                'period_days': 5,
+                'min_seen_days': 5,
+                'use_msisdn': True}}]
+    }]
+    cond_list = from_cond_dict_list_to_cond_list(cond_list)
+    monkeypatch.setattr(mocked_config, 'conditions', cond_list)
+    result = runner.invoke(dirbs_classify_cli, classify_options, obj={'APP_CONFIG': mocked_config})
+    assert result.exit_code == -1
+
+
+def test_sanity_checks_operators(db_conn, mocked_config, tmpdir, logger, monkeypatch):
+    """Verify that the sanity checks are performed on operators config."""
+    classify_options = []
+    classify_options.extend(['--curr-date', '20161130'])
+    classify_options.extend(['--disable-sanity-checks'])
+    runner = CliRunner()
+    result = runner.invoke(dirbs_classify_cli, classify_options, obj={'APP_CONFIG': mocked_config})
+    assert result.exit_code == 0
+
+    # monkey patch operator config
+    classify_options = []
+    classify_options.extend(['--curr-date', '20161130'])
+    operator_conf = [{
+        'id': 'xyzoperatortest',
+        'name': 'First Operator',
+        'mcc_mnc_pairs': [{
+            'mcc': '111',
+            'mnc': '01'
+        }]
+    }]
+
+    operator_conf = from_op_dict_list_to_op_list(operator_conf)
+    monkeypatch.setattr(mocked_config.region_config, 'operators', operator_conf)
+    result = runner.invoke(dirbs_classify_cli, classify_options, obj={'APP_CONFIG': mocked_config})
+    assert result.exit_code == -1
+
+
+def test_sanity_checks_amnesty(db_conn, mocked_config, tmpdir, logger, monkeypatch):
+    """Verify that the sanity checks are performed on amnesty configs."""
+    classify_options = []
+    classify_options.extend(['--curr-date', '20161130'])
+    classify_options.extend(['--disable-sanity-checks'])
+    runner = CliRunner()
+    result = runner.invoke(dirbs_classify_cli, classify_options, obj={'APP_CONFIG': mocked_config})
+    assert result.exit_code == 0
+
+    # monkey patch amnesty config
+    classify_options = []
+    classify_options.extend(['--curr-date', '20161130'])
+    amnesty_config = {
+        'amnesty_enabled': False,
+        'evaluation_period_end_date': 19500202,
+        'amnesty_period_end_date': 19500302
+    }
+
+    amnesty_config = from_amnesty_dict_to_amnesty_conf(amnesty_config)
+    monkeypatch.setattr(mocked_config, 'amnesty_config', amnesty_config)
+    result = runner.invoke(dirbs_classify_cli, classify_options, obj={'APP_CONFIG': mocked_config})
+    assert result.exit_code == -1
