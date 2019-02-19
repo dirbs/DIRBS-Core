@@ -89,6 +89,7 @@ class ListsGenerator:
         self._restrict_exceptions_list = self._config.listgen_config.restrict_exceptions_list
         self._generate_check_digit = self._config.listgen_config.generate_check_digit
         self._output_invalid_imeis = self._config.listgen_config.output_invalid_imeis
+        self._non_active_pairs_period = self._config.listgen_config.non_active_pairs
         self._operators = self._config.region_config.operators
         self._amnesty = self._config.amnesty_config
         self._intermediate_table_names = []
@@ -122,6 +123,15 @@ class ListsGenerator:
         if self._base_run_id != -1:
             self._logger.info('Using previous successful dirbs-listgen run id {0:d} as base for delta lists...'
                               .format(self._base_run_id))
+
+        if self._non_active_pairs_period > 0:
+            current_date = datetime.date.today()
+            self._non_active_pairs_last_seen = datetime.date(current_date.year,
+                                                             current_date.month,
+                                                             current_date.day) - datetime.timedelta(
+                self._non_active_pairs_period)
+            self._logger.info('List of non-active pairs with last_seen {0} will be generated'.format(
+                self._non_active_pairs_last_seen))
 
         # We need at least 4 workers for list generation, as top-level list generation futures will themselves create
         # futures and so on.
@@ -1721,6 +1731,10 @@ class ListsGenerator:
                              (self._write_full_csv_exceptions_list, 'full exceptions list for operator {0}')]:
                         self._queue_csv_writer_job(executor, futures_to_cb, partial(fn, op.id), desc.format(op.id), md)
 
+            if self._non_active_pairs_period > 0:
+                self._queue_csv_writer_job(executor, futures_to_cb, self._write_non_active_pairs_csv_list,
+                                           'non active pairs list', md)
+
             self._wait_for_futures(futures_to_cb)
 
         metadata.add_optional_job_metadata(self._metadata_conn, 'dirbs-listgen', self._run_id, **md)
@@ -1728,6 +1742,13 @@ class ListsGenerator:
         self._logger.info('Zipping up lists...')
         with zipfile.ZipFile(os.path.join(self._output_dir, '{0}_blacklist.zip'.format(self._date_str)), 'w') as zf:
             for csv_path in glob.glob(os.path.join(self._output_dir, '{0}_blacklist*.csv'.format(self._date_str))):
+                zf.write(csv_path, arcname=os.path.basename(csv_path))
+                os.remove(csv_path)
+
+        with zipfile.ZipFile(os.path.join(self._output_dir, '{0}_non_active_pairs.zip'.format(self._date_str)),
+                             'w') as zf:
+            for csv_path in glob.glob(os.path.join(self._output_dir, '{0}_non_active_pairs*.csv'.format(
+                    self._date_str))):
                 zf.write(csv_path, arcname=os.path.basename(csv_path))
                 os.remove(csv_path)
 
@@ -1806,6 +1827,30 @@ class ListsGenerator:
         return self._gen_metadata_for_list(filename,
                                            num_records=num_records,
                                            num_written_records=num_written_records), 'blacklist', cp.duration
+
+    def _write_non_active_pairs_csv_list(self):
+        """Write non active pairs from the pairing list."""
+        tblname = 'pairing_list'
+        filename = os.path.join(self._output_dir, '{0}_non_active_pairs.csv'.format(self._date_str))
+        cursor_name = 'listgen_write_non_active_pairs_csv'
+        with create_db_connection(self._config.db_config) as conn, \
+                conn.cursor(name=cursor_name) as cursor, open(filename, 'w') as csvfile, CodeProfiler() as cp:
+            csv_writer = csv.DictWriter(csvfile, fieldnames=['imei', 'imsi'], extrasaction='ignore')
+            csv_writer.writeheader()
+            cursor.execute(sql.SQL("""SELECT t1.imei_norm as imei, t1.imsi
+                                                     FROM pairing_list AS t1
+                                                     INNER JOIN monthly_network_triplets_country AS t2
+                                                 ON t1.imei_norm = t2.imei_norm and t1.imsi = t2.imsi
+                                                    WHERE t2.last_seen < %s"""), [self._non_active_pairs_last_seen])
+            num_written_records = 0
+            for row_data in cursor:
+                csv_writer.writerow(row_data._asdict())
+                num_written_records += 1
+            num_records = self._get_total_record_count(conn, tblname)
+
+        return self._gen_metadata_for_list(filename,
+                                           num_records=num_records,
+                                           num_written_records=num_written_records), 'non_active_pairs', cp.duration
 
     def _write_delta_csv_blacklist(self):
         """Write delta CSV blacklist from the blacklist table."""

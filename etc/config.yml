@@ -147,6 +147,9 @@ list_generation:
   # If true, output only "valid" IMEIs.
   # Valid IMEIs start with 14 digits as they will have 15 digits if the check digit append has been enabled
   output_invalid_imeis: true
+  # The number of days an IMEI-IMSI pair is not seen on the network, if enable, it will generate a list of non active
+  # pairs for this period, the default value for this parameter is 0 days which means it will not generate the list.
+  # non_active_pairs: <enable me>
 
 # Definitions of configuration variables used by DIRBS Core in the report generation process.
 report_generation:

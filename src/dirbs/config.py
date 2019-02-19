@@ -912,6 +912,7 @@ class ListGenerationConfig(ConfigSection):
         self.restrict_exceptions_list = self._parse_bool('restrict_exceptions_list_to_blacklisted_imeis')
         self.generate_check_digit = self._parse_bool('generate_check_digit')
         self.output_invalid_imeis = self._parse_bool('output_invalid_imeis')
+        self.non_active_pairs = self._parse_positive_int('non_active_pairs')
 
     @property
     def section_name(self):
@@ -925,7 +926,8 @@ class ListGenerationConfig(ConfigSection):
             'lookback_days': 60,
             'restrict_exceptions_list_to_blacklisted_imeis': False,
             'generate_check_digit': False,
-            'output_invalid_imeis': True
+            'output_invalid_imeis': True,
+            'non_active_pairs': 0
         }
 
 
