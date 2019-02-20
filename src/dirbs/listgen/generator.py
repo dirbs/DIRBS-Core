@@ -1706,7 +1706,7 @@ class ListsGenerator:
 
         return per_type_counts, cp.duration
 
-    def _write_csv_lists(self):
+    def _write_csv_lists(self):  # noqa: C901
         """Write full CSV lists from the intermediate tables."""
         with futures.ProcessPoolExecutor(max_workers=self._nworkers) as executor:
             # We use ProcessPoolExecutor as these tasks are CPU intensive. This means that we do not have access
@@ -1830,27 +1830,30 @@ class ListsGenerator:
 
     def _write_non_active_pairs_csv_list(self):
         """Write non active pairs from the pairing list."""
-        tblname = 'pairing_list'
-        filename = os.path.join(self._output_dir, '{0}_non_active_pairs.csv'.format(self._date_str))
-        cursor_name = 'listgen_write_non_active_pairs_csv'
-        with create_db_connection(self._config.db_config) as conn, \
-                conn.cursor(name=cursor_name) as cursor, open(filename, 'w') as csvfile, CodeProfiler() as cp:
-            csv_writer = csv.DictWriter(csvfile, fieldnames=['imei', 'imsi'], extrasaction='ignore')
-            csv_writer.writeheader()
-            cursor.execute(sql.SQL("""SELECT t1.imei_norm as imei, t1.imsi
-                                                     FROM pairing_list AS t1
-                                                     INNER JOIN monthly_network_triplets_country AS t2
-                                                 ON t1.imei_norm = t2.imei_norm and t1.imsi = t2.imsi
-                                                    WHERE t2.last_seen < %s"""), [self._non_active_pairs_last_seen])
-            num_written_records = 0
-            for row_data in cursor:
-                csv_writer.writerow(row_data._asdict())
-                num_written_records += 1
-            num_records = self._get_total_record_count(conn, tblname)
+        if self._non_active_pairs_period > 0:
+            tblname = 'pairing_list'
+            filename = os.path.join(self._output_dir, '{0}_non_active_pairs.csv'.format(self._date_str))
+            cursor_name = 'listgen_write_non_active_pairs_csv'
+            with create_db_connection(self._config.db_config) as conn, \
+                    conn.cursor(name=cursor_name) as cursor, open(filename, 'w') as csvfile, CodeProfiler() as cp:
+                csv_writer = csv.DictWriter(csvfile, fieldnames=['imei', 'imsi'], extrasaction='ignore')
+                csv_writer.writeheader()
+                cursor.execute(sql.SQL("""SELECT t1.imei_norm AS imei, t1.imsi
+                                            FROM pairing_list AS t1
+                                      INNER JOIN monthly_network_triplets_country AS t2
+                                                 ON t1.imei_norm = t2.imei_norm
+                                             AND t1.imsi = t2.imsi
+                                           WHERE t2.last_seen < %s"""), [self._non_active_pairs_last_seen])
+                num_written_records = 0
+                for row_data in cursor:
+                    csv_writer.writerow(row_data._asdict())
+                    num_written_records += 1
+                num_records = self._get_total_record_count(conn, tblname)
 
-        return self._gen_metadata_for_list(filename,
-                                           num_records=num_records,
-                                           num_written_records=num_written_records), 'non_active_pairs', cp.duration
+            return self._gen_metadata_for_list(filename,
+                                               num_records=num_records,
+                                               num_written_records=num_written_records
+                                               ), 'non_active_pairs', cp.duration
 
     def _write_delta_csv_blacklist(self):
         """Write delta CSV blacklist from the blacklist table."""
