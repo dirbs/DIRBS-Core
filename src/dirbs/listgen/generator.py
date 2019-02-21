@@ -125,12 +125,12 @@ class ListsGenerator:
                               .format(self._base_run_id))
 
         if self._non_active_pairs_period > 0:
-            current_date = datetime.date.today()
+            current_date = datetime.date.today() if self._curr_date is None else self._curr_date
             self._non_active_pairs_last_seen = datetime.date(current_date.year,
                                                              current_date.month,
                                                              current_date.day) - datetime.timedelta(
                 self._non_active_pairs_period)
-            self._logger.info('List of non-active pairs with last_seen {0} will be generated'.format(
+            self._logger.info('List of non-active pairs with last_seen less than {0} will be generated'.format(
                 self._non_active_pairs_last_seen))
 
         # We need at least 4 workers for list generation, as top-level list generation futures will themselves create

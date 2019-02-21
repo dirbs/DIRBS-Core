@@ -52,7 +52,7 @@ from dirbs.importer.stolen_list_importer import StolenListImporter
 from dirbs.importer.registration_list_importer import RegistrationListImporter
 from dirbs.importer.golden_list_importer import GoldenListImporter
 from dirbs.cli.classify import cli as dirbs_classify_cli
-from dirbs.config import ConditionConfig, OperatorConfig, AmnestyConfig
+from dirbs.config import ConditionConfig, OperatorConfig, AmnestyConfig, ListGenerationConfig
 
 
 def job_metadata_importer(*, db_conn, command, run_id, subcommand=None, status,
@@ -228,6 +228,11 @@ def from_op_dict_list_to_op_list(operators_list):
 def from_amnesty_dict_to_amnesty_conf(amnesty_dict):
     """Helper function to convert a dict of amnesty conf to amnesty conf instance."""
     return AmnestyConfig(ignore_env=True, **amnesty_dict)
+
+
+def from_listgen_dict_to_listgen_conf(listgen_dict):
+    """Helper function to convert a dict of listgen conf to listgen instance."""
+    return ListGenerationConfig(ignore_env=True, **listgen_dict)
 
 
 def invoke_cli_classify_with_conditions_helper(conditions_list, mocked_config, monkeypatch,

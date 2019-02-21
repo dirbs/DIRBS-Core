@@ -51,7 +51,7 @@ from _importer_params import OperatorDataParams, PairListParams, GoldenListParam
     StolenListParams, RegistrationListParams
 from _helpers import get_importer, from_cond_dict_list_to_cond_list, find_file_in_dir, find_subdirectory_in_dir, \
     import_data, invoke_cli_classify_with_conditions_helper, from_op_dict_list_to_op_list, \
-    from_amnesty_dict_to_amnesty_conf
+    from_amnesty_dict_to_amnesty_conf, from_listgen_dict_to_listgen_conf
 from _fixtures import *    # noqa: F403, F401
 from dirbs.metadata import query_for_command_runs
 
@@ -2607,3 +2607,88 @@ def test_sanity_checks_loopback_days(per_test_postgres, mocked_config, tmpdir, l
     monkeypatch.setattr(mocked_config.listgen_config, 'lookback_days', 90)
     result = runner.invoke(dirbs_listgen_cli, options_list, obj={'APP_CONFIG': mocked_config})
     assert result.exit_code == -1
+
+
+def test_non_active_pairs_default_behaviour(per_test_postgres, logger, mocked_config, monkeypatch, tmpdir, db_conn):
+    """Verify that Non Active Pairs list is not generated always until exclusively specified."""
+    # first generate list without activating non active pairs in config, default value should be 0
+    # we expect that the list is not generated
+    assert mocked_config.listgen_config.non_active_pairs == 0
+    _, output_dir = _cli_listgen_helper(db_conn, tmpdir, 'non_active_pairs_run_1', mocked_config, date='20170101')
+    assert not _read_rows_from_file('non_active_pairs.csv', tmpdir, output_dir=output_dir)
+
+    # now we activate non_active_pairs in config and assign a value 0, expecting list will still not
+    # be generated, monkey patching listgen config
+    list_gen_config = {
+        'lookback_days': 180,
+        'restrict_exceptions_list_to_blacklisted_imeis': False,
+        'generate_check_digit': False,
+        'output_invalid_imeis': True,
+        'non_active_pairs': 0
+    }
+    list_gen_config = from_listgen_dict_to_listgen_conf(list_gen_config)
+    monkeypatch.setattr(mocked_config, 'listgen_config', list_gen_config)
+    assert mocked_config.listgen_config.non_active_pairs == 0
+    _, output_dir = _cli_listgen_helper(db_conn, tmpdir, 'non_active_pairs_run_2', mocked_config, date='20170101')
+    assert not _read_rows_from_file('non_active_pairs.csv', tmpdir, output_dir=output_dir)
+
+    # increasing the non active pairs value should generate a non active pairs list
+    monkeypatch.setattr(mocked_config.listgen_config, 'non_active_pairs', 20)
+    assert mocked_config.listgen_config.non_active_pairs == 20
+    _, output_dir = _cli_listgen_helper(db_conn, tmpdir, 'non_active_pairs_run_3', mocked_config, date='20170101')
+    assert _read_rows_from_file('non_active_pairs.csv', tmpdir, output_dir=output_dir)
+
+
+@pytest.mark.parametrize('pairing_list_importer',
+                         [PairListParams(content='imei,imsi\n'
+                                                 '12345678901230,11107678901234\n'
+                                                 '12345678901231,11108678901234\n'
+                                                 '12345678901232,11109678901234\n'
+                                                 '12345678901233,11101678901234\n'
+                                                 '12345678901234,11101678901234\n'
+                                                 '12345678901235,11102678901234\n'
+                                                 '12345678901236,11102678901234\n')],
+                         indirect=True)
+@pytest.mark.parametrize('operator_data_importer',
+                         [OperatorDataParams(
+                             content='date,imei,imsi,msisdn\n'
+                                     '20190221,12345678901228,11105678901234,1\n'
+                                     '20190121,12345678901229,11106678901234,1\n'
+                                     '20190121,12345678901230,11107678901234,1\n'
+                                     '20180812,12345678901230,11107678901234,1\n'
+                                     '20180812,12345678901231,11108678901234,1\n'
+                                     '20180812,12345678901232,11109678901234,1',
+                             extract=False,
+                             perform_unclean_checks=False,
+                             perform_leading_zero_check=False,
+                             perform_region_checks=False,
+                             perform_home_network_check=False,
+                             operator='operator1'
+                         )],
+                         indirect=True)
+def test_non_active_pairs_listgen(per_test_postgres, mocked_config, logger, monkeypatch, tmpdir, db_conn,
+                                  pairing_list_importer, operator_data_importer):
+    """Verify non active pairs list generation functionality works correctly."""
+    operator_data_importer.import_data()
+    pairing_list_importer.import_data()
+
+    # monkey patch non active pairs value
+    monkeypatch.setattr(mocked_config.listgen_config, 'non_active_pairs', 10)
+    assert mocked_config.listgen_config.non_active_pairs == 10
+    _, output_dir = _cli_listgen_helper(db_conn, tmpdir, 'non_active_pairs_run_4', mocked_config, date='20190101')
+    rows = _read_rows_from_file('non_active_pairs.csv', tmpdir, output_dir=output_dir)
+    rows = rows = [tuple(map(str, i.split(',')))[:7] for i in rows]
+    assert len(rows) == 4
+    assert ('12345678901230', '11107678901234\n') in rows
+    assert ('12345678901232', '11109678901234\n') in rows
+    assert ('12345678901231', '11108678901234\n') in rows
+
+    # changing the current date with listgen
+    _, output_dir = _cli_listgen_helper(db_conn, tmpdir, 'non_active_pairs_run_5', mocked_config, date='20190221')
+    rows = _read_rows_from_file('non_active_pairs.csv', tmpdir, output_dir=output_dir)
+    rows = rows = [tuple(map(str, i.split(',')))[:7] for i in rows]
+    assert len(rows) == 5
+    assert ('12345678901230', '11107678901234\n') in rows
+    assert ('12345678901230', '11107678901234\n') in rows
+    assert ('12345678901232', '11109678901234\n') in rows
+    assert ('12345678901231', '11108678901234\n') in rows
