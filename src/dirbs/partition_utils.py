@@ -664,10 +664,6 @@ def repartition_exceptions_lists(conn, *, num_physical_shards, src_filter_sql=No
             insert_sql = sql.SQL('{0} {1}').format(base_sql, sql.SQL(src_filter_sql))
         else:
             insert_sql = base_sql
-
-        print('---------------------BASE')
-        print(insert_sql)
-        print('------------------------')
         cursor.execute(insert_sql)
 
         # Add in indexes to each partition
