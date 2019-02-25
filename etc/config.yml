@@ -279,7 +279,7 @@ conditions:
     grace_period_days: 30
     blocking: true
     reason: Violated simple dimension
-    max_allowed_matching_ratio: 0.1
+    max_allowed_matching_ratio: 1.0
   - label: compound_dimension
     dimensions:
       - module: stolen_list
@@ -292,7 +292,7 @@ conditions:
     grace_period_days: 0
     blocking: true
     reason: Violated compound dimension
-    max_allowed_matching_ratio: 0.1
+    max_allowed_matching_ratio: 1.0
 
 # Definition of settings to be used for logging output of DIRBS system.
 logging:

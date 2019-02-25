@@ -238,7 +238,7 @@ def _warn_about_prune_all(prune_all, logger):
               help='DANGEROUS: If set, will set end_date to all the imeis falling in the specified period')
 def blacklist(ctx, config, statsd, logger, run_id, conn, metadata_conn, command,
               metrics_root, metrics_run_root, condition_name, prune_all):
-    """Prune obsolete blacklist data."""
+    """Expire IMEIs outside the blacklist retention period from blacklist."""
     current_date = datetime.date.today()
     retention_days = config.retention_config.blacklist_retention
 
@@ -364,7 +364,7 @@ def lists(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, met
     metadata.add_optional_job_metadata(metadata_conn, command, run_id,
                                        retention_months=config.retention_config.months_retention)
 
-    logger.info('Pruning lists tables to remove any obsolete data with end_date outside the retention window..')
+    logger.info('Pruning lists tables to remove any obsolete data with end_time outside the retention window..')
     retention_months = config.retention_config.months_retention
 
     if curr_date is None:
@@ -372,6 +372,95 @@ def lists(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, met
 
     first_month_to_drop = datetime.date(curr_date.year, curr_date.month, 1) - relativedelta.relativedelta(
         months=retention_months)
-    logger.info('Lists data with end_date earlier than {0} will be pruned'.format(first_month_to_drop))
+    logger.info('Lists data with end_time earlier than {0} will be pruned'.format(first_month_to_drop))
     
-    pass
+    with utils.db_role_setter(conn, role_name='dirbs_core_power_user'), conn.cursor() as cursor:
+        logger.debug('Calculating original number of rows in lists tables...')
+        row_count_sql = sql.SQL("""SELECT blacklist_row_count, noft_lists_row_count, excp_lists_row_count
+                                     FROM (SELECT COUNT(*) FROM blacklist) as blacklist_row_count,
+                                          (SELECT COUNT(*) FROM notifications_lists) as noft_lists_row_count,
+                                          (SELECT COUNT(*) FROM exceptions_lists) as excp_lists_row_count""")
+        cursor.execute(row_count_sql)
+        rows_before = cursor.fetchone()
+        blacklist_rows_before = int(rows_before.blacklist_row_count.strip('()'))
+        notflist_rows_before = int(rows_before.noft_lists_row_count.strip('()'))
+        excplist_rows_before = int(rows_before.excp_lists_row_count.strip('()'))
+        rows_before = blacklist_rows_before + notflist_rows_before + excplist_rows_before
+        logger.debug('Calculated original number of rows in lists tables...')
+        statsd.gauge('{0}blacklist_rows_before'.format(metrics_run_root), blacklist_rows_before)
+        statsd.gauge('{0}notifications_lists_rows_before'.format(metrics_run_root), notflist_rows_before)
+        statsd.gauge('{0}exceptions_lists_rows_before'.format(metrics_run_root), excplist_rows_before)
+        metadata.add_optional_job_metadata(metadata_conn, command, run_id,
+                                           blacklist_rows_before=blacklist_rows_before,
+                                           notifications_lists_rows_before=notflist_rows_before,
+                                           exceptions_lists_rows_before=excplist_rows_before)
+
+        # Calculate number of rows in the lists table outside the retention window
+        cursor.execute(sql.SQL("""SELECT COUNT(*)
+                                    FROM blacklist
+                                   WHERE start_run_id IN (SELECT run_id
+                                                            FROM job_metadata
+                                                           WHERE command='dirbs-listgen'
+                                                           AND end_time < %s)"""), [first_month_to_drop])
+        total_bl_rows_out_window_to_prune = cursor.fetchone()[0]
+        logger.info('Found {0:d} rows of blacklist table outside the retention window to prune'.format(
+            total_bl_rows_out_window_to_prune))
+
+        cursor.execute(sql.SQL("""SELECT COUNT(*)
+                                    FROM notifications_lists
+                                   WHERE start_run_id IN (SELECT run_id
+                                                            FROM job_metadata
+                                                           WHERE command='dirbs-listgen'
+                                                           AND end_time < %s)"""), [first_month_to_drop])
+        total_nl_rows_out_window_to_prune = cursor.fetchone()[0]
+        logger.info('Found {0:d} rows of notifications lists table outside the retention window to prune'.format(
+            total_nl_rows_out_window_to_prune))
+
+        cursor.execute(sql.SQL("""SELECT COUNT(*)
+                                    FROM exceptions_lists
+                                   WHERE start_run_id IN (SELECT run_id
+                                                            FROM job_metadata
+                                                           WHERE command='dirbs-listgen'
+                                                           AND end_time < %s)"""),
+                       [first_month_to_drop])
+        total_nl_rows_out_window_to_prune = cursor.fetchone()[0]
+        logger.info('Found {0:d} rows of exceptions lists table outside the retention window to prune'.format(
+            total_nl_rows_out_window_to_prune))
+
+        # We repartition the tables to re-create them, passing a condition sql
+        logger.debug('Re-creating blacklist table...')
+        num_phys_imei_shards = partition_utils.num_physical_imei_shards(conn)
+        src_filter_sql = cursor.mogrify("""WHERE start_run_id NOT IN (SELECT run_id
+                                                                    FROM job_metadata
+                                                                   WHERE command='dirbs-listgen'
+                                                                   AND end_time < '{0}')""".format(first_month_to_drop))
+        partition_utils.repartition_blacklist(conn, num_physical_shards=num_phys_imei_shards,
+                                              src_filter_sql=str(src_filter_sql, encoding=conn.encoding))
+        logger.debug('Re-created blacklist table')
+
+        logger.debug('Re-creating notifications lists table...')
+        partition_utils.repartition_notifications_lists(conn, num_physical_shards=num_phys_imei_shards,
+                                                        src_filter_sql=str(src_filter_sql, encoding=conn.encoding))
+        logger.debug('Re-created notifications lists table')
+
+        logger.debug('Re-creating exceptions lists table...')
+        partition_utils.repartition_exceptions_lists(conn, num_physical_shards=num_phys_imei_shards,
+                                                     src_filter_sql=str(src_filter_sql, encoding=conn.encoding))
+        logger.debug('Re-created exceptions lists table')
+
+        logger.debug('Calculating new number of rows in lists tables...')
+        cursor.execute(row_count_sql)
+        rows_after = cursor.fetchone()
+        blacklist_rows_after = int(rows_after.blacklist_row_count.strip('()'))
+        notflist_rows_after = int(rows_after.noft_lists_row_count.strip('()'))
+        excplist_rows_after = int(rows_after.excp_lists_row_count.strip('()'))
+        rows_after = blacklist_rows_after + notflist_rows_after + excplist_rows_after
+        logger.debug('Calculated new number of rows in lists tables')
+        statsd.gauge('{0}blacklist_rows_after'.format(metrics_run_root), blacklist_rows_after)
+        statsd.gauge('{0}notifications_lists_rows_after'.format(metrics_run_root), notflist_rows_after)
+        statsd.gauge('{0}exceptions_lists_rows_after'.format(metrics_run_root), excplist_rows_after)
+        metadata.add_optional_job_metadata(metadata_conn, command, run_id,
+                                           blacklist_rows_before=blacklist_rows_after,
+                                           notifications_lists_rows_before=notflist_rows_after,
+                                           exceptions_lists_rows_before=excplist_rows_after)
+        logger.info('Pruned {0:d} rows from lists tables'.format(rows_after - rows_before))

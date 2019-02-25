@@ -474,7 +474,7 @@ def _grant_perms_list(conn, *, part_name):
     pass
 
 
-def repartition_blacklist(conn, *, num_physical_shards):
+def repartition_blacklist(conn, *, num_physical_shards, src_filter_sql=None):
     """Function to repartition the blacklist table."""
     with conn.cursor() as cursor, utils.db_role_setter(conn, role_name='dirbs_core_listgen'):
         # Create parent partition
@@ -495,9 +495,14 @@ def repartition_blacklist(conn, *, num_physical_shards):
                                      perms_func=_grant_perms_list, fillfactor=80)
 
         # Insert data from original partition
-        cursor.execute("""INSERT INTO blacklist_new
-                               SELECT *
-                                 FROM blacklist""")
+        base_sql = sql.SQL("""INSERT INTO blacklist_new
+                                   SELECT *
+                                     FROM blacklist""")
+        if src_filter_sql is not None:
+            insert_sql = sql.SQL('{0} {1}').format(base_sql, sql.SQL(src_filter_sql))
+        else:
+            insert_sql = base_sql
+        cursor.execute(insert_sql)
 
         # Add in indexes to each partition
         idx_metadata = [
@@ -563,7 +568,7 @@ def notifications_lists_indices():
     ]
 
 
-def repartition_notifications_lists(conn, *, num_physical_shards):
+def repartition_notifications_lists(conn, *, num_physical_shards, src_filter_sql=None):
     """Function to repartition the notifications_lists table."""
     with conn.cursor() as cursor, utils.db_role_setter(conn, role_name='dirbs_core_listgen'):
         # Create parent partition
@@ -591,9 +596,14 @@ def repartition_notifications_lists(conn, *, num_physical_shards):
                                            operator_id=op_id, num_physical_shards=num_physical_shards)
 
         # Insert data from original partition
-        cursor.execute("""INSERT INTO notifications_lists_new
-                               SELECT *
-                                 FROM notifications_lists""")
+        base_sql = sql.SQL("""INSERT INTO notifications_lists_new
+                                   SELECT *
+                                     FROM notifications_lists""")
+        if src_filter_sql is not None:
+            insert_sql = sql.SQL('{0} {1}').format(base_sql, sql.SQL(src_filter_sql))
+        else:
+            insert_sql = base_sql
+        cursor.execute(insert_sql)
 
         # Add in indexes to each partition
         add_indices(conn, tbl_name='notifications_lists_new', idx_metadata=notifications_lists_indices())
@@ -619,7 +629,7 @@ def exceptions_lists_indices():
     ]
 
 
-def repartition_exceptions_lists(conn, *, num_physical_shards):
+def repartition_exceptions_lists(conn, *, num_physical_shards, src_filter_sql=None):
     """Function to repartition the exceptions_lists table."""
     with conn.cursor() as cursor, utils.db_role_setter(conn, role_name='dirbs_core_listgen'):
         # Create parent partition
@@ -647,9 +657,18 @@ def repartition_exceptions_lists(conn, *, num_physical_shards):
                                            operator_id=op_id, num_physical_shards=num_physical_shards)
 
         # Insert data from original partition
-        cursor.execute("""INSERT INTO exceptions_lists_new
-                               SELECT *
-                                 FROM exceptions_lists""")
+        base_sql = sql.SQL("""INSERT INTO exceptions_lists_new
+                                   SELECT *
+                                     FROM exceptions_lists""")
+        if src_filter_sql is not None:
+            insert_sql = sql.SQL('{0} {1}').format(base_sql, sql.SQL(src_filter_sql))
+        else:
+            insert_sql = base_sql
+
+        print('---------------------BASE')
+        print(insert_sql)
+        print('------------------------')
+        cursor.execute(insert_sql)
 
         # Add in indexes to each partition
         add_indices(conn, tbl_name='exceptions_lists_new', idx_metadata=exceptions_lists_indices())
