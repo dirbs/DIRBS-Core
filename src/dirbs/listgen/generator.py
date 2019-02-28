@@ -1745,12 +1745,13 @@ class ListsGenerator:
                 zf.write(csv_path, arcname=os.path.basename(csv_path))
                 os.remove(csv_path)
 
-        with zipfile.ZipFile(os.path.join(self._output_dir, '{0}_non_active_pairs.zip'.format(self._date_str)),
-                             'w') as zf:
-            for csv_path in glob.glob(os.path.join(self._output_dir, '{0}_non_active_pairs*.csv'.format(
-                    self._date_str))):
-                zf.write(csv_path, arcname=os.path.basename(csv_path))
-                os.remove(csv_path)
+        if self._non_active_pairs_period > 0:
+            with zipfile.ZipFile(os.path.join(self._output_dir, '{0}_non_active_pairs.zip'.format(self._date_str)),
+                                 'w') as zf:
+                for csv_path in glob.glob(os.path.join(self._output_dir, '{0}_non_active_pairs*.csv'.format(
+                        self._date_str))):
+                    zf.write(csv_path, arcname=os.path.basename(csv_path))
+                    os.remove(csv_path)
 
         for op in self._operators:
             with zipfile.ZipFile(os.path.join(self._output_dir,
