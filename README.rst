@@ -1,6 +1,6 @@
 SPDX-License-Identifier: BSD-3-Clause-Clear
 
-Copyright (c) 2018 Qualcomm Technologies, Inc.
+Copyright (c) 2019 Qualcomm Technologies, Inc.
  
 All rights reserved.
  
@@ -360,4 +360,4 @@ To create the distribution (wheel, assets) for a release:
 All assets to be shipped will be output to the ``dist`` directory.
 
 
-© 2016-2018 Qualcomm Technologies, Inc.  All rights reserved.
+© 2016-2019 Qualcomm Technologies, Inc.  All rights reserved.
