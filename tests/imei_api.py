@@ -1156,54 +1156,6 @@ def test_options_method_not_allowed_on_batch_imei_api(flask_app):
     assert b'The method is not allowed for the requested URL' in rv.data
 
 
-def test_allowed_content_types_on_batch_imei_api(flask_app):
-    """Test Depot not known yet.
-
-    Verify that no other content-types then json is allowed.
-    """
-    # allowed content-type: application/json
-    imeis = ['64220297727231', '64220297727231']
-    headers = {'content-type': 'application/json'}
-    rv = flask_app.post(url_for('v2.imei_batch_api'), data=json.dumps({'imeis': imeis}), headers=headers)
-    assert rv.status_code == 200
-
-    # content-type text not allowed
-    headers = {'content-type': 'text'}
-    rv = flask_app.post(url_for('v2.imei_batch_api'), data=json.dumps({'imeis': imeis}), headers=headers)
-    assert rv.status_code == 400
-    assert b'Bad Input format' in rv.data
-
-    # content-type text/plain not allowed
-    headers = {'content-type': 'text/plain'}
-    rv = flask_app.post(url_for('v2.imei_batch_api'), data=json.dumps({'imeis': imeis}), headers=headers)
-    assert rv.status_code == 400
-    assert b'Bad Input format' in rv.data
-
-    # content-type application/javascript not allowed
-    headers = {'content-type': 'application/javascript'}
-    rv = flask_app.post(url_for('v2.imei_batch_api'), data=json.dumps({'imeis': imeis}), headers=headers)
-    assert rv.status_code == 400
-    assert b'Bad Input format' in rv.data
-
-    # content-type application/xml not allowed
-    headers = {'content-type': 'application/xml'}
-    rv = flask_app.post(url_for('v2.imei_batch_api'), data=json.dumps({'imeis': imeis}), headers=headers)
-    assert rv.status_code == 400
-    assert b'Bad Input format' in rv.data
-
-    # content-type text/xml not allowed
-    headers = {'content-type': 'text/xml'}
-    rv = flask_app.post(url_for('v2.imei_batch_api'), data=json.dumps({'imeis': imeis}), headers=headers)
-    assert rv.status_code == 400
-    assert b'Bad Input format' in rv.data
-
-    # content-type text/html not allowed
-    headers = {'content-type': 'text/html'}
-    rv = flask_app.post(url_for('v2.imei_batch_api'), data=json.dumps({'imeis': imeis}), headers=headers)
-    assert rv.status_code == 400
-    assert b'Bad Input format' in rv.data
-
-
 def test_long_short_imei_formats_on_batch_imei_api(flask_app):
     """Test Depot not known yet.
 
