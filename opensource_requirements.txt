@@ -7,8 +7,8 @@ PyYAML==3.12
 statsd==3.2.2
 itsdangerous==0.24
 Jinja2==2.10.1
-MarkupSafe==1.0
-six==1.11.0
+MarkupSafe==1.1.1
+six==1.12.0
 Werkzeug==0.14.1
 marshmallow==2.19.0
 webargs==5.1.3
