@@ -1,12 +1,12 @@
 click==6.7
 Flask==1.0.2
 luhn==0.2.0
-psycopg2==2.7.4 --no-binary psycopg2
-python-dateutil==2.6.1
-PyYAML==3.12
-statsd==3.2.2
-itsdangerous==0.24
 Jinja2==2.10.1
+psycopg2==2.7.7 --no-binary psycopg2
+python-dateutil==2.7.5
+PyYAML==3.13
+statsd==3.3
+itsdangerous==1.1.0
 MarkupSafe==1.1.1
 six==1.12.0
 Werkzeug==0.14.1
