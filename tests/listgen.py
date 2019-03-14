@@ -2527,7 +2527,7 @@ def test_sanity_checks_operators(per_test_postgres, mocked_config, tmpdir, logge
     operator_conf = from_op_dict_list_to_op_list(operator_conf)
     monkeypatch.setattr(mocked_config.region_config, 'operators', operator_conf)
     result = runner.invoke(dirbs_listgen_cli, options_list, obj={'APP_CONFIG': mocked_config})
-    assert result.exit_code == -1
+    assert result.exit_code == 1
 
 
 def test_sanity_checks_amnesty(per_test_postgres, mocked_config, tmpdir, logger, monkeypatch):
@@ -2554,7 +2554,7 @@ def test_sanity_checks_amnesty(per_test_postgres, mocked_config, tmpdir, logger,
     amnesty_config = from_amnesty_dict_to_amnesty_conf(amnesty_config)
     monkeypatch.setattr(mocked_config, 'amnesty_config', amnesty_config)
     result = runner.invoke(dirbs_listgen_cli, options_list, obj={'APP_CONFIG': mocked_config})
-    assert result.exit_code == -1
+    assert result.exit_code == 1
 
 
 def test_sanity_checks_conditions(per_test_postgres, mocked_config, tmpdir, logger, monkeypatch):
@@ -2586,7 +2586,7 @@ def test_sanity_checks_conditions(per_test_postgres, mocked_config, tmpdir, logg
     cond_list = from_cond_dict_list_to_cond_list(cond_list)
     monkeypatch.setattr(mocked_config, 'conditions', cond_list)
     result = runner.invoke(dirbs_listgen_cli, options_list, obj={'APP_CONFIG': mocked_config})
-    assert result.exit_code == -1
+    assert result.exit_code == 1
 
 
 def test_sanity_checks_loopback_days(per_test_postgres, mocked_config, tmpdir, logger, monkeypatch):
@@ -2606,7 +2606,7 @@ def test_sanity_checks_loopback_days(per_test_postgres, mocked_config, tmpdir, l
     options_list.append(output_dir)
     monkeypatch.setattr(mocked_config.listgen_config, 'lookback_days', 90)
     result = runner.invoke(dirbs_listgen_cli, options_list, obj={'APP_CONFIG': mocked_config})
-    assert result.exit_code == -1
+    assert result.exit_code == 1
 
 
 def test_non_active_pairs_default_behaviour(per_test_postgres, logger, mocked_config, monkeypatch, tmpdir, db_conn):

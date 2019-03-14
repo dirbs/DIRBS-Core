@@ -748,7 +748,7 @@ class ListsGenerator:
                                                    AND {block_date_filter}) cs
                                          WHERE NOT EXISTS(SELECT 1
                                                             FROM golden_list gl
-                                                           WHERE hashed_imei_norm = md5(cs.imei_norm)::uuid)
+                                                           WHERE hashed_imei_norm = md5(cs.imei_norm)::UUID)
                                                {exclude_blacklisted_imeis_query}
                                       GROUP BY imei_norm) bl_imeis,
                                        LATERAL ({is_valid_query}) is_valid_tbl,

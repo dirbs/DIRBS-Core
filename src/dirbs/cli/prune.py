@@ -139,7 +139,7 @@ def triplets(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, 
                     .format(total_rows_pruned))
 
 
-@cli.command()
+@cli.command(name='classification_state')
 @click.pass_context
 @common.unhandled_exception_handler
 @common.cli_wrapper(command='dirbs-prune', subcommand='classification_state', required_role='dirbs_core_power_user')

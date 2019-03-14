@@ -543,7 +543,7 @@ def standard(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, 
     metadata.add_optional_job_metadata(metadata_conn, command, run_id, report_outputs=report_metadata)
 
 
-@cli.command()  # noqa: C901
+@cli.command(name='gsma_not_found')  # noqa: C901
 @common.parse_multiprocessing_options
 @_parse_month_year_report_options_args
 @click.pass_context
@@ -576,7 +576,7 @@ def gsma_not_found(ctx, config, statsd, logger, run_id, conn, metadata_conn, com
     metadata.add_optional_job_metadata(metadata_conn, command, run_id, report_outputs=report_metadata)
 
 
-@cli.command()  # noqa: C901
+@cli.command(name='top_duplicates')  # noqa: C901
 @common.parse_multiprocessing_options
 @_parse_month_year_report_options_args
 @click.pass_context
@@ -609,7 +609,7 @@ def top_duplicates(ctx, config, statsd, logger, run_id, conn, metadata_conn, com
     metadata.add_optional_job_metadata(metadata_conn, command, run_id, report_outputs=report_metadata)
 
 
-@cli.command()  # noqa: C901
+@cli.command(name='condition_imei_overlaps')  # noqa: C901
 @common.parse_multiprocessing_options
 @_parse_month_year_report_options_args
 @click.pass_context
@@ -643,7 +643,7 @@ def condition_imei_overlaps(ctx, config, statsd, logger, run_id, conn, metadata_
     metadata.add_optional_job_metadata(metadata_conn, command, run_id, report_outputs=report_metadata)
 
 
-@cli.command()  # noqa: C901
+@cli.command(name='stolen_violations')  # noqa: C901
 @common.parse_multiprocessing_options
 @click.pass_context
 @common.unhandled_exception_handler

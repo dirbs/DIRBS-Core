@@ -253,7 +253,7 @@ def install(ctx):
     return rv
 
 
-@cli.command()
+@cli.command(name='install_roles')
 @click.pass_context
 @common.unhandled_exception_handler
 def install_roles(ctx):

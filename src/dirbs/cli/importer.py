@@ -281,7 +281,7 @@ def operator(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, 
         importer.import_data()
 
 
-@cli.command()
+@cli.command(name='gsma_tac')
 @click.argument('input_file', type=click.Path(exists=True, dir_okay=False), callback=_validate_input_file_extension)
 @disable_historic_check_option
 @click.pass_context
@@ -301,7 +301,7 @@ def gsma_tac(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, 
         importer.import_data()
 
 
-@cli.command()
+@cli.command(name='stolen_list')
 @click.argument('input_file', type=click.Path(exists=True, dir_okay=False), callback=_validate_input_file_extension)
 @disable_historic_check_option
 @click.pass_context
@@ -327,7 +327,7 @@ def stolen_list(ctx, config, statsd, logger, run_id, conn, metadata_conn, comman
         importer.import_data()
 
 
-@cli.command()
+@cli.command(name='pairing_list')
 @click.argument('input_file', type=click.Path(exists=True, dir_okay=False), callback=_validate_input_file_extension)
 @disable_historic_check_option
 @click.pass_context
@@ -353,7 +353,7 @@ def pairing_list(ctx, config, statsd, logger, run_id, conn, metadata_conn, comma
         importer.import_data()
 
 
-@cli.command()
+@cli.command(name='registration_list')
 @click.argument('input_file', type=click.Path(exists=True, dir_okay=False), callback=_validate_input_file_extension)
 @disable_historic_check_option
 @click.pass_context
@@ -380,7 +380,7 @@ def registration_list(ctx, config, statsd, logger, run_id, conn, metadata_conn, 
         importer.import_data()
 
 
-@cli.command()
+@cli.command(name='golden_list')
 @click.argument('input_file', type=click.Path(exists=True, dir_okay=False), callback=_validate_input_file_extension)
 @disable_historic_check_option
 @click.option('--pre-hashed',

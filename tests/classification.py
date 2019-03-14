@@ -2653,7 +2653,7 @@ def test_sanity_checks_conditions(db_conn, mocked_config, tmpdir, logger, monkey
     cond_list = from_cond_dict_list_to_cond_list(cond_list)
     monkeypatch.setattr(mocked_config, 'conditions', cond_list)
     result = runner.invoke(dirbs_classify_cli, classify_options, obj={'APP_CONFIG': mocked_config})
-    assert result.exit_code == -1
+    assert result.exit_code == 1
 
 
 def test_sanity_checks_operators(db_conn, mocked_config, tmpdir, logger, monkeypatch):
@@ -2680,7 +2680,7 @@ def test_sanity_checks_operators(db_conn, mocked_config, tmpdir, logger, monkeyp
     operator_conf = from_op_dict_list_to_op_list(operator_conf)
     monkeypatch.setattr(mocked_config.region_config, 'operators', operator_conf)
     result = runner.invoke(dirbs_classify_cli, classify_options, obj={'APP_CONFIG': mocked_config})
-    assert result.exit_code == -1
+    assert result.exit_code == 1
 
 
 def test_sanity_checks_amnesty(db_conn, mocked_config, tmpdir, logger, monkeypatch):
@@ -2704,4 +2704,4 @@ def test_sanity_checks_amnesty(db_conn, mocked_config, tmpdir, logger, monkeypat
     amnesty_config = from_amnesty_dict_to_amnesty_conf(amnesty_config)
     monkeypatch.setattr(mocked_config, 'amnesty_config', amnesty_config)
     result = runner.invoke(dirbs_classify_cli, classify_options, obj={'APP_CONFIG': mocked_config})
-    assert result.exit_code == -1
+    assert result.exit_code == 1
