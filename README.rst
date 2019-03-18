@@ -330,7 +330,7 @@ Running the API server locally
 To run the API server locally, simply run:
 ::
 
-    flask run -h 0.0.0.0
+    make start-dev
 
 The API server will then be available on localhost:5000 on the host machine
 
