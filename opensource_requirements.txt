@@ -12,5 +12,5 @@ six==1.12.0
 Werkzeug==0.14.1
 marshmallow==2.19.0
 webargs==5.1.3
-apispec==0.31.0
-flask-apispec==0.4.2
+apispec==1.1.0
+flask-apispec==0.8.0

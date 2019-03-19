@@ -205,7 +205,7 @@ def app_error_handler(error):
         return BadRequest(description=error.exc.messages)
 
     if isinstance(error, HTTPException):
-        return error.get_response(), code
+        return error.get_response(environ=None), code
     elif app.propagate_exceptions:
         # In debug or testing mode, re-raise any non-HTTP exceptions to trigger the debugger
         raise error

@@ -92,4 +92,4 @@ test:
 
 start-dev:
 	pip3 install -r opensource_requirements.txt
-	flask run -h 127.0.0.1 -p 5000
+	flask run -h 0.0.0.0 -p 5000

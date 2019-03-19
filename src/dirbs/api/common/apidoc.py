@@ -32,6 +32,7 @@ Copyright (c) 2018 Qualcomm Technologies, Inc.
 from apispec import APISpec
 from flask import Blueprint, url_for
 from flask_apispec.extension import FlaskApiSpec
+from apispec.ext.marshmallow import MarshmallowPlugin
 from flask_apispec.apidoc import ViewConverter, ResourceConverter
 
 
@@ -53,17 +54,20 @@ class ApiDoc(FlaskApiSpec):
         self.app = app
         self.init_app()
 
-    def init_app(self):
-        """Override base init_app method."""
-        self.view_converter = ViewConverter(self.app)
-        self.resource_converter = ResourceConverter(self.app)
+    def init_app(self, **kwargs):
+        """Override base init_app method.
+        :param **kwargs:
+        """
         self.spec = APISpec(
             title=self.title,
             version=self.version,
             info={'description': self.top_level_description},
-            plugins=['apispec.ext.marshmallow']
+            plugins=[MarshmallowPlugin()],
+            openapi_version='2.0'
         )
 
+        self.resource_converter = ResourceConverter(self.app, self.spec)
+        self.view_converter = ViewConverter(self.app, self.spec)
         self.add_swagger_routes()
 
         for deferred in self._deferred:
