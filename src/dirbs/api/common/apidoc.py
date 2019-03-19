@@ -55,9 +55,7 @@ class ApiDoc(FlaskApiSpec):
         self.init_app()
 
     def init_app(self, **kwargs):
-        """Override base init_app method.
-        :param **kwargs:
-        """
+        """Override base init_app method."""
         self.spec = APISpec(
             title=self.title,
             version=self.version,

@@ -1,7 +1,7 @@
 """
 Package for DIRBS REST-ful API (version 2).
 
-Copyright (c) 2018 Qualcomm Technologies, Inc.
+Copyright (c) 2019 Qualcomm Technologies, Inc.
 
  All rights reserved.
 
@@ -32,8 +32,6 @@ Copyright (c) 2018 Qualcomm Technologies, Inc.
 
 from flask import Blueprint
 from flask_apispec import use_kwargs, marshal_with, doc
-from werkzeug.exceptions import BadRequest
-from marshmallow import fields, validate
 
 from dirbs.api.v2.resources import imei as imei_resource
 from dirbs.api.v2.schemas.imei import IMEI, BatchIMEI, IMEIBatchArgs, IMEISubscribers, \
@@ -48,6 +46,7 @@ from dirbs.api.v2.schemas.catalog import Catalog, CatalogArgs
 from dirbs.api.v2.schemas.msisdn import MSISDNResp
 from dirbs.api.v2.schemas.tac import TacInfo, TacArgs, BatchTacInfo
 from dirbs.api.v2.schemas.version import Version
+from dirbs.api.common.handlers import validate_error, disable_options_method
 
 api = Blueprint('v2', __name__.split('.')[0])
 
@@ -55,47 +54,7 @@ api = Blueprint('v2', __name__.split('.')[0])
 @api.app_errorhandler(422)
 def validation_errors(error):
     """Transform marshmallow validation errors to custom responses to maintain backward-compatibility."""
-    field_name = error.exc.field_names[0]
-    field_value = error.exc.data[field_name]
-    field_type = error.exc.fields[0]
-    if isinstance(field_type, fields.List):
-        field_type = error.exc.fields[0].container
-        field_value = error.exc.data[field_name][next(iter(error.exc.messages[field_name]))]
-    return BadRequest(description=get_error_desc(field_type, field_name, field_value))
-
-
-def get_error_desc(field, name, value):
-    """Helper function to construct error description."""
-    error_desc = 'Bad \'{0}\':\'{1}\' argument format.'.format(name, value)
-    if isinstance(field, fields.Integer):
-        try:
-            int(value)
-            msg_allow_zero = 'or equal to ' if field.validate.min < 1 else ''
-            error_desc = 'Param \'{0}\':\'{1}\' must be greater than {2}0' \
-                .format(name, value, msg_allow_zero)
-        except ValueError:
-            error_desc = 'Bad \'{0}\':\'{1}\' argument format. Accepts only integer'.format(name, value)
-    if isinstance(field, fields.Boolean):
-        allowed_values = ['0', '1', 'true', 'false']
-        error_desc = 'Bad \'{0}\':\'{1}\' argument format. Accepts only one of {2}' \
-            .format(name, value, allowed_values)
-    if isinstance(field, fields.String) and isinstance(field.validate, validate.OneOf):
-        error_desc = 'Bad \'{0}\':\'{1}\' argument format. Accepts only one of {2}' \
-            .format(name, value, field.validate.choices)
-    if isinstance(field, fields.DateTime):
-        dateformat = 'YYYYMMDD' if field.dateformat == '%Y%m%d' else field.dateformat
-        error_desc = 'Bad \'{0}\':\'{1}\' argument format. Date must be in \'{2}\' format.' \
-            .format(name, value, dateformat)
-    return error_desc
-
-
-def disable_options_method():
-    """Decorator function to disable OPTIONS method on endpoint."""
-    def wrapper(func):
-        func.provide_automatic_options = False
-        return func
-
-    return wrapper
+    return validate_error(error)
 
 
 def register_docs(api_doc):
