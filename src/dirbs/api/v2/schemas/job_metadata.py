@@ -104,7 +104,7 @@ class JobMetadataArgs(Schema):
         return self._declared_fields
 
 
-class Keys(Schema):
+class JobKeys(Schema):
     """Defines schema for keys of paginated result set."""
 
     previous_key = fields.String()
@@ -115,5 +115,5 @@ class Keys(Schema):
 class Jobs(Schema):
     """Defines schema for the metadata associated with DIRBS jobs."""
 
-    _keys = fields.Nested(Keys, required=True)
+    _keys = fields.Nested(JobKeys, required=True)
     jobs = fields.List(fields.Nested(JobMetadata, required=True))

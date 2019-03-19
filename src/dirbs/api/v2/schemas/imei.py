@@ -171,7 +171,7 @@ class SubscriberArgs(Schema):
         return self._declared_fields
 
 
-class Keys(Schema):
+class IMEIKeys(Schema):
     """Defines schema for keys of paginated result set."""
 
     previous_key = fields.String()
@@ -182,7 +182,7 @@ class Keys(Schema):
 class IMEISubscribers(Schema):
     """Defines schema for IMEI-Subscribers."""
 
-    _keys = fields.Nested(Keys, required=True)
+    _keys = fields.Nested(IMEIKeys, required=True)
     imei_norm = fields.String()
     subscribers = fields.List(fields.Nested(Subscribers, required=True))
 
@@ -190,7 +190,7 @@ class IMEISubscribers(Schema):
 class IMEIPairings(Schema):
     """Defines schema for IMEI-Pairings."""
 
-    _keys = fields.Nested(Keys, required=True)
+    _keys = fields.Nested(IMEIKeys, required=True)
     imei_norm = fields.String()
     pairs = fields.List(fields.Nested(Pairings, required=True))
 

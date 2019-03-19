@@ -30,7 +30,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-.PHONY: clean-pyc install-dev install dist audit test
+.PHONY: clean-pyc install-dev install dist audit test start-dev
 
 
 clean: clean-pyc

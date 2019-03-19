@@ -32,7 +32,7 @@ Copyright (c) 2018 Qualcomm Technologies, Inc.
 from marshmallow import Schema, fields, pre_dump
 
 
-class GSMA(Schema):
+class GSMATac(Schema):
     """Defines the GSMA schema for API V1."""
 
     marketing_name = fields.String()
@@ -63,4 +63,4 @@ class GSMATacInfo(Schema):
     """Defines the schema for TAC API(version 1) response."""
 
     tac = fields.String(required=True)
-    gsma = fields.Nested(GSMA, required=True)
+    gsma = fields.Nested(GSMATac, required=True)

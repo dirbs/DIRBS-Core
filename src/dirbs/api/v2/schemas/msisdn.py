@@ -32,7 +32,7 @@ Copyright (c) 2018 Qualcomm Technologies, Inc.
 from marshmallow import Schema, fields, pre_dump
 
 
-class GSMA(Schema):
+class GSMAMSISDN(Schema):
     """Defines sub-schema for MSISDNV2 schema."""
 
     manufacturer = fields.String()
@@ -60,7 +60,7 @@ class MSISDN(Schema):
 
     imei_norm = fields.String()
     imsi = fields.String()
-    gsma = fields.Nested(GSMA, required=True)
+    gsma = fields.Nested(GSMAMSISDN, required=True)
     registration = fields.Nested(REGISTRATION, required=True)
     last_seen = fields.String()
 
