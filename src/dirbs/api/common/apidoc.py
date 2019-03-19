@@ -118,5 +118,5 @@ class ApiDoc(FlaskApiSpec):
                       'The Core API will attempt to send the appropriate HTML status codes. ' \
                       'On error, the request response will contain details about the error cause when possible.' \
                       '\n\n' \
-                      'Copyright \xA9 2018 Qualcomm Technologies, Inc. All rights reserved.'
+                      'Copyright \xA9 2019 Qualcomm Technologies, Inc. All rights reserved.'
         return description
