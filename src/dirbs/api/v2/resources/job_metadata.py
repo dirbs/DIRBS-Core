@@ -36,7 +36,7 @@ from psycopg2 import sql
 
 from dirbs.api.common.db import get_db_connection
 from dirbs.api.common.pagination import Pagination
-from dirbs.api.v2.schemas.job_metadata import Keys, JobMetadata
+from dirbs.api.v2.schemas.job_metadata import JobKeys, JobMetadata
 
 
 def get_metadata(command=None, subcommand=None, run_id=None, status=None):
@@ -84,14 +84,14 @@ def job_metadata_api(command=None, subcommand=None, run_id=None, status=None, sh
 
         if not show_details:
             response = {
-                '_keys': Keys().dump(dict(paginated_data.get('keys'))).data,
+                '_keys': JobKeys().dump(dict(paginated_data.get('keys'))).data,
                 'jobs': [JobMetadata(exclude=('extra_metadata',)).dump(dict(dat)).data for dat in
                          paginated_data.get('data')]
             }
             return jsonify(response)
         else:
             response = {
-                '_keys': Keys().dump(dict(paginated_data.get('keys'))).data,
+                '_keys': JobKeys().dump(dict(paginated_data.get('keys'))).data,
                 'jobs': [JobMetadata().dump(dict(dat)).data for dat in paginated_data.get('data')]
             }
             return jsonify(response)
@@ -99,12 +99,12 @@ def job_metadata_api(command=None, subcommand=None, run_id=None, status=None, sh
     keys = {'offset': '', 'limit': '', 'previous_key': '', 'next_key': '', 'result_size': len(result)}
     if not show_details:
         response = {
-            '_keys': Keys().dump(dict(keys)).data,
+            '_keys': JobKeys().dump(dict(keys)).data,
             'jobs': [JobMetadata(exclude=('extra_metadata',)).dump(rec._asdict()).data for rec in result]
         }
     else:
         response = {
-            '_keys': Keys().dump(dict(keys)).data,
+            '_keys': JobKeys().dump(dict(keys)).data,
             'jobs': [JobMetadata().dump(rec._asdict()).data for rec in result]
         }
     return jsonify(response)
