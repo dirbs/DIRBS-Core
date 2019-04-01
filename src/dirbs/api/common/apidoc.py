@@ -1,7 +1,7 @@
 """
 Subclass FlaskApiSpec to add support for documenting multiple API versions.
 
-Copyright (c) 2018 Qualcomm Technologies, Inc.
+Copyright (c) 2019 Qualcomm Technologies, Inc.
 
  All rights reserved.
 

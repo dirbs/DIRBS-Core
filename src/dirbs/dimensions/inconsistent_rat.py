@@ -1,7 +1,7 @@
 """
 DIRBS dimension function for IMEIs connecting to RAT greater than device capability based on GSMA TAC database.
 
-Copyright (c) 2018 Qualcomm Technologies, Inc.
+Copyright (c) 2019 Qualcomm Technologies, Inc.
 
  All rights reserved.
 

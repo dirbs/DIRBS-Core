@@ -3,7 +3,7 @@ DIRBS code representation of a classification 'condition'.
 
 A condition comprises of one or more dimension algorithms with associated parameters.
 
-Copyright (c) 2018 Qualcomm Technologies, Inc.
+Copyright (c) 2019 Qualcomm Technologies, Inc.
 
  All rights reserved.
 

@@ -1,7 +1,7 @@
 """
 DIRBS base dimension functionality shared by all dimensions.
 
-Copyright (c) 2018 Qualcomm Technologies, Inc.
+Copyright (c) 2019 Qualcomm Technologies, Inc.
 
  All rights reserved.
 

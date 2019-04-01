@@ -1,7 +1,7 @@
 """
 DIRBS CLI for data import. Common functions for processing command line options.
 
-Copyright (c) 2018 Qualcomm Technologies, Inc.
+Copyright (c) 2019 Qualcomm Technologies, Inc.
 
  All rights reserved.
 

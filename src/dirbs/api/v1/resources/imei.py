@@ -1,7 +1,7 @@
 """
 DIRBS REST-ful API-V1 imei module.
 
-Copyright (c) 2018 Qualcomm Technologies, Inc.
+Copyright (c) 2019 Qualcomm Technologies, Inc.
 
  All rights reserved.
 

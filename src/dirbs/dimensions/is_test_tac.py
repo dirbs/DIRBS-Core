@@ -1,7 +1,7 @@
 """
 This function is used for determining whether an IMEI's TAC component belongs to the ranges associated with Test TACs.
 
-Copyright (c) 2018 Qualcomm Technologies, Inc.
+Copyright (c) 2019 Qualcomm Technologies, Inc.
 
  All rights reserved.
 

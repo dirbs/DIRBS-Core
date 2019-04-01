@@ -1,7 +1,7 @@
 """
 DIRBS class for generating lists (blacklist, per-MNO notification lists and per-MNO exception lists).
 
-Copyright (c) 2018 Qualcomm Technologies, Inc.
+Copyright (c) 2019 Qualcomm Technologies, Inc.
 
  All rights reserved.
 
