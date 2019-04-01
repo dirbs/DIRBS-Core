@@ -54,7 +54,10 @@ class GSMATac(Schema):
 
     @pre_dump(pass_many=False)
     def extract_fields(self, data):
-        """Flatten the optional_fields to schema fields."""
+        """
+        Flatten the optional_fields to schema fields.
+        :param data: input data dump
+        """
         for key in data['optional_fields']:
             data[key] = data['optional_fields'][key]
 

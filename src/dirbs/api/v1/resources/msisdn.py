@@ -36,7 +36,11 @@ from dirbs.api.v1.schemas.msisdn import MSISDN
 
 
 def msisdn_api(msisdn):
-    """MSISDN API endpoint."""
+    """
+    MSISDN API endpoint.
+    :param msisdn: MSISDN value
+    :return: json response
+    """
     if len(msisdn) > 15:
         abort(400, 'Bad MSISDN format (too long)')
 

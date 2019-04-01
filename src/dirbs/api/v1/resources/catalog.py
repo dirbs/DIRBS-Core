@@ -38,7 +38,12 @@ from dirbs.api.v1.schemas.catalog import CatalogFile
 
 
 def catalog_api(max_results=None, **kwargs):
-    """Data catalog API endpoint."""
+    """
+    Data catalog API endpoint.
+    :param max_results: max output results
+    :param kwargs: input args
+    :return: json response
+    """
     # Build filters to be applied to the SQL query
     filters, filter_params = _build_sql_query_filters(**kwargs)
 

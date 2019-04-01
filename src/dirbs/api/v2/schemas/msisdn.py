@@ -41,7 +41,10 @@ class GSMAMSISDN(Schema):
 
     @pre_dump(pass_many=False)
     def extract_fields(self, data):
-        """Extract and map related fields."""
+        """
+        Extract and map related fields.
+        :param data: dumped data
+        """
         if data['optional_fields'] is not None:
             for key in data['optional_fields']:
                 data[key] = data['optional_fields'][key]

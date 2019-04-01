@@ -38,7 +38,11 @@ from dirbs.api.v2.schemas.tac import TacInfo
 
 
 def tac_api(tac):
-    """TAC GET API endpoint (version 2)."""
+    """
+    TAC GET API endpoint (version 2).
+    :param tac: gsma tac
+    :return: json
+    """
     validate_tac(tac)
     with get_db_connection() as db_conn, db_conn.cursor() as cursor:
         cursor.execute("""SELECT tac, manufacturer, bands, allocation_date, model_name, device_type,
@@ -51,7 +55,11 @@ def tac_api(tac):
 
 
 def tac_batch_api(**kwargs):
-    """TAC POST API endpoint (version 2)."""
+    """
+    TAC POST API endpoint (version 2).
+    :param kwargs: list of gsma tacs
+    :return: json
+    """
     if kwargs is not None:
         tacs = kwargs.get('tacs')
         if tacs is not None:

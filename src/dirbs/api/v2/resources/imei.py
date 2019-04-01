@@ -42,7 +42,12 @@ from dirbs.api.common.pagination import Pagination
 
 
 def registration_list_status(cursor, imei_norm):
-    """Method to get RegistrationList status of an IMEI from Registration List."""
+    """
+    Method to get RegistrationList status of an IMEI from Registration List.
+    :param cursor: db cursor
+    :param imei_norm: normalized imei
+    :return: status dict
+    """
     cursor.execute(sql.SQL("""SELECT status,
                                           CASE
                                             WHEN status = 'whitelist' THEN FALSE
@@ -69,7 +74,12 @@ def registration_list_status(cursor, imei_norm):
 
 
 def stolen_list_status(cursor, imei_norm):
-    """Method to get StolenList status of an IMEI from Stolen List."""
+    """
+    Method to get StolenList status of an IMEI from Stolen List.
+    :param cursor: db cursor
+    :param imei_norm: normalized imei
+    :return: status dict
+    """
     cursor.execute(sql.SQL("""SELECT status,
                                           CASE
                                             WHEN status = 'blacklist' THEN FALSE
@@ -95,7 +105,12 @@ def stolen_list_status(cursor, imei_norm):
 
 
 def block_date(cursor, imei_norm):
-    """Method to get block date of an IMEI from Notification and Blacklist."""
+    """
+    Method to get block date of an IMEI from Notification and Blacklist.
+    :param cursor: db cursor
+    :param imei_norm: normalized imei
+    :return: block date or none
+    """
     # check if it is in blacklist
     cursor.execute("""SELECT block_date, delta_reason
                         FROM blacklist
@@ -121,7 +136,12 @@ def block_date(cursor, imei_norm):
 
 
 def is_exempted_device(cursor, imei_norm):
-    """Method to check if an IMEI device has been exempted."""
+    """
+    Method to check if an IMEI device has been exempted.
+    :param cursor: db cursor
+    :param imei_norm: normalized imei
+    :return: bool
+    """
     exempted_device_types = current_app.config['DIRBS_CONFIG'].region_config.exempted_device_types
 
     if len(exempted_device_types) > 0:
@@ -136,7 +156,11 @@ def is_exempted_device(cursor, imei_norm):
 
 
 def imei_info_api(imei):
-    """IMEI-Info API method handler."""
+    """
+    IMEI-Info API method handler.
+    :param imei: IMEI
+    :return: json
+    """
     imei_norm = validate_imei(imei)
 
     with get_db_connection() as db_conn, db_conn.cursor() as cursor:
@@ -153,7 +177,11 @@ def imei_info_api(imei):
 
 
 def imei_api(imei):
-    """IMEI API handler."""
+    """
+    IMEI API handler.
+    :param imei: IMEI
+    :return: json
+    """
     imei_norm = validate_imei(imei)
 
     with get_db_connection() as db_conn, db_conn.cursor() as cursor:
@@ -190,7 +218,12 @@ def imei_api(imei):
 
 
 def imei_subscribers_api(imei, **kwargs):
-    """IMEI-Subscribers API handler."""
+    """
+    IMEI-Subscribers API handler.
+    :param imei: IMEI
+    :param kwargs: extra input args
+    :return: json
+    """
     imei_norm = validate_imei(imei)
     offset = kwargs.get('offset')
     limit = kwargs.get('limit')
@@ -231,7 +264,12 @@ def imei_subscribers_api(imei, **kwargs):
 
 
 def imei_pairings_api(imei, **kwargs):
-    """IMEI-Pairings API handler."""
+    """
+    IMEI-Pairings API handler.
+    :param imei: IMEI
+    :param kwargs: extra input args
+    :return: json
+    """
     imei_norm = validate_imei(imei)
     offset = kwargs.get('offset')
     limit = kwargs.get('limit')
@@ -275,7 +313,11 @@ def imei_pairings_api(imei, **kwargs):
 
 
 def imei_batch_api(**kwargs):
-    """IMEI API POST method handler for IMEI-Batch request."""
+    """
+    IMEI API POST method handler for IMEI-Batch request.
+    :param kwargs: input imei list
+    :return: json
+    """
     if bool(kwargs):
         imeis = kwargs.get('imeis')
         data = []

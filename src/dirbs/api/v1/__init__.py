@@ -53,12 +53,19 @@ api = Blueprint('v1', __name__.split('.')[0])
 
 @api.app_errorhandler(422)
 def validation_errors(error):
-    """Transform marshmallow validation errors to custom responses to maintain backward-compatibility."""
+    """
+    Transform marshmallow validation errors to custom responses to maintain backward-compatibility.
+    :param error: intercepted http error
+    :return: modified json error response
+    """
     return validate_error(error)
 
 
 def register_docs(apidoc):
-    """Register all endpoints with the ApiDoc object."""
+    """
+    Register all endpoints with the ApiDoc object.
+    :param apidoc: apidoc instance
+    """
     for endpoint in [tac_api, catalog_api, version_api, msisdn_api, imei_api, job_metadata_api]:
         apidoc.register(endpoint, blueprint='v1')
 
@@ -72,7 +79,12 @@ def register_docs(apidoc):
 @marshal_with(None, code=400, description='Bad parameter value')
 @disable_options_method()
 def imei_api(imei, **kwargs):
-    """IMEI API route."""
+    """
+    IMEI API route.
+    :param imei: IMEI
+    :param kwargs: args
+    :return: json
+    """
     return imei_resource.imei_api(imei, **kwargs)
 
 
@@ -82,7 +94,11 @@ def imei_api(imei, **kwargs):
 @marshal_with(None, code=400, description='Bad TAC format')
 @disable_options_method()
 def tac_api(tac):
-    """TAC API route."""
+    """
+    TAC API route.
+    :param tac: gsma tac
+    :return: json
+    """
     return tac_resource.api(tac)
 
 
@@ -94,7 +110,11 @@ def tac_api(tac):
 @marshal_with(None, code=400, description='Bad parameter value')
 @disable_options_method()
 def catalog_api(**kwargs):
-    """Catalog API route."""
+    """
+    Catalog API route.
+    :param kwargs: input args
+    :return: json
+    """
     return catalog_resource.catalog_api(**kwargs)
 
 
@@ -106,7 +126,11 @@ def catalog_api(**kwargs):
 @marshal_with(None, code=400, description='Bad parameter value')
 @disable_options_method()
 def job_metadata_api(**kwargs):
-    """Job Metadata API route."""
+    """
+    Job Metadata API route.
+    :param kwargs: input args
+    :return: json
+    """
     return job_resource.job_metadata_api(**kwargs)
 
 
@@ -126,5 +150,9 @@ def version_api():
 @marshal_with(MSISDN, code=200, description='On success')
 @disable_options_method()
 def msisdn_api(msisdn):
-    """MSISDN API route."""
+    """
+    MSISDN API route.
+    :param msisdn:
+    :return: json
+    """
     return msisdn_resource.msisdn_api(msisdn)

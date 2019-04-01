@@ -80,7 +80,11 @@ class IMEI(Schema):
 
     @post_dump
     def skip_missing_block_date(self, data):
-        """Skip block date if it is missing."""
+        """
+        Skip block date if it is missing.
+        :param data: dumped data
+        :return: modified dumped data
+        """
         if data.get('block_date') in self.SKIP_VALUES:
             del data['block_date']
         return data
@@ -97,7 +101,10 @@ class Validators:
 
     @staticmethod
     def validate_imei(val):
-        """Validates IMEI format."""
+        """
+        Validates IMEI format.
+        :param val: IMEI value
+        """
         if len(val) > 16:
             abort(400, 'Bad IMEI format (too long).')
 
@@ -112,7 +119,10 @@ class Validators:
 
     @staticmethod
     def validate_imei_list(val):
-        """Validates IMEI list."""
+        """
+        Validates IMEI list.
+        :param val: list of IMEIs
+        """
         if len(val) == 0:
             abort(400, 'Bad Input format (imei list cannot be empty).')
 

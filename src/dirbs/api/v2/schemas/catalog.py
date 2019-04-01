@@ -65,7 +65,10 @@ class CatalogFile(Schema):
 
     @pre_dump(pass_many=False)
     def extract_fields(self, data):
-        """Extract import status."""
+        """
+        Extract import status.
+        :param data: dumped data
+        """
         data['import_status'] = {
             'ever_imported_successfully': True if 'success' in data['status_list'] else False,
             'most_recent_import': data['status_list'][0] if data['status_list'] else None

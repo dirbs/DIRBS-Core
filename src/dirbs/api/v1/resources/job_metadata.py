@@ -37,7 +37,16 @@ from dirbs.api.v1.schemas.job_metadata import JobMetadata
 
 
 def job_metadata_api(command=None, subcommand=None, run_id=None, status=None, max_results=10, show_details=True):
-    """Job metadata API endpoint."""
+    """
+    Job metadata API endpoint.
+    :param command: job command name (default none)
+    :param subcommand: job sub-command name (default none)
+    :param run_id: job run id (default none)
+    :param status: job execution status (default none)
+    :param max_results: max output results (default 10)
+    :param show_details: bool (default True)
+    :return: json response
+    """
     with get_db_connection() as db_conn, db_conn.cursor() as cursor:
         # Build the query with params retrieved from request
         filters_sql = []
