@@ -40,7 +40,10 @@ class ApiDoc(FlaskApiSpec):
     """Override base FlaskApiSpec constructor."""
 
     def __init__(self, app, *, version):
-        """Constructor."""
+        """Constructor.
+        :param app: app instance
+        :param version: api version
+        """
         self.title = 'DIRBS Core'
         self.version = version
         self.apidoc_ui_url = '/apidocs/{0}/'.format(self.version)
@@ -55,7 +58,9 @@ class ApiDoc(FlaskApiSpec):
         self.init_app()
 
     def init_app(self, **kwargs):
-        """Override base init_app method."""
+        """Override base init_app method.
+        :param kwargs: args
+        """
         self.spec = APISpec(
             title=self.title,
             version=self.version,
@@ -89,6 +94,12 @@ class ApiDoc(FlaskApiSpec):
             return dict(url_for=custom_url_for)
 
         def custom_url_for(endpoint, **values):
+            """
+            Method to map custom urls for swagger.
+            :param endpoint: swagger endpoint
+            :param values: url value to map
+            :return:
+            """
             endpoint = endpoint.replace('flask-apispec', 'flask-apispec-{0}'.format(self.version))
             return url_for(endpoint, **values)
 

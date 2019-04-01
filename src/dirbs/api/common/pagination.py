@@ -36,7 +36,12 @@ class Pagination:
 
     @staticmethod
     def paginate(data, offset=1, limit=10):
-        """Method to paginate data-set based on offset and limit."""
+        """Method to paginate data-set based on offset and limit.
+        :param data: input data to paginate
+        :param offset: to start with
+        :param limit: limit of data
+        :return: paginated data
+        """
         if offset is None:
             offset = 1
 

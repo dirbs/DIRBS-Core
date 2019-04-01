@@ -38,7 +38,10 @@ from dirbs.utils import filter_imei_list_sql_by_device_type, registration_list_s
 
 
 def validate_imei(imei):
-    """Method for validating imei format."""
+    """Method for validating imei format.
+    :param imei: device imei
+    :return: normalized imei
+    """
     if len(imei) > 16:
         abort(400, 'Bad IMEI format (too long)')
 
@@ -51,7 +54,11 @@ def validate_imei(imei):
 
 
 def get_conditions(cursor, imei_norm):
-    """Method for reading conditions from config & DB."""
+    """Method for reading conditions from config & DB.
+    :param cursor: db cursor
+    :param imei_norm: normalized imei
+    :return: matching condition results
+    """
     conditions = current_app.config['DIRBS_CONFIG'].conditions
     condition_results = {c.label: {'blocking': c.blocking, 'result': False} for c in conditions}
     cursor.execute("""SELECT cond_name
@@ -68,7 +75,11 @@ def get_conditions(cursor, imei_norm):
 
 
 def ever_observed_on_network(cursor, imei_norm):
-    """Method to check if an IMEI is ever observed on the network."""
+    """Method to check if an IMEI is ever observed on the network.
+    :param cursor: db cursor
+    :param imei_norm: normalized imei
+    :return: bool
+    """
     cursor.execute(
         """SELECT EXISTS(SELECT 1
                            FROM network_imeis
@@ -80,7 +91,12 @@ def ever_observed_on_network(cursor, imei_norm):
 
 
 def is_in_registration_list(db_conn, cursor, imei_norm):
-    """Method to check if an IMEI exists in the Registration List."""
+    """Method to check if an IMEI exists in the Registration List.
+    :param db_conn: database connection
+    :param cursor: database cursor
+    :param imei_norm: normalized imei
+    :return: bool
+    """
     cursor.execute(sql.SQL("""SELECT EXISTS(SELECT 1
                                               FROM registration_list
                                              WHERE imei_norm = %(imei_norm)s
@@ -104,7 +120,11 @@ def is_in_registration_list(db_conn, cursor, imei_norm):
 
 
 def get_subscribers(cursor, imei_norm):
-    """Method to get IMSI-MSISDN pairs seen on the network with imei_norm."""
+    """Method to get IMSI-MSISDN pairs seen on the network with imei_norm.
+    :param cursor: db cursor
+    :param imei_norm: normalized imei
+    :return: subscribers list
+    """
     cursor.execute("""SELECT DISTINCT imsi, msisdn, last_seen
                         FROM monthly_network_triplets_country_no_null_imeis
                        WHERE imei_norm = %(imei_norm)s
@@ -116,7 +136,11 @@ def get_subscribers(cursor, imei_norm):
 
 
 def is_paired(cursor, imei_norm):
-    """Method to check if an IMEI is paired."""
+    """Method to check if an IMEI is paired.
+    :param cursor: db cursor
+    :param imei_norm: normalized imei
+    :return: bool
+    """
     cursor.execute("""SELECT EXISTS(SELECT 1
                                       FROM pairing_list
                                      WHERE imei_norm = %(imei_norm)s
