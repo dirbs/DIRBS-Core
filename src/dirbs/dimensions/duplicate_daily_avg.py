@@ -39,7 +39,15 @@ class DuplicateAverageThreshold(DuplicateAbstractBase):
     """Implementation of the DuplicateAverageThreshold classification dimension."""
 
     def __init__(self, *, threshold, period_days=None, period_months=None, min_seen_days, use_msisdn=False, **kwargs):
-        """Constructor."""
+        """
+        Constructor.
+        :param threshold: threshold for duplicate entries
+        :param period_days: analysis period in days (default None)
+        :param period_months: analysis period in months (default None)
+        :param min_seen_days: minimum days a triplets has been seen
+        :param use_msisdn: flag to use MSISDN for analysis instead of IMSI (default false)
+        :param kwargs:
+        """
         super().__init__(period_days=period_days, period_months=period_months, use_msisdn=use_msisdn, **kwargs)
 
         try:
@@ -63,7 +71,15 @@ class DuplicateAverageThreshold(DuplicateAbstractBase):
         return 'Duplicate daily average'
 
     def _matching_imeis_sql(self, conn, app_config, virt_imei_range_start, virt_imei_range_end, curr_date=None):
-        """Overrides Dimension._matching_imeis_sql."""
+        """
+        Overrides Dimension._matching_imeis_sql.
+        :param conn: database connection
+        :param app_config: dirbs config obj
+        :param virt_imei_range_start: imei shard range start
+        :param virt_imei_range_end: imei shard range end
+        :param curr_date: user defined current date for analysis
+        :return: SQL
+        """
         analysis_start_date, analysis_end_date = self._calc_analysis_window(conn, curr_date)
 
         """Calculate the average number of IMSIs an IMEI is seen with on a daily basis.

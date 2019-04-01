@@ -40,7 +40,15 @@ class InconsistentRAT(Dimension):
     """Implementation of the InconsistentRAT classification dimension."""
 
     def _matching_imeis_sql(self, conn, app_config, virt_imei_range_start, virt_imei_range_end, curr_date=None):
-        """Overrides Dimension._matching_imeis_sql."""
+        """
+        Overrides Dimension._matching_imeis_sql.
+        :param conn: database connection
+        :param app_config: dirbs config obj
+        :param virt_imei_range_start: virtual imei shard range start
+        :param virt_imei_range_end: virtual imei shard range end
+        :param curr_date: user defined current date
+        :return: SQL
+        """
         """ Compute the RAT bitmask on a per model level by OR'ing all the TAC bitmasks with
         the same model name. Check individually that device was seen on 2G/3G/4G RAT and if model is
         capable of that particular RAT.

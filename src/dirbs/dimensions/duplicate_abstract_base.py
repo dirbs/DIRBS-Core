@@ -40,7 +40,13 @@ class DuplicateAbstractBase(Dimension):
     """Abstract base class that all duplicate dimensions should inherit from."""
 
     def __init__(self, *, period_days, period_months, use_msisdn, **kwargs):
-        """Constructor."""
+        """
+        Constructor.
+        :param period_days: period in terms of days
+        :param period_months: period in terms of months
+        :param use_msisdn: flag to use MSISDN for analysis rather then IMSI
+        :param kwargs: kwargs
+        """
         super().__init__(**kwargs)
 
         if period_days is not None and period_months is not None:
@@ -63,7 +69,12 @@ class DuplicateAbstractBase(Dimension):
             raise ValueError('Negative value for period_days passed to duplicate dimension. Check config...')
 
     def _calc_analysis_window(self, conn, curr_date=None):
-        """Method used to calculate the analysis window (as a tuple) given a curr date."""
+        """
+        Method used to calculate the analysis window (as a tuple) given a curr date.
+        :param conn: database connection
+        :param curr_date: user defined current date (default None)
+        :return: dates range for analysis
+        """
         analysis_end_date = compute_analysis_end_date(conn, curr_date)
         if self._period_months is not None:
             analysis_start_date = analysis_end_date - relativedelta.relativedelta(months=self._period_months)

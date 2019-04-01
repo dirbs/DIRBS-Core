@@ -43,7 +43,12 @@ class GSMANotFound(Dimension):
     """Implementation of the GSMANotFound classification dimension."""
 
     def __init__(self, *, per_rbi_delays=None, ignore_rbi_delays=False, **kwargs):
-        """Constructor."""
+        """
+        Constructor.
+        :param per_rbi_delays: user defined rbi delays values
+        :param ignore_rbi_delays: flag to ignore rbi delay
+        :param kwargs: kwargs
+        """
         super().__init__(**kwargs)
 
         if not isinstance(ignore_rbi_delays, bool):
@@ -78,7 +83,15 @@ class GSMANotFound(Dimension):
         self.final_rbi_delays = {**default_rbi_delays, **per_rbi_delays} if not ignore_rbi_delays else {}
 
     def _matching_imeis_sql(self, conn, app_config, virt_imei_range_start, virt_imei_range_end, curr_date=None):
-        """Overrides Dimension._matching_imeis_sql."""
+        """
+        Overrides Dimension._matching_imeis_sql.
+        :param conn: database connection
+        :param app_config: dirbs config obj
+        :param virt_imei_range_start: virtual imei shard range start
+        :param virt_imei_range_end: virtual imei shard range end
+        :param curr_date: user defined current date for analysis
+        :return: SQL
+        """
         analysis_end_date = compute_analysis_end_date(conn, curr_date)
         rbi_list = [rbi for rbi in self.final_rbi_delays.keys()]
         delay_list = [self.final_rbi_delays[rbi] for rbi in rbi_list]
