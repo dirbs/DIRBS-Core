@@ -65,7 +65,25 @@ from dirbs.listgen import ListsGenerator
 @common.cli_wrapper(command='dirbs-listgen', required_role='dirbs_core_listgen')
 def cli(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root, metrics_run_root,
         curr_date, no_full_lists, no_cleanup, base, disable_sanity_checks, output_dir):
-    """DIRBS script to output CSV lists (blacklist, exception, notification) for the current classification state."""
+    """
+    DIRBS script to output CSV lists (blacklist, exception, notification) for the current classification state.
+    :param ctx: current cli context obj
+    :param config: dirbs config obj
+    :param statsd: dirbs statsd obj
+    :param logger: dirbs logger obj
+    :param run_id: job run id
+    :param conn: database connection
+    :param metadata_conn: database connection for metadata
+    :param command: command name
+    :param metrics_root:
+    :param metrics_run_root:
+    :param curr_date: current date
+    :param no_full_lists: no full list flag
+    :param no_cleanup: no cleanup flag
+    :param base: base param for run id
+    :param disable_sanity_checks: sanity checks flag
+    :param output_dir: output directory path
+    """
     if curr_date is not None:
         logger.warn('*************************************************************************')
         logger.warn('WARNING: --curr-date option passed to dirbs-listgen')

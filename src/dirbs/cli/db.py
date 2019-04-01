@@ -52,7 +52,11 @@ min_schema_version = 19
 
 
 def _store_job_metadata(config, subcommand):
-    """Utility method to store metadata about a dirbs-db invocation in the database."""
+    """
+    Utility method to store metadata about a dirbs-db invocation in the database.
+    :param config: dirbs config obj
+    :param subcommand: sub-command name
+    """
     logger = logging.getLogger('dirbs.db')
     with utils.create_db_connection(config.db_config, autocommit=True) as conn:
         # We can only really store successful database installs/upgrades as we can't store
@@ -71,7 +75,10 @@ def _store_job_metadata(config, subcommand):
 @click.pass_context
 @common.configure_logging
 def cli(ctx):
-    """DIRBS script to intiliaze, configure and upgrade the PostgreSQL schema."""
+    """
+    DIRBS script to intiliaze, configure and upgrade the PostgreSQL schema.
+    :param ctx: current cli context obj
+    """
     config = common.ensure_config(ctx)
     db_config = config.db_config
     logger = logging.getLogger('dirbs.db')
@@ -103,7 +110,10 @@ def cli(ctx):
 @click.pass_context
 @common.unhandled_exception_handler
 def check(ctx):
-    """Checks whether DB schema matches software DB version."""
+    """
+    Checks whether DB schema matches software DB version.
+    :param ctx: current cli context obj
+    """
     db_config = common.ensure_config(ctx).db_config
 
     logger = logging.getLogger('dirbs.db')
@@ -135,7 +145,10 @@ def check(ctx):
 @click.pass_context
 @common.unhandled_exception_handler
 def upgrade(ctx):
-    """Upgrades the current DB schema to the version supported by this code using migration scripts."""
+    """
+    Upgrades the current DB schema to the version supported by this code using migration scripts.
+    :param ctx: current cli context obj
+    """
     logger = logging.getLogger('dirbs.db')
     config = common.ensure_config(ctx)
     db_config = config.db_config
@@ -207,7 +220,11 @@ def upgrade(ctx):
 @click.pass_context
 @common.unhandled_exception_handler
 def install(ctx):
-    """Installs latest schema on clean DB instance."""
+    """
+    Installs latest schema on clean DB instance.
+    :param ctx: current cli context obj
+    :return: status
+    """
     logger = logging.getLogger('dirbs.db')
     config = common.ensure_config(ctx)
     db_config = config.db_config
@@ -257,7 +274,10 @@ def install(ctx):
 @click.pass_context
 @common.unhandled_exception_handler
 def install_roles(ctx):
-    """Creates DIRBS Core PostgreSQL base roles if they don't exist."""
+    """
+    Creates DIRBS Core PostgreSQL base roles if they don't exist.
+    :param ctx: current cli context obj
+    """
     logger = logging.getLogger('dirbs.db')
     config = common.ensure_config(ctx)
     db_config = copy.copy(config.db_config)
@@ -276,7 +296,11 @@ def install_roles(ctx):
 
 
 def num_physical_shards_option(f):
-    """Function to parse/validate the --num-physical-shards CLI option to dirbs-db repartition."""
+    """
+    Function to parse/validate the --num-physical-shards CLI option to dirbs-db repartition.
+    :param f: obj
+    :return: options obj
+    """
     def callback(ctx, param, value):
         if value is not None:
             if value < 1 or value > 100:
@@ -295,7 +319,11 @@ def num_physical_shards_option(f):
 @common.unhandled_exception_handler
 @num_physical_shards_option
 def repartition(ctx, num_physical_shards):
-    """Repartition DIRBS Core tables into a new number of physical IMEI shards."""
+    """
+    Repartition DIRBS Core tables into a new number of physical IMEI shards.
+    :param ctx: current cli context obj
+    :param num_physical_shards: number of physical shards
+    """
     logger = logging.getLogger('dirbs.db')
     config = common.ensure_config(ctx)
     with utils.create_db_connection(config.db_config) as conn, conn.cursor() as cursor:

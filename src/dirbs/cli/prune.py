@@ -56,7 +56,11 @@ import dirbs.partition_utils as partition_utils
 @click.pass_context
 @common.configure_logging
 def cli(ctx, curr_date):
-    """DIRBS script to prune obsolete data from the DIRBS Core PostgreSQL database."""
+    """
+    DIRBS script to prune obsolete data from the DIRBS Core PostgreSQL database.
+    :param ctx: current cli context
+    :param curr_date: current date by user
+    """
     ctx.obj['CURR_DATE'] = curr_date
 
 
@@ -65,7 +69,19 @@ def cli(ctx, curr_date):
 @common.unhandled_exception_handler
 @common.cli_wrapper(command='dirbs-prune', subcommand='triplets', required_role='dirbs_core_power_user')
 def triplets(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root, metrics_run_root):
-    """Prune old monthly_network_triplets data."""
+    """
+    Prune old monthly_network_triplets data.
+    :param ctx: current cli context
+    :param config: dirbs config obj
+    :param statsd: statsd obj
+    :param logger: dirbs logger obj
+    :param run_id: job run id
+    :param conn: database connetion
+    :param metadata_conn: database metadata connection
+    :param command: command name
+    :param metrics_root:
+    :param metrics_run_root:
+    """
     curr_date = ctx.obj['CURR_DATE']
 
     # Store metadata
@@ -145,7 +161,19 @@ def triplets(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, 
 @common.cli_wrapper(command='dirbs-prune', subcommand='classification_state', required_role='dirbs_core_power_user')
 def classification_state(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root,
                          metrics_run_root):
-    """Prune obsolete classification_state data."""
+    """
+    Prune obsolete classification_state data.
+    :param ctx: current cli context
+    :param config: dirbs config obj
+    :param statsd: statsd obj
+    :param logger: dirbs logger obj
+    :param run_id: job run id
+    :param conn: database connection
+    :param metadata_conn: database metadata connection
+    :param command: command name
+    :param metrics_root:
+    :param metrics_run_root:
+    """
     curr_date = ctx.obj['CURR_DATE']
 
     # Store metadata
@@ -214,7 +242,11 @@ def classification_state(ctx, config, statsd, logger, run_id, conn, metadata_con
 
 
 def _warn_about_prune_all(prune_all, logger):
-    """Function to print out warning about setting all in production."""
+    """
+    Function to print out warning about setting all in production.
+    :param prune_all: prune all flag
+    :param logger: dirbs logger obj
+    """
     if prune_all is not False:
         logger.warn('*************************************************************************')
         logger.warn('WARNING: --prune_all option passed to dirbs-prune blacklist')
@@ -238,7 +270,21 @@ def _warn_about_prune_all(prune_all, logger):
               help='DANGEROUS: If set, will set end_date to all the imeis falling in the specified period')
 def blacklist(ctx, config, statsd, logger, run_id, conn, metadata_conn, command,
               metrics_root, metrics_run_root, condition_name, prune_all):
-    """Expire IMEIs outside the blacklist retention period from blacklist."""
+    """
+    Expire IMEIs outside the blacklist retention period from blacklist.
+    :param ctx: current cli context
+    :param config: dirbs config obj
+    :param statsd: statsd obj
+    :param logger: dirbs logger obj
+    :param run_id: job run id
+    :param conn: database connection
+    :param metadata_conn: metadata database connection
+    :param command: command name
+    :param metrics_root:
+    :param metrics_run_root:
+    :param condition_name: name of the condition
+    :param prune_all: prune all flag
+    """
     current_date = datetime.date.today()
     retention_days = config.retention_config.blacklist_retention
 
@@ -357,7 +403,19 @@ def blacklist(ctx, config, statsd, logger, run_id, conn, metadata_conn, command,
 @common.unhandled_exception_handler
 @common.cli_wrapper(command='dirbs-prune', subcommand='lists', required_role='dirbs_core_power_user')
 def lists(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root, metrics_run_root):
-    """Prune obsolete lists data."""
+    """
+    Prune obsolete lists data.
+    :param ctx: current cli context
+    :param config: dirbs config obj
+    :param statsd: statsd obj
+    :param logger: dirbs logger obj
+    :param run_id: job run id
+    :param conn: database connection
+    :param metadata_conn: metadata database obj
+    :param command: command name
+    :param metrics_root:
+    :param metrics_run_root:
+    """
     curr_date = ctx.obj['CURR_DATE']
 
     # store metadata
