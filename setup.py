@@ -82,11 +82,21 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 # Attribution-ShareAlike license: http://creativecommons.org/licenses/by-sa/3.0
 #
 def read(*names):
+    """
+    Method to read the names provided.
+    :param names: target file names/paths
+    :return: file pointer
+    """
     with open(path.join(here, *names), encoding="utf8") as fp:
         return fp.read()
 
 
 def find_version(*file_paths):
+    """
+    Method to find the current version of dirbs to bump in release.
+    :param file_paths: path of the version file
+    :return: dirbs version str
+    """
     version_file = read(*file_paths)
     version_match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]",
                               version_file, re.M)
