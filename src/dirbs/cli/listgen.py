@@ -67,6 +67,7 @@ def cli(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metri
         curr_date, no_full_lists, no_cleanup, base, disable_sanity_checks, output_dir):
     """
     DIRBS script to output CSV lists (blacklist, exception, notification) for the current classification state.
+
     :param ctx: current cli context obj
     :param config: dirbs config obj
     :param statsd: dirbs statsd obj

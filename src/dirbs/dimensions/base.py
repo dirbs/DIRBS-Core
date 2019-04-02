@@ -45,6 +45,7 @@ class Dimension(object):
     def __init__(self, invert=False, condition_label=None):
         """
         Constructor.
+
         :param invert: to invert the condition effect
         :param condition_label: label of the condition (default None)
         """
@@ -61,6 +62,7 @@ class Dimension(object):
     def sql(self, conn, app_config, virt_imei_range_start, virt_imei_range_end, curr_date=None):
         """
         Interface for a dimension to return the SQL fragment associated with it.
+
         :param conn: database connection
         :param app_config: dirbs config obj
         :param virt_imei_range_start: virtual imei shard range start
@@ -98,6 +100,7 @@ class Dimension(object):
         Interface for classifying IMEIs based on a dimension.
 
         Returns a string version of the SQL, with no unbound parameters
+
         :param conn: database connection
         :param app_config: dirbs config obj
         :param virt_imei_range_start: virtual imei shard range start
@@ -109,6 +112,7 @@ class Dimension(object):
     def _log_analysis_window(self, analysis_start_date, analysis_end_date, start_message=None):
         """
         Helper function to print out window on used for analysis using interval notation.
+
         :param analysis_start_date: start date for analysis
         :param analysis_end_date: end date for analysis
         :param start_message: start analysis message

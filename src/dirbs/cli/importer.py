@@ -44,6 +44,7 @@ from dirbs.importer import importer_factory
 def _process_batch_size(ctx, param, val):
     """
     Process batch size cli option.
+
     :param ctx: current cli context obj
     :param param: param
     :param val: batch size value
@@ -61,6 +62,7 @@ def _process_batch_size(ctx, param, val):
 def _process_disable_msisdn_import(ctx, param, val):
     """
     Process disable msisdn import cli option.
+
     :param ctx: current cli context obj
     :param param: param
     :param val: flag value
@@ -75,6 +77,7 @@ def _process_disable_msisdn_import(ctx, param, val):
 def _process_disable_rat_import(ctx, param, val):
     """
     Process disable rat import cli option.
+
     :param ctx: current cli context obj
     :param param: param
     :param val: flag value
@@ -89,6 +92,7 @@ def _process_disable_rat_import(ctx, param, val):
 def _validate_operator_id(ctx, param, val):
     """
     Process and validate operator id.
+
     :param ctx: current cli context obj
     :param param: param
     :param val: operator id
@@ -113,6 +117,7 @@ def _validate_input_file_extension(ctx, param, input_file):
 
     Importer file extractor does a full check by opening the file and trying to extract the zip contents.
     zipfile.is_zipfile() function is not reliable as .xlsx files are also passed through for example.
+
     :param ctx: current cli context obj
     :param param: param
     :param input_file: input file
@@ -126,6 +131,7 @@ def _validate_input_file_extension(ctx, param, input_file):
 def disable_historic_check_option(f):
     """
     Function to parse the verbosity flag used by all CLI programs.
+
     :param f: flag obj
     :return: cli option obj
     """
@@ -138,6 +144,7 @@ def disable_historic_check_option(f):
 def _enable_delta_import_mode(f):
     """
     Function to switch importer to delta import mode.
+
     :param f: obj
     :return: options obj
     """
@@ -150,6 +157,7 @@ def _enable_delta_import_mode(f):
 def _disable_delta_adds_check(f):
     """
     Function to disable verification that delta adds are not already in the DB.
+
     :param f: obj
     :return: options obj
     """
@@ -163,6 +171,7 @@ def _disable_delta_adds_check(f):
 def _disable_delta_removes_check(f):
     """
     Function to disable verification that delta removes are already in the DB.
+
     :param f: obj
     :return: options obj
     """
@@ -175,6 +184,7 @@ def _disable_delta_removes_check(f):
 def _disable_delta_updates_check(f):
     """
     Function to disable delta check for updates.
+
     :param f: obj
     :return: options obj
     """
@@ -187,6 +197,7 @@ def _disable_delta_updates_check(f):
 def add_delta_options(f):
     """
     Decorator used to parse all the delta validation check options.
+
     :param f: obj
     :return: obj
     """
@@ -200,6 +211,7 @@ def add_delta_options(f):
 def handle_import_check_exception(f):
     """
     Makes sure that any import check exception is handled here so it is not treated as an uncaught exception.
+
     :param f: obj
     :return: decorated obj
     """
@@ -248,6 +260,7 @@ def handle_import_check_exception(f):
 def cli(ctx, no_cleanup, extract_dir, prevalidator_path, prevalidator_schema_path):
     """
     DIRBS script to import data into DIRBS Core PostgreSQL database.
+
     :param ctx: current cli context obj
     :param no_cleanup: no cleanup flag
     :param extract_dir: dir path to extract
@@ -263,6 +276,7 @@ def cli(ctx, no_cleanup, extract_dir, prevalidator_path, prevalidator_schema_pat
 def _common_import_params(ctx):
     """
     Dictionary containing parameters provided to the dirbs-import command.
+
     :param ctx: current cli context obj
     :return: dict
     """
@@ -322,6 +336,7 @@ def operator(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, 
     Import the CSV operator data found in INPUT into the PostgreSQL database.
 
     OPERATOR_ID is an ID up to 16 characters to unique identify the operator.
+
     :param ctx: current cli context obj
     :param config: dirbs config obj
     :param statsd: statsd obj
@@ -383,6 +398,7 @@ def gsma_tac(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, 
              input_file, disable_historic_check):
     """
     Import the GSMA TAC DB data found in INPUT into the PostgreSQL database.
+
     :param ctx: current cli context obj
     :param config: dirbs config obj
     :param statsd: statsd obj
@@ -419,6 +435,7 @@ def stolen_list(ctx, config, statsd, logger, run_id, conn, metadata_conn, comman
                 disable_delta_updates_check):
     """
     Import the Stolen List data found in INPUT into the PostgreSQL database.
+
     :param ctx: current cli context obj
     :param config: dirbs config obj
     :param statsd: statsd obj
@@ -463,6 +480,7 @@ def pairing_list(ctx, config, statsd, logger, run_id, conn, metadata_conn, comma
                  disable_delta_updates_check):
     """
     Import the Pairing List data found in INPUT into the PostgreSQL database.
+
     :param ctx: current cli context obj
     :param config: dirbs config obj
     :param statsd: statsd obj
@@ -507,6 +525,7 @@ def registration_list(ctx, config, statsd, logger, run_id, conn, metadata_conn, 
                       metrics_run_root, input_file, disable_historic_check, delta, disable_delta_adds_check,
                       disable_delta_removes_check, disable_delta_updates_check):
     """Import the Registration list data found in INPUT into the PostgreSQL database.
+
     :param ctx: current cli context obj
     :param config: dirbs config obj
     :param statsd: statsd obj
@@ -558,6 +577,7 @@ def golden_list(ctx, config, statsd, logger, run_id, conn, metadata_conn, comman
     Import the Golden list data found in INPUT into the PostgreSQL database.
 
     NOTE: Use caution when adding entries to the Golden list, as any IMEIs added to this list will never be blocked.
+
     :param ctx: current cli context obj
     :param config: dirbs config obj
     :param statsd: statsd obj

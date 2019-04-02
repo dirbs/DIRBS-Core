@@ -38,7 +38,9 @@ from dirbs.utils import filter_imei_list_sql_by_device_type, registration_list_s
 
 
 def validate_imei(imei):
-    """Method for validating imei format.
+    """
+    Method for validating imei format.
+
     :param imei: device imei
     :return: normalized imei
     """
@@ -54,7 +56,9 @@ def validate_imei(imei):
 
 
 def get_conditions(cursor, imei_norm):
-    """Method for reading conditions from config & DB.
+    """
+    Method for reading conditions from config & DB.
+
     :param cursor: db cursor
     :param imei_norm: normalized imei
     :return: matching condition results
@@ -75,7 +79,9 @@ def get_conditions(cursor, imei_norm):
 
 
 def ever_observed_on_network(cursor, imei_norm):
-    """Method to check if an IMEI is ever observed on the network.
+    """
+    Method to check if an IMEI is ever observed on the network.
+
     :param cursor: db cursor
     :param imei_norm: normalized imei
     :return: bool
@@ -91,7 +97,9 @@ def ever_observed_on_network(cursor, imei_norm):
 
 
 def is_in_registration_list(db_conn, cursor, imei_norm):
-    """Method to check if an IMEI exists in the Registration List.
+    """
+    Method to check if an IMEI exists in the Registration List.
+
     :param db_conn: database connection
     :param cursor: database cursor
     :param imei_norm: normalized imei
@@ -120,7 +128,9 @@ def is_in_registration_list(db_conn, cursor, imei_norm):
 
 
 def get_subscribers(cursor, imei_norm):
-    """Method to get IMSI-MSISDN pairs seen on the network with imei_norm.
+    """
+    Method to get IMSI-MSISDN pairs seen on the network with imei_norm.
+
     :param cursor: db cursor
     :param imei_norm: normalized imei
     :return: subscribers list
@@ -136,7 +146,9 @@ def get_subscribers(cursor, imei_norm):
 
 
 def is_paired(cursor, imei_norm):
-    """Method to check if an IMEI is paired.
+    """
+    Method to check if an IMEI is paired.
+
     :param cursor: db cursor
     :param imei_norm: normalized imei
     :return: bool

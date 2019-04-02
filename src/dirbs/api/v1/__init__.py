@@ -55,6 +55,7 @@ api = Blueprint('v1', __name__.split('.')[0])
 def validation_errors(error):
     """
     Transform marshmallow validation errors to custom responses to maintain backward-compatibility.
+
     :param error: intercepted http error
     :return: modified json error response
     """
@@ -64,6 +65,7 @@ def validation_errors(error):
 def register_docs(apidoc):
     """
     Register all endpoints with the ApiDoc object.
+
     :param apidoc: apidoc instance
     """
     for endpoint in [tac_api, catalog_api, version_api, msisdn_api, imei_api, job_metadata_api]:
@@ -81,6 +83,7 @@ def register_docs(apidoc):
 def imei_api(imei, **kwargs):
     """
     IMEI API route.
+
     :param imei: IMEI
     :param kwargs: args
     :return: json
@@ -96,6 +99,7 @@ def imei_api(imei, **kwargs):
 def tac_api(tac):
     """
     TAC API route.
+
     :param tac: gsma tac
     :return: json
     """
@@ -112,6 +116,7 @@ def tac_api(tac):
 def catalog_api(**kwargs):
     """
     Catalog API route.
+
     :param kwargs: input args
     :return: json
     """
@@ -128,6 +133,7 @@ def catalog_api(**kwargs):
 def job_metadata_api(**kwargs):
     """
     Job Metadata API route.
+
     :param kwargs: input args
     :return: json
     """
@@ -152,6 +158,7 @@ def version_api():
 def msisdn_api(msisdn):
     """
     MSISDN API route.
+
     :param msisdn:
     :return: json
     """

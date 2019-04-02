@@ -38,6 +38,7 @@ from dirbs.api.v1.schemas.msisdn import MSISDN
 def msisdn_api(msisdn):
     """
     MSISDN API endpoint.
+
     :param msisdn: MSISDN value
     :return: json response
     """

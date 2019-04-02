@@ -60,6 +60,7 @@ class CatalogAttributes:
                  num_records=None):
         """
         Constructor.
+
         :param filename: catalog file name
         :param file_type: type of the file
         :param modified_time: modification time
@@ -88,6 +89,7 @@ class CatalogAttributes:
     def __eq__(self, other):
         """
         Define the equality behavior.
+
         :param other:
         :return: bool (True/False)
         """
@@ -103,6 +105,7 @@ class CatalogAttributes:
     def __ne__(self, other):
         """
         Define the non-equality behavior.
+
         :param other:
         :return: bool (negate __eq__())
         """
@@ -127,6 +130,7 @@ class CatalogAttributes:
 def cli(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root, metrics_run_root):
     """
     DIRBS script to catalog data files received by DIRBS Core.
+
     :param ctx: click commands context object
     :param config: dirbs config
     :param statsd: statsd instance
@@ -166,6 +170,7 @@ def cli(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metri
 def _harvest_files(prospectors, logger):
     """
     Traverse all specified prospector paths and determine uncataloged files.
+
     :param prospectors: file prospectors to harvest files
     :param logger: logger instance
     :return: dict list
@@ -216,6 +221,7 @@ def _harvest_files(prospectors, logger):
 def _fetch_catalog_files(config):
     """
     Fetch all the cataloged files from the database.
+
     :param config: dirbs config instance
     :return: list of cataloged files
     """
@@ -232,6 +238,7 @@ def _fetch_catalog_files(config):
 def _populate_file_properties(config, file_list, run_id, perform_prevalidation, logger):
     """
     Determine the attributes associated with the file.
+
     :param config: dirbs config
     :param file_list: list of files
     :param run_id: job run id
@@ -292,6 +299,7 @@ def _populate_file_properties(config, file_list, run_id, perform_prevalidation, 
 def _get_extra_attributes(input_file, file_type, logger):
     """
     Function to perform additional checks if they are defined for the file_type.
+
     :param input_file: input file name
     :param file_type: type of the file
     :param logger: dirbs logger instance
@@ -311,6 +319,7 @@ def _get_extra_attributes(input_file, file_type, logger):
 def _prevalidate_file(config, file_descriptor, file_path, file_type, run_id, schema, files_to_delete, logger):
     """
     Pre-validate the input file using the CSV validator.
+
     :param config: dirbs config instance
     :param file_descriptor: file descriptor
     :param file_path: file path
@@ -346,6 +355,7 @@ def _prevalidate_file(config, file_descriptor, file_path, file_type, run_id, sch
 def _update_catalog(uncataloged_files, config):
     """
     Write the new and modified files to the data catalog.
+
     :param uncataloged_files: list of uncataloged files
     :param config: dirbs config
     """

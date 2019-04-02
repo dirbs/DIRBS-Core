@@ -43,6 +43,7 @@ class UsedByDirbsSubscriber(Dimension):
     def __init__(self, *, lookback_days, **kwargs):
         """
         Constructor.
+
         :param lookback_days: number of days to look back for analysis
         :param kwargs: kwargs
         """
@@ -62,6 +63,7 @@ class UsedByDirbsSubscriber(Dimension):
     def _matching_imeis_sql(self, conn, app_config, virt_imei_range_start, virt_imei_range_end, curr_date=None):
         """
         Overrides Dimension._matching_imeis_sql.
+
         :param conn: database connection
         :param app_config: dirbs config obj
         :param virt_imei_range_start: virtual imei shard range start

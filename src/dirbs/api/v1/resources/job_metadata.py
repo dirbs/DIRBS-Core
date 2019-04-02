@@ -39,6 +39,7 @@ from dirbs.api.v1.schemas.job_metadata import JobMetadata
 def job_metadata_api(command=None, subcommand=None, run_id=None, status=None, max_results=10, show_details=True):
     """
     Job metadata API endpoint.
+
     :param command: job command name (default none)
     :param subcommand: job sub-command name (default none)
     :param run_id: job run id (default none)

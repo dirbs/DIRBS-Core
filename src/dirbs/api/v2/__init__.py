@@ -55,6 +55,7 @@ api = Blueprint('v2', __name__.split('.')[0])
 def validation_errors(error):
     """
     Transform marshmallow validation errors to custom responses to maintain backward-compatibility.
+
     :param error: intercepted 422 http error
     :return: modified json error response
     """
@@ -64,6 +65,7 @@ def validation_errors(error):
 def register_docs(api_doc):
     """
     Register all endpoints with the ApiDoc object.
+
     :param api_doc: apidoc instance
     """
     for endpoint in [version_api, tac_post_api, tac_get_api, msisdn_get_api, imei_get_api,
@@ -82,6 +84,7 @@ def register_docs(api_doc):
 def tac_post_api(**kwargs):
     """
     Batch TAC API (version 2) POST route.
+
     :param kwargs: list of tacs
     :return: json
     """
@@ -96,6 +99,7 @@ def tac_post_api(**kwargs):
 def tac_get_api(tac):
     """
     TAC API (version 2) GET route.
+
     :param tac: gsma tac
     :return: json
     """
@@ -111,6 +115,7 @@ def tac_get_api(tac):
 def msisdn_get_api(msisdn):
     """
     MSISDN API (version 2) GET route.
+
     :param msisdn: MSISDN
     :return: json
     """
@@ -127,6 +132,7 @@ def msisdn_get_api(msisdn):
 def imei_get_api(imei):
     """
     IMEI API (version 2.0) GET route.
+
     :param imei: IMEI
     :return: json
     """
@@ -143,6 +149,7 @@ def imei_get_api(imei):
 def imei_get_subscribers_api(imei, **kwargs):
     """
     IMEI Subscribers API (version 2.0) GET route.
+
     :param imei: IMEI
     :param kwargs: extra input args
     :return: json
@@ -160,6 +167,7 @@ def imei_get_subscribers_api(imei, **kwargs):
 def imei_get_pairings_api(imei, **kwargs):
     """
     IMEI Pairings API (version 2.0) GET route.
+
     :param imei: IMEI
     :param kwargs: extra input args
     :return: json
@@ -176,6 +184,7 @@ def imei_get_pairings_api(imei, **kwargs):
 def imei_info_api(imei):
     """
     IMEI-Info API (Version 2.0) GET route.
+
     :param imei: IMEI
     :return: json
     """
@@ -192,6 +201,7 @@ def imei_info_api(imei):
 def imei_batch_api(**kwargs):
     """
     IMEI Batch API (version 2.0) POST route.
+
     :param kwargs: list of IMEI's
     :return: json
     """
@@ -209,6 +219,7 @@ def imei_batch_api(**kwargs):
 def job_metadata_get_api(**kwargs):
     """
     Job Metadata API GET route.
+
     :param kwargs: input args
     :return: json
     """
@@ -226,6 +237,7 @@ def job_metadata_get_api(**kwargs):
 def catalog_get_api(**kwargs):
     """
     Catalog API GET route.
+
     :param kwargs: input args
     :return: json
     """

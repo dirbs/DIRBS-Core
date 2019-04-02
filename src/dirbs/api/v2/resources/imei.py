@@ -44,6 +44,7 @@ from dirbs.api.common.pagination import Pagination
 def registration_list_status(cursor, imei_norm):
     """
     Method to get RegistrationList status of an IMEI from Registration List.
+
     :param cursor: db cursor
     :param imei_norm: normalized imei
     :return: status dict
@@ -76,6 +77,7 @@ def registration_list_status(cursor, imei_norm):
 def stolen_list_status(cursor, imei_norm):
     """
     Method to get StolenList status of an IMEI from Stolen List.
+
     :param cursor: db cursor
     :param imei_norm: normalized imei
     :return: status dict
@@ -107,6 +109,7 @@ def stolen_list_status(cursor, imei_norm):
 def block_date(cursor, imei_norm):
     """
     Method to get block date of an IMEI from Notification and Blacklist.
+
     :param cursor: db cursor
     :param imei_norm: normalized imei
     :return: block date or none
@@ -138,6 +141,7 @@ def block_date(cursor, imei_norm):
 def is_exempted_device(cursor, imei_norm):
     """
     Method to check if an IMEI device has been exempted.
+
     :param cursor: db cursor
     :param imei_norm: normalized imei
     :return: bool
@@ -158,6 +162,7 @@ def is_exempted_device(cursor, imei_norm):
 def imei_info_api(imei):
     """
     IMEI-Info API method handler.
+
     :param imei: IMEI
     :return: json
     """
@@ -179,6 +184,7 @@ def imei_info_api(imei):
 def imei_api(imei):
     """
     IMEI API handler.
+
     :param imei: IMEI
     :return: json
     """
@@ -220,6 +226,7 @@ def imei_api(imei):
 def imei_subscribers_api(imei, **kwargs):
     """
     IMEI-Subscribers API handler.
+
     :param imei: IMEI
     :param kwargs: extra input args
     :return: json
@@ -266,6 +273,7 @@ def imei_subscribers_api(imei, **kwargs):
 def imei_pairings_api(imei, **kwargs):
     """
     IMEI-Pairings API handler.
+
     :param imei: IMEI
     :param kwargs: extra input args
     :return: json
@@ -315,6 +323,7 @@ def imei_pairings_api(imei, **kwargs):
 def imei_batch_api(**kwargs):
     """
     IMEI API POST method handler for IMEI-Batch request.
+
     :param kwargs: input imei list
     :return: json
     """

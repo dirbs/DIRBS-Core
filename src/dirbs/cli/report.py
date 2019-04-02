@@ -58,6 +58,7 @@ import dirbs.partition_utils as partition_utils
 def _gen_metadata_for_reports(filenames, output_dir):
     """
     Function to generate a metadata dictionary for a list file pointer and a passed number of records.
+
     :param filenames: list of file names
     :param output_dir: output directory path
     :return: dict
@@ -80,6 +81,7 @@ def _gen_metadata_for_reports(filenames, output_dir):
 def _parse_month_year_report_options_args(f):
     """
     Decorator used to parse all the monthly, year command line options and update the config.
+
     :param f: obj
     :return: obj
     """
@@ -96,6 +98,7 @@ def _parse_month_year_report_options_args(f):
 def _parse_month(f):
     """
     Function to parse month option on the command line.
+
     :param f: obj
     :return: click arg obj
     """
@@ -107,6 +110,7 @@ def _parse_month(f):
 def _parse_year(f):
     """
     Function to parse year option on the command line.
+
     :param f: obj
     :return: click arg obj
     """
@@ -118,6 +122,7 @@ def _parse_year(f):
 def _parse_output_dir(f):
     """
     Function to parse output dir option on the command line.
+
     :param f: obj
     :return: click arg obj
     """
@@ -128,6 +133,7 @@ def _parse_output_dir(f):
 def _parse_force_refresh(f):
     """
     Function to parse force refresh option on the command line.
+
     :param f: obj
     :return: click option obj
     """
@@ -141,6 +147,7 @@ def _parse_force_refresh(f):
 def _parse_disable_retention_check(f):
     """
     Function to parse disable retention check option on the command line.
+
     :param f: obj
     :return: click option obj
     """
@@ -153,6 +160,7 @@ def _parse_disable_retention_check(f):
 def _parse_disable_data_check(f):
     """
     Function to parse disable data check option on the command line.
+
     :param f: obj
     :return: click option obj
     """
@@ -166,6 +174,7 @@ def _parse_disable_data_check(f):
 def _parse_debug_query_performance(f):
     """
     Function to parse debug query performance option on the command line.
+
     :param f: obj
     :return: click option obj
     """
@@ -179,6 +188,7 @@ def _parse_debug_query_performance(f):
 def _validate_month(ctx, param, val):
     """
     Helper function to validate a month coming from the CLI.
+
     :param ctx: current cli context
     :param param: param
     :param val: month value
@@ -192,6 +202,7 @@ def _validate_month(ctx, param, val):
 def _validate_year(ctx, param, val):
     """
     Helper function to validate a year coming from the CLI.
+
     :param ctx: current cli context
     :param param: param
     :param val: year value
@@ -206,6 +217,7 @@ def _write_report(report, month, year, output_dir, filename_prefix, css_filename
                   per_tac_compliance_data):
     """
     Helper function to write an individual report to disk.
+
     :param report: report type
     :param month: reporting month
     :param year: reporting year
@@ -281,6 +293,7 @@ def _write_report(report, month, year, output_dir, filename_prefix, css_filename
 def _validate_data_partitions(config, conn, month, year, logger, disable_data_check):
     """
     Validate that data is present for all configured operators and only configured operators.
+
     :param config: dirbs config obj
     :param conn: database conection
     :param month: data month
@@ -360,6 +373,7 @@ def _validate_data_partitions(config, conn, month, year, logger, disable_data_ch
 def _write_country_gsma_not_found_report(conn, config, month, year, country_name, output_dir):
     """
     Helper function to write out the country-wide GSMA not found report.
+
     :param conn: database connection
     :param config: dirbs config obj
     :param month: data month
@@ -385,6 +399,7 @@ def _write_country_gsma_not_found_report(conn, config, month, year, country_name
 def _write_country_duplicates_report(conn, config, month, year, country_name, output_dir, imsi_min_limit=5):
     """
     Helper function to write out the country-wide duplicates report.
+
     :param conn: database connection
     :param config: dirbs config obj
     :param month: data month
@@ -421,6 +436,7 @@ def _write_country_duplicates_report(conn, config, month, year, country_name, ou
 def _write_condition_imei_overlaps(conn, config, month, year, country_name, output_dir, cond_names):
     """
     Helper function to write out IMEIs that are seen on multiple operators that have been classified.
+
     :param conn: database connection
     :param config: dirbs config obj
     :param month: data month
@@ -462,6 +478,7 @@ def _write_condition_imei_overlaps(conn, config, month, year, country_name, outp
 def _make_report_directory(ctx, base_dir, run_id, conn, config, class_run_id=None, **extra_options):
     """
     Make directory based on timestamp, data_id and class_run_id.
+
     :param ctx: current cli context
     :param base_dir: base directory path
     :param run_id: job run id
@@ -513,6 +530,7 @@ def _make_report_directory(ctx, base_dir, run_id, conn, config, class_run_id=Non
 def _reports_validation_checks(disable_retention_check, year, month, logger, config, conn, disable_data_check):
     """
     Helper method to perform validation checks on reports.
+
     :param disable_retention_check: retention check flag
     :param year: data year
     :param month: data month
@@ -529,6 +547,7 @@ def _reports_validation_checks(disable_retention_check, year, month, logger, con
 def _retention_window_check(disable_retention_check, year, month, config, logger):
     """
     Helper method to perform retention check.
+
     :param disable_retention_check: retention check flag
     :param year: data year
     :param month: data month
@@ -551,6 +570,7 @@ def _retention_window_check(disable_retention_check, year, month, config, logger
 def _operators_configured_check(config, logger):
     """
     Helper method to perform configured operators check.
+
     :param config: dirbs config obj
     :param logger: dirbs logger obj
     """
@@ -564,6 +584,7 @@ def _operators_configured_check(config, logger):
 def _extra_missing_operator_check(config, conn, month, year, logger, disable_data_check):
     """
     Process extra missing operator check.
+
     :param config: dirbs config obj
     :param conn: database connection
     :param month: data month
@@ -591,6 +612,7 @@ def _extra_missing_operator_check(config, conn, month, year, logger, disable_dat
 def cli(ctx):
     """
     DIRBS script to output reports (operator and country) for a given MONTH and YEAR.
+
     :param ctx: current cli context obj
     """
     pass
@@ -607,6 +629,7 @@ def standard(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, 
              month, year, output_dir):
     """
     Generate standard monthly operator and country-level reports.
+
     :param ctx: current cli context
     :param config: dirbs config obj
     :param statsd: statsd obj
@@ -715,6 +738,7 @@ def gsma_not_found(ctx, config, statsd, logger, run_id, conn, metadata_conn, com
                    month, year, output_dir):
     """
     Generate report of all GSMA not found IMEIs.
+
     :param ctx: current cli context
     :param config: dirbs config obj
     :param statsd: statsd obj
@@ -767,6 +791,7 @@ def top_duplicates(ctx, config, statsd, logger, run_id, conn, metadata_conn, com
                    month, year, output_dir):
     """
     Generate report listing IMEIs seen with more than 5 IMSIs in a given month and year.
+
     :param ctx: current cli context
     :param config: dirbs config obj
     :param statsd: statsd obj
@@ -819,6 +844,7 @@ def condition_imei_overlaps(ctx, config, statsd, logger, run_id, conn, metadata_
                             debug_query_performance, month, year, output_dir):
     """
     Generate per-condition reports showing matched IMEIs seen on more than one MNO network.
+
     :param ctx: current cli context
     :param config: dirbs config obj
     :param statsd: statsd obj
@@ -879,6 +905,7 @@ def stolen_violations(ctx, config, statsd, logger, run_id, conn, metadata_conn, 
                       metrics_run_root, output_dir, newer_than, filter_by_conditions):
     """
     Generate per-MNO list of IMEIs seen on the network after they were reported stolen.
+
     :param ctx: current cli context
     :param config: dirbs config obj
     :param statsd: statsd obj

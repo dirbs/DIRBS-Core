@@ -35,7 +35,9 @@ from marshmallow import fields, validate
 
 
 def validate_error(error):
-    """Transform marshmallow validation errors to custom responses to maintain backward-compatibility.
+    """
+    Transform marshmallow validation errors to custom responses to maintain backward-compatibility.
+
     :param error: intercepted http error
     :return: custom http error response
     """
@@ -51,6 +53,7 @@ def validate_error(error):
 def get_error_desc(field, name, value):
     """
     Helper function to construct error description.
+
     :param field: Marshmallow field
     :param name: field name
     :param value: field value

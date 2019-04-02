@@ -45,6 +45,7 @@ class GSMANotFound(Dimension):
     def __init__(self, *, per_rbi_delays=None, ignore_rbi_delays=False, **kwargs):
         """
         Constructor.
+
         :param per_rbi_delays: user defined rbi delays values
         :param ignore_rbi_delays: flag to ignore rbi delay
         :param kwargs: kwargs
@@ -85,6 +86,7 @@ class GSMANotFound(Dimension):
     def _matching_imeis_sql(self, conn, app_config, virt_imei_range_start, virt_imei_range_end, curr_date=None):
         """
         Overrides Dimension._matching_imeis_sql.
+
         :param conn: database connection
         :param app_config: dirbs config obj
         :param virt_imei_range_start: virtual imei shard range start

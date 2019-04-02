@@ -42,6 +42,7 @@ class DuplicateAbstractBase(Dimension):
     def __init__(self, *, period_days, period_months, use_msisdn, **kwargs):
         """
         Constructor.
+
         :param period_days: period in terms of days
         :param period_months: period in terms of months
         :param use_msisdn: flag to use MSISDN for analysis rather then IMSI
@@ -71,6 +72,7 @@ class DuplicateAbstractBase(Dimension):
     def _calc_analysis_window(self, conn, curr_date=None):
         """
         Method used to calculate the analysis window (as a tuple) given a curr date.
+
         :param conn: database connection
         :param curr_date: user defined current date (default None)
         :return: dates range for analysis

@@ -34,7 +34,9 @@ from flask import abort
 
 
 def validate_tac(val):
-    """Validate TAC input argument format.
+    """
+    Validate TAC input argument format.
+
     :param val: tac value
     """
     if len(val) != 8:

@@ -93,6 +93,7 @@ app.json_encoder = utils.JSONEncoder
 def _metrics_type_from_req_ctxt(req):
     """
     Utility method to get a metrics path for the API type.
+
     :param req: input http request
     :return: str
     """
@@ -137,6 +138,7 @@ def log_api_perf_start():
 def add_no_cache(response):
     """
     Makes sure no API responses are cached by setting headers on the response.
+
     :param response: prep response
     :return: response with modified headers
     """
@@ -153,6 +155,7 @@ def add_no_cache(response):
 def log_api_successes(response):
     """
     Makes sure we record the number of successful API responses for each API.
+
     :param response: prep response
     :return: prep response
     """
@@ -166,6 +169,7 @@ def log_api_successes(response):
 def add_security_headers(response):
     """
     Makes sure appropriate security headers are added for each API.
+
     :param response: prep response
     :return: response with security headers
     """
@@ -178,6 +182,7 @@ def add_security_headers(response):
 def log_api_perf_end(response):
     """
     Logs the response time of every request to StatsD.
+
     :param response: prep response
     :return: prep response
     """
@@ -197,6 +202,7 @@ def log_api_perf_end(response):
 def on_request_end(error):
     """
     Make sure we always close the DB at the end of a request.
+
     :param error: error (unused)
     """
     close_db_connection()
@@ -211,6 +217,7 @@ def on_request_end(error):
 def app_error_handler(error):
     """
     Make sure we log metrics for all failures.
+
     :param error: intercepted http error
     :return: http error (logged)
     """

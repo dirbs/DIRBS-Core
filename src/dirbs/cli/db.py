@@ -54,6 +54,7 @@ min_schema_version = 19
 def _store_job_metadata(config, subcommand):
     """
     Utility method to store metadata about a dirbs-db invocation in the database.
+
     :param config: dirbs config obj
     :param subcommand: sub-command name
     """
@@ -77,6 +78,7 @@ def _store_job_metadata(config, subcommand):
 def cli(ctx):
     """
     DIRBS script to intiliaze, configure and upgrade the PostgreSQL schema.
+
     :param ctx: current cli context obj
     """
     config = common.ensure_config(ctx)
@@ -112,6 +114,7 @@ def cli(ctx):
 def check(ctx):
     """
     Checks whether DB schema matches software DB version.
+
     :param ctx: current cli context obj
     """
     db_config = common.ensure_config(ctx).db_config
@@ -147,6 +150,7 @@ def check(ctx):
 def upgrade(ctx):
     """
     Upgrades the current DB schema to the version supported by this code using migration scripts.
+
     :param ctx: current cli context obj
     """
     logger = logging.getLogger('dirbs.db')
@@ -222,6 +226,7 @@ def upgrade(ctx):
 def install(ctx):
     """
     Installs latest schema on clean DB instance.
+
     :param ctx: current cli context obj
     :return: status
     """
@@ -276,6 +281,7 @@ def install(ctx):
 def install_roles(ctx):
     """
     Creates DIRBS Core PostgreSQL base roles if they don't exist.
+
     :param ctx: current cli context obj
     """
     logger = logging.getLogger('dirbs.db')
@@ -298,6 +304,7 @@ def install_roles(ctx):
 def num_physical_shards_option(f):
     """
     Function to parse/validate the --num-physical-shards CLI option to dirbs-db repartition.
+
     :param f: obj
     :return: options obj
     """
@@ -321,6 +328,7 @@ def num_physical_shards_option(f):
 def repartition(ctx, num_physical_shards):
     """
     Repartition DIRBS Core tables into a new number of physical IMEI shards.
+
     :param ctx: current cli context obj
     :param num_physical_shards: number of physical shards
     """

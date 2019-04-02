@@ -33,7 +33,9 @@ from psycopg2 import sql
 
 
 def _build_sql_query_filters(**kwargs):
-    """Function to build list of filters to apply to SQL query.
+    """
+    Function to build list of filters to apply to SQL query.
+
     :param kwargs: kay value sql filters
     :return: filters, params
     """

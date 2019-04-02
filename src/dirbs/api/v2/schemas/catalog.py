@@ -67,6 +67,7 @@ class CatalogFile(Schema):
     def extract_fields(self, data):
         """
         Extract import status.
+
         :param data: dumped data
         """
         data['import_status'] = {

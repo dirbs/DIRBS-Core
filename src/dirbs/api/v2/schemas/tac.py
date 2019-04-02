@@ -54,6 +54,7 @@ class GSMA(Schema):
     def extract_fields(self, data):
         """
         Map optional fields to corresponding schema fields.
+
         :param data: dumped data
         """
         for key in data['optional_fields']:

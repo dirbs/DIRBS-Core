@@ -43,6 +43,7 @@ from dirbs.api.v2.schemas.catalog import CatalogFile, Keys
 def catalog_api(**kwargs):
     """
     Defines handler for Catalog API (version 2.0) GET method.
+
     :param kwargs: input args
     :return: json
     """

@@ -42,6 +42,7 @@ from dirbs.api.v2.schemas.job_metadata import JobKeys, JobMetadata
 def get_metadata(command=None, subcommand=None, run_id=None, status=None):
     """
     Get metadata for jobs.
+
     :param command: command name (default None)
     :param subcommand: sub-command name (default None)
     :param run_id: job run id (default None)
@@ -80,6 +81,7 @@ def job_metadata_api(command=None, subcommand=None, run_id=None, status=None, sh
                      order=None, offset=None, limit=None):
     """
     Defines handler method for job-metadata GET API (version 2.0).
+
     :param command: command name (default None)
     :param subcommand: sub-command name (default None)
     :param run_id: job run id (default None)

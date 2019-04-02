@@ -50,6 +50,7 @@ import dirbs.utils as utils
 def parse_verbosity_option(f):
     """
     Function to parse the verbosity flag used by all CLI programs.
+
     :param f: click verbosity flag to parse
     :return: click option obj
     """
@@ -69,6 +70,7 @@ def parse_verbosity_option(f):
 def validate_date(ctx, param, val):
     """
     Function to validate a date string supplied on the command line.
+
     :param ctx: cli context
     :param param:
     :param val: string date value
@@ -88,6 +90,7 @@ def validate_date(ctx, param, val):
 def parse_statsd_options(f):
     """
     Decorator used to parse all the StatsD command line options and update the config.
+
     :param f: obj
     :return: obj
     """
@@ -100,6 +103,7 @@ def parse_statsd_options(f):
 def _parse_statsd_host(f):
     """
     Function to override the StatsD host on the command line.
+
     :param f: obj
     :return: option obj
     """
@@ -118,6 +122,7 @@ def _parse_statsd_host(f):
 def _parse_statsd_port(f):
     """
     Function to override the StatsD port on the command line.
+
     :param f: obj
     :return: option obj
     """
@@ -139,6 +144,7 @@ def _parse_statsd_port(f):
 def _parse_statsd_prefix(f):
     """
     Function to override the StatsD prefix on the command line.
+
     :param f: obj
     :return: option obj
     """
@@ -157,6 +163,7 @@ def _parse_statsd_prefix(f):
 def parse_db_options(f):
     """
     Decorator used to parse all the PostgreSQL command line options and update the config.
+
     :param f: obj
     :return: option objs
     """
@@ -171,6 +178,7 @@ def parse_db_options(f):
 def _parse_db_host(f):
     """
     Function to override the DB host on the command line.
+
     :param f: obj
     :return: option obj
     """
@@ -189,6 +197,7 @@ def _parse_db_host(f):
 def _parse_db_port(f):
     """
     Function to override the DB port on the command line.
+
     :param f: obj
     :return: option obj
     """
@@ -210,6 +219,7 @@ def _parse_db_port(f):
 def _parse_db_database(f):
     """
     Function to override the DB port on the command line.
+
     :param f: obj
     :return: option obj
     """
@@ -228,6 +238,7 @@ def _parse_db_database(f):
 def _parse_db_user(f):
     """
     Function to override the DB user on the command line.
+
     :param f: obj
     :return: option obj
     """
@@ -246,6 +257,7 @@ def _parse_db_user(f):
 def _parse_db_password(f):
     """
     Function to override the DB password on the command line.
+
     :param f: obj
     :return: option obj
     """
@@ -272,6 +284,7 @@ def _parse_db_password(f):
 def parse_multiprocessing_options(f):
     """
     Decorator used to parse all the multiprocessing command line options and update the config.
+
     :param f: obj
     :return: option obj
     """
@@ -283,6 +296,7 @@ def parse_multiprocessing_options(f):
 def _parse_max_local_cpus(f):
     """
     Function to override the number of max local CPUs to use on the command line.
+
     :param f: obj
     :return: option obj
     """
@@ -305,6 +319,7 @@ def _parse_max_local_cpus(f):
 def _parse_max_db_connections(f):
     """
     Function to override the number of max database connections on the command line.
+
     :param f: obj
     :return: option obj
     """
@@ -327,6 +342,7 @@ def _parse_max_db_connections(f):
 def ensure_config(ctx):
     """
     Ensures that the DIRBS config has been created in the context and returns it.
+
     :param ctx: current cli context
     :return: dirbs config obj
     """
@@ -354,6 +370,7 @@ def setup_initial_logging(f):
 
     The configure_logging decorator should be applied later after the config has been read so that logging takes
     into account user preferences.
+
     :param f: obj
     :return: decorated logging obj
     """
@@ -370,6 +387,7 @@ def configure_logging(f):
 
     This decorator requires the click context so should be included after the click.pass_context decorator. It should
     included after the setup_initial_logging fixture, which is intended to init the logging.
+
     :param f: obj
     :return: decorated logging obj
     """
@@ -384,6 +402,7 @@ def configure_logging(f):
 def ensure_statsd(ctx):
     """
     Ensures that the DIRBS config has been created in the context and returns it.
+
     :param ctx: current cli context obj
     :return: statsd config obj
     """
@@ -407,6 +426,7 @@ def unhandled_exception_handler(f):
     exceptions will not be caught, unless some other component makes sure that these are marshalled back to the main
     thread and re-raised. If concurrent.futures is being used, this will always happen if you call result() on the
     future.
+
     :param f: obj
     :return: decorated obj
     """
@@ -460,6 +480,7 @@ def cli_wrapper(command=None, subcommand=None, logger_name=None, metrics_root=No
 
     This decorator requires the click context so should be included after the click.pass_context decorator. In most
     cases this should be the last decorator in the chain, directly above the actual CLI function.
+
     :param command: command name (default None)
     :param subcommand: sub-command name (default None)
     :param logger_name: dirbs logger name (default None)
@@ -583,6 +604,7 @@ def validate_conditions(ctx, param, condition_names_str):
     Checks if passed value is acceptable for processing worker count.
 
     Need atleast one thread and the maximum count is capped at number of cores on the system minus one.
+
     :param ctx: current cli context
     :param param: param
     :param condition_names_str: condition names strings

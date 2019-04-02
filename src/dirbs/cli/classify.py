@@ -90,6 +90,7 @@ def cli(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metri
     DIRBS script to classify IMEIs.
 
     Iterates through all configured conditions and write to the classification_state table.
+
     :param ctx: click command context
     :param config: dirbs config instance
     :param statsd: statsd instance
@@ -217,6 +218,7 @@ def cli(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metri
 def _warn_about_curr_date(curr_date, logger):
     """
     Function to print out warning about setting curr_date in production.
+
     :param curr_date: user supplied current date
     :param logger: dirbs logger instance
     """
@@ -241,6 +243,7 @@ def _warn_about_curr_date(curr_date, logger):
 
 def _warn_about_disabled_safety_check(safety_check, logger):
     """Function to print out warning about disabling safety check in production.
+
     :param safety_check: safety check param
     :param logger: dirbs logger instance
     """
@@ -263,6 +266,7 @@ def _warn_about_disabled_safety_check(safety_check, logger):
 def _completed_calc_jobs(futures_to_condition, per_condition_state, logger):
     """
     Function to process the IMEI calculation jobs and yield results once a condition is completed.
+
     :param futures_to_condition: list of condition futures
     :param per_condition_state: list of condition states
     :param logger: dirbs logger instance
@@ -289,6 +293,7 @@ def _completed_calc_jobs(futures_to_condition, per_condition_state, logger):
 def _completed_update_jobs(futures_to_condition, per_condition_state, logger):
     """
     Function to process the classification_state update jobs and yield results once a condition is completed.
+
     :param futures_to_condition: list of condition futures
     :param per_condition_state: per condition state
     :param logger: dirbs logger instance
@@ -315,6 +320,7 @@ def _completed_update_jobs(futures_to_condition, per_condition_state, logger):
 def _perform_sanity_checks(config, extra_metadata):
     """
     Method to perform sanity checks on current classification run.
+
     :param config: dirbs config instance
     :param extra_metadata: job extra metadata dict obj
     :return: bool (true/false)
@@ -333,6 +339,7 @@ def _perform_sanity_checks(config, extra_metadata):
 def _do_final_cleanup(conn, logger, is_locked, tables_to_delete):
     """
     Function to perform final cleanup to remove intermediate tables and release locks.
+
     :param conn: database connection obj
     :param logger: dirbs logger obj
     :param is_locked: bool (to check if there is postgres advisory lock)

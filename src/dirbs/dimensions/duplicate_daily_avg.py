@@ -41,6 +41,7 @@ class DuplicateAverageThreshold(DuplicateAbstractBase):
     def __init__(self, *, threshold, period_days=None, period_months=None, min_seen_days, use_msisdn=False, **kwargs):
         """
         Constructor.
+
         :param threshold: threshold for duplicate entries
         :param period_days: analysis period in days (default None)
         :param period_months: analysis period in months (default None)
@@ -73,6 +74,7 @@ class DuplicateAverageThreshold(DuplicateAbstractBase):
     def _matching_imeis_sql(self, conn, app_config, virt_imei_range_start, virt_imei_range_end, curr_date=None):
         """
         Overrides Dimension._matching_imeis_sql.
+
         :param conn: database connection
         :param app_config: dirbs config obj
         :param virt_imei_range_start: imei shard range start

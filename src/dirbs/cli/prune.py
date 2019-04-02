@@ -58,6 +58,7 @@ import dirbs.partition_utils as partition_utils
 def cli(ctx, curr_date):
     """
     DIRBS script to prune obsolete data from the DIRBS Core PostgreSQL database.
+
     :param ctx: current cli context
     :param curr_date: current date by user
     """
@@ -71,6 +72,7 @@ def cli(ctx, curr_date):
 def triplets(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root, metrics_run_root):
     """
     Prune old monthly_network_triplets data.
+
     :param ctx: current cli context
     :param config: dirbs config obj
     :param statsd: statsd obj
@@ -163,6 +165,7 @@ def classification_state(ctx, config, statsd, logger, run_id, conn, metadata_con
                          metrics_run_root):
     """
     Prune obsolete classification_state data.
+
     :param ctx: current cli context
     :param config: dirbs config obj
     :param statsd: statsd obj
@@ -244,6 +247,7 @@ def classification_state(ctx, config, statsd, logger, run_id, conn, metadata_con
 def _warn_about_prune_all(prune_all, logger):
     """
     Function to print out warning about setting all in production.
+
     :param prune_all: prune all flag
     :param logger: dirbs logger obj
     """
@@ -272,6 +276,7 @@ def blacklist(ctx, config, statsd, logger, run_id, conn, metadata_conn, command,
               metrics_root, metrics_run_root, condition_name, prune_all):
     """
     Expire IMEIs outside the blacklist retention period from blacklist.
+
     :param ctx: current cli context
     :param config: dirbs config obj
     :param statsd: statsd obj
@@ -405,6 +410,7 @@ def blacklist(ctx, config, statsd, logger, run_id, conn, metadata_conn, command,
 def lists(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root, metrics_run_root):
     """
     Prune obsolete lists data.
+
     :param ctx: current cli context
     :param config: dirbs config obj
     :param statsd: statsd obj

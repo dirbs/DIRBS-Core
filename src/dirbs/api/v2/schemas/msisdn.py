@@ -43,6 +43,7 @@ class GSMAMSISDN(Schema):
     def extract_fields(self, data):
         """
         Extract and map related fields.
+
         :param data: dumped data
         """
         if data['optional_fields'] is not None:

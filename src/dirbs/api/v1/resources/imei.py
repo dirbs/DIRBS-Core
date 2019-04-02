@@ -42,6 +42,7 @@ from dirbs.api.common.imei import validate_imei, get_conditions, ever_observed_o
 def imei_api(imei, include_seen_with=False, include_paired_with=False):
     """
     IMEI API handler.
+
     :param imei: normalized imei
     :param include_seen_with: bool (to include seen_with info)
     :param include_paired_with: bool (to include paired with info)

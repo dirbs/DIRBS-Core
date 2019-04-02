@@ -64,7 +64,28 @@ class AbstractImporter:
                  prevalidator_path='/opt/validator/bin/validate', prevalidator_schema_path='/opt/dirbs/etc/schema',
                  batch_size=100000, expected_suffix='.csv', extract=True, no_cleanup=False, extract_dir=None,
                  max_db_connections=1, max_local_cpus=1):
-        """Constructor."""
+        """
+        Constructor.
+
+        :param conn: database connection
+        :param metadata_conn: database connection for inserting job metadata
+        :param import_id: id of the import job
+        :param metrics_root:
+        :param metrics_run_root:
+        :param db_config: database config obj
+        :param input_filename: name of file to be imported
+        :param logger: dirbs logger obj
+        :param statsd: statsd obj
+        :param prevalidator_path: path to csv validator (default /opt/validator/bin/validate)
+        :param prevalidator_schema_path: path to the validation schema (default /opt/dirbs/etc/schema)
+        :param batch_size: batch size (default 100000)
+        :param expected_suffix: expected file suffix (default .csv)
+        :param extract: flag to extract file (default True)
+        :param no_cleanup: flag to stop cleanup operation (default False)
+        :param extract_dir: directory path to extract files (default None)
+        :param max_db_connections: max number of database connection for this job (default 1)
+        :param max_local_cpus: max number of local cpu to be used (default 1)
+        """
         assert import_id != -1
         self.import_id = import_id
         self._conn = conn
@@ -122,7 +143,11 @@ class AbstractImporter:
         return state
 
     def __setstate__(self, state):
-        """Custom function to allow use of this class in ProcessPoolExecutor."""
+        """
+        Custom function to allow use of this class in ProcessPoolExecutor.
+
+        :param state: current state
+        """
         self.__dict__.update(state)
 
     @property

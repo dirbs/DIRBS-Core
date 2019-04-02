@@ -39,6 +39,7 @@ from dirbs.api.v1.schemas.tac import GSMATacInfo
 def api(tac):
     """
     TAC API endpoint (version 1).
+
     :param tac: gsma tac
     :return: json response
     """
