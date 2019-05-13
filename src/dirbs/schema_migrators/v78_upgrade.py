@@ -1,7 +1,7 @@
 """
 DIRBS DB schema migration script (v77 -> v78).
 
-Copyright (c) 2018 Qualcomm Technologies, Inc.
+Copyright (c) 2019 Qualcomm Technologies, Inc.
 
  All rights reserved.
 

@@ -1,7 +1,7 @@
 """
 DIRBS configuration file parser.
 
-Copyright (c) 2018 Qualcomm Technologies, Inc.
+Copyright (c) 2019 Qualcomm Technologies, Inc.
 
  All rights reserved.
 
@@ -492,6 +492,14 @@ class OperatorConfig(ConfigSection):
             'mcc_mnc_pairs': []
         }
 
+    def as_dict(self):
+        """Method to turn this config into a dict for serialization purposes."""
+        return {
+            'operator_id': self.id,
+            'operator_name': self.name,
+            'mcc_mnc_pairs': self.mcc_mnc_pairs
+        }
+
 
 class LoggingConfig(ConfigSection):
     """Class representing the 'logging' section of the config."""
@@ -878,6 +886,7 @@ class RetentionConfig(ConfigSection):
         """Constructor which parses the data retention config."""
         super(RetentionConfig, self).__init__(**retention_config)
         self.months_retention = self._parse_positive_int('months_retention')
+        self.blacklist_retention = self._parse_positive_int('blacklist_retention')
 
     @property
     def section_name(self):
@@ -889,6 +898,7 @@ class RetentionConfig(ConfigSection):
         """Property describing defaults for config values."""
         return {
             'months_retention': 3,
+            'blacklist_retention': 0,
         }
 
 
@@ -902,6 +912,7 @@ class ListGenerationConfig(ConfigSection):
         self.restrict_exceptions_list = self._parse_bool('restrict_exceptions_list_to_blacklisted_imeis')
         self.generate_check_digit = self._parse_bool('generate_check_digit')
         self.output_invalid_imeis = self._parse_bool('output_invalid_imeis')
+        self.non_active_pairs = self._parse_positive_int('non_active_pairs')
 
     @property
     def section_name(self):
@@ -915,7 +926,8 @@ class ListGenerationConfig(ConfigSection):
             'lookback_days': 60,
             'restrict_exceptions_list_to_blacklisted_imeis': False,
             'generate_check_digit': False,
-            'output_invalid_imeis': True
+            'output_invalid_imeis': True,
+            'non_active_pairs': 0
         }
 
 
@@ -1085,4 +1097,12 @@ class AmnestyConfig(ConfigSection):
             'amnesty_enabled': False,
             'evaluation_period_end_date': '19700101',
             'amnesty_period_end_date': '19700102'
+        }
+
+    def as_dict(self):
+        """Method to turn this config into a dict for serialization purposes."""
+        return {
+            'amnesty_enabled': self.amnesty_enabled,
+            'evaluation_period_end_date': self.evaluation_period_end_date.isoformat(),
+            'amnesty_period_end_date': self.amnesty_period_end_date.isoformat()
         }

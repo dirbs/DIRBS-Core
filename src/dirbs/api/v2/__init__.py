@@ -1,7 +1,7 @@
 """
 Package for DIRBS REST-ful API (version 2).
 
-Copyright (c) 2018 Qualcomm Technologies, Inc.
+Copyright (c) 2019 Qualcomm Technologies, Inc.
 
  All rights reserved.
 
@@ -32,70 +32,42 @@ Copyright (c) 2018 Qualcomm Technologies, Inc.
 
 from flask import Blueprint
 from flask_apispec import use_kwargs, marshal_with, doc
-from werkzeug.exceptions import BadRequest
-from marshmallow import fields, validate
 
-from dirbs.api.common.tac import TacApi
-from dirbs.api.common.msisdn import MsisdnApi, MSISDNResp
-from dirbs.api.common.imei import ImeiApi, IMEIV2, BatchIMEI, IMEIBatchArgs, IMEISubscribers, \
+from dirbs.api.v2.resources import imei as imei_resource
+from dirbs.api.v2.schemas.imei import IMEI, BatchIMEI, IMEIBatchArgs, IMEISubscribers, \
     SubscriberArgs, IMEIPairings, IMEIInfo
-from dirbs.api.common.job_metadata import JobMetadataArgsV2, Jobs, JobsApi
-from dirbs.api.common.catalog import CatalogArgsV2, CatalogV2, CatalogApi
-from dirbs.api.common.tac import TacInfo, TacArgs, BatchTacInfo
-from dirbs.api.common import version as version_
-from dirbs.api.common.version import Version
+from dirbs.api.v2.resources import catalog as catalog_resource
+from dirbs.api.v2.resources import msisdn as msisdn_resource
+from dirbs.api.v2.resources import job_metadata as job_resource
+from dirbs.api.v2.resources import tac as tac_resource
+from dirbs.api.v2.resources import version as version_resource
+from dirbs.api.v2.schemas.job_metadata import JobMetadataArgs, Jobs
+from dirbs.api.v2.schemas.catalog import Catalog, CatalogArgs
+from dirbs.api.v2.schemas.msisdn import MSISDNResp
+from dirbs.api.v2.schemas.tac import TacInfo, TacArgs, BatchTacInfo
+from dirbs.api.v2.schemas.version import Version
+from dirbs.api.common.handlers import validate_error, disable_options_method
 
 api = Blueprint('v2', __name__.split('.')[0])
 
 
 @api.app_errorhandler(422)
 def validation_errors(error):
-    """Transform marshmallow validation errors to custom responses to maintain backward-compatibility."""
-    field_name = error.exc.field_names[0]
-    field_value = error.exc.data[field_name]
-    field_type = error.exc.fields[0]
-    if isinstance(field_type, fields.List):
-        field_type = error.exc.fields[0].container
-        field_value = error.exc.data[field_name][next(iter(error.exc.messages[field_name]))]
-    return BadRequest(description=get_error_desc(field_type, field_name, field_value))
+    """
+    Transform marshmallow validation errors to custom responses to maintain backward-compatibility.
 
-
-def get_error_desc(field, name, value):
-    """Helper function to construct error description."""
-    error_desc = 'Bad \'{0}\':\'{1}\' argument format.'.format(name, value)
-    if isinstance(field, fields.Integer):
-        try:
-            int(value)
-            msg_allow_zero = 'or equal to ' if field.validate.min < 1 else ''
-            error_desc = 'Param \'{0}\':\'{1}\' must be greater than {2}0' \
-                .format(name, value, msg_allow_zero)
-        except ValueError:
-            error_desc = 'Bad \'{0}\':\'{1}\' argument format. Accepts only integer'.format(name, value)
-    if isinstance(field, fields.Boolean):
-        allowed_values = ['0', '1', 'true', 'false']
-        error_desc = 'Bad \'{0}\':\'{1}\' argument format. Accepts only one of {2}' \
-            .format(name, value, allowed_values)
-    if isinstance(field, fields.String) and isinstance(field.validate, validate.OneOf):
-        error_desc = 'Bad \'{0}\':\'{1}\' argument format. Accepts only one of {2}' \
-            .format(name, value, field.validate.choices)
-    if isinstance(field, fields.DateTime):
-        dateformat = 'YYYYMMDD' if field.dateformat == '%Y%m%d' else field.dateformat
-        error_desc = 'Bad \'{0}\':\'{1}\' argument format. Date must be in \'{2}\' format.' \
-            .format(name, value, dateformat)
-    return error_desc
-
-
-def disable_options_method():
-    """Decorator function to disable OPTIONS method on endpoint."""
-    def wrapper(func):
-        func.provide_automatic_options = False
-        return func
-
-    return wrapper
+    :param error: intercepted 422 http error
+    :return: modified json error response
+    """
+    return validate_error(error)
 
 
 def register_docs(api_doc):
-    """Register all endpoints with the ApiDoc object."""
+    """
+    Register all endpoints with the ApiDoc object.
+
+    :param api_doc: apidoc instance
+    """
     for endpoint in [version_api, tac_post_api, tac_get_api, msisdn_get_api, imei_get_api,
                      imei_get_subscribers_api, imei_get_pairings_api, imei_batch_api,
                      job_metadata_get_api, catalog_get_api, imei_info_api]:
@@ -110,8 +82,13 @@ def register_docs(api_doc):
 @marshal_with(None, code=400, description='Bad TAC format')
 @disable_options_method()
 def tac_post_api(**kwargs):
-    """Batch TAC API (version 2) POST route."""
-    return TacApi().post(**kwargs)
+    """
+    Batch TAC API (version 2) POST route.
+
+    :param kwargs: list of tacs
+    :return: json
+    """
+    return tac_resource.tac_batch_api(**kwargs)
 
 
 @doc(description='Fetch TAC information from both the GSMA database and the device registration system.', tags=['TAC'])
@@ -120,8 +97,13 @@ def tac_post_api(**kwargs):
 @marshal_with(None, code=400, description='Bad TAC format')
 @disable_options_method()
 def tac_get_api(tac):
-    """TAC API (version 2) GET route."""
-    return TacApi().get(tac)
+    """
+    TAC API (version 2) GET route.
+
+    :param tac: gsma tac
+    :return: json
+    """
+    return tac_resource.tac_api(tac)
 
 
 @doc(description='Information Core knows about the MSISDN. It returns a list of IMEI, '
@@ -131,20 +113,30 @@ def tac_get_api(tac):
 @marshal_with(None, code=400, description='Bad MSISDN format')
 @disable_options_method()
 def msisdn_get_api(msisdn):
-    """MSISDN API (version 2) GET route."""
-    return MsisdnApi().get(msisdn)
+    """
+    MSISDN API (version 2) GET route.
+
+    :param msisdn: MSISDN
+    :return: json
+    """
+    return msisdn_resource.msisdn_api(msisdn)
 
 
 @doc(description='Information Core knows about the IMEI, as well as the results of '
                  'all conditions evaluated as part of DIRBS core. Calling systems should expose as '
                  'little or as much of this information to the end user as is appropriate.', tags=['IMEI'])
 @api.route('/imei/<imei>', methods=['GET'])
-@marshal_with(IMEIV2, code=200, description='On success (IMEI info found in Core)')
+@marshal_with(IMEI, code=200, description='On success (IMEI info found in Core)')
 @marshal_with(None, code=400, description='Bad IMEI format')
 @disable_options_method()
 def imei_get_api(imei):
-    """IMEI API (version 2.0) GET route."""
-    return ImeiApi().get(imei)
+    """
+    IMEI API (version 2.0) GET route.
+
+    :param imei: IMEI
+    :return: json
+    """
+    return imei_resource.imei_api(imei)
 
 
 @doc(description='Information Core knows about the IMSI-MSISDN pairs the IMEI has been '
@@ -155,8 +147,14 @@ def imei_get_api(imei):
 @marshal_with(None, code=400, description='Bad IMEI format')
 @disable_options_method()
 def imei_get_subscribers_api(imei, **kwargs):
-    """IMEI Subscribers API (version 2.0) GET route."""
-    return ImeiApi().get_subscribers(imei, **kwargs)
+    """
+    IMEI Subscribers API (version 2.0) GET route.
+
+    :param imei: IMEI
+    :param kwargs: extra input args
+    :return: json
+    """
+    return imei_resource.imei_subscribers_api(imei, **kwargs)
 
 
 @doc(description='Information Core knows about the IMSIs paired with the IMEI in the '
@@ -167,8 +165,14 @@ def imei_get_subscribers_api(imei, **kwargs):
 @marshal_with(None, code=400, description='Bad IMEI format')
 @disable_options_method()
 def imei_get_pairings_api(imei, **kwargs):
-    """IMEI Pairings API (version 2.0) GET route."""
-    return ImeiApi().get_pairings(imei, **kwargs)
+    """
+    IMEI Pairings API (version 2.0) GET route.
+
+    :param imei: IMEI
+    :param kwargs: extra input args
+    :return: json
+    """
+    return imei_resource.imei_pairings_api(imei, **kwargs)
 
 
 @doc(description='Information (such as make, model, brand etc) Core knows about an IMEI in the '
@@ -178,8 +182,13 @@ def imei_get_pairings_api(imei, **kwargs):
 @marshal_with(None, code=400, description='Bad IMEI format')
 @disable_options_method()
 def imei_info_api(imei):
-    """IMEI-Info API (Version 2.0) GET route."""
-    return ImeiApi().get_info(imei)
+    """
+    IMEI-Info API (Version 2.0) GET route.
+
+    :param imei: IMEI
+    :return: json
+    """
+    return imei_resource.imei_info_api(imei)
 
 
 @doc(description='Information Core knows about each IMEI (max:1000) in the batch request, '
@@ -190,34 +199,49 @@ def imei_info_api(imei):
 @marshal_with(None, code=400, description='Bad IMEI format')
 @disable_options_method()
 def imei_batch_api(**kwargs):
-    """IMEI Batch API (version 2.0) POST route."""
-    return ImeiApi().get_batch(**kwargs)
+    """
+    IMEI Batch API (version 2.0) POST route.
+
+    :param kwargs: list of IMEI's
+    :return: json
+    """
+    return imei_resource.imei_batch_api(**kwargs)
 
 
 @doc(description='Information Core knows about the DIRBS jobs run on the system.'
                  'It is intended to be used by operational staff to generate data '
                  'for the admin panel.', tags=['Jobs'])
 @api.route('/job_metadata', methods=['GET'])
-@use_kwargs(JobMetadataArgsV2().fields_dict, locations=['query'])
+@use_kwargs(JobMetadataArgs().fields_dict, locations=['query'])
 @marshal_with(Jobs, code=200, description='On success')
 @marshal_with(None, code=400, description='Bad parameter value')
 @disable_options_method()
 def job_metadata_get_api(**kwargs):
-    """Job Metadata API GET route."""
-    return JobsApi().get_job_metadata(**kwargs)
+    """
+    Job Metadata API GET route.
+
+    :param kwargs: input args
+    :return: json
+    """
+    return job_resource.job_metadata_api(**kwargs)
 
 
 @doc(description='Information Core knows about the cataloged data files.'
                  'It returns a list of files along with their properties'
                  'and state of validation checks run by Core.', tags=['Catalog'])
 @api.route('/catalog', methods=['GET'])
-@use_kwargs(CatalogArgsV2().fields_dict, locations=['query'])
-@marshal_with(CatalogV2, code=200, description='On success')
+@use_kwargs(CatalogArgs().fields_dict, locations=['query'])
+@marshal_with(Catalog, code=200, description='On success')
 @marshal_with(None, code=400, description='Bad parameter value')
 @disable_options_method()
 def catalog_get_api(**kwargs):
-    """Catalog API GET route."""
-    return CatalogApi().get_catalog_data(**kwargs)
+    """
+    Catalog API GET route.
+
+    :param kwargs: input args
+    :return: json
+    """
+    return catalog_resource.catalog_api(**kwargs)
 
 
 @doc(description='Information about the code and DB schema version used by Core and presence of potential whitespace '
@@ -227,4 +251,4 @@ def catalog_get_api(**kwargs):
 @disable_options_method()
 def version_api():
     """Version API (version 2) route."""
-    return version_.api()
+    return version_resource.version()

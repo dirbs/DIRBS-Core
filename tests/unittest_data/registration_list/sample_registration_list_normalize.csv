@@ -1,6 +1,6 @@
-APPROVED_IMEI,make,model,status,model_number,brand_name,device_type,radio_interface
-1000011#000000,,,,,,,
-1000012*000001,,,,,,,
-10000130000002,,,,,,,
-10000140000003,,,,,,,
-10000150000004,,,,,,,
+APPROVED_IMEI,make,model,status,model_number,brand_name,device_type,radio_interface,device_id
+1000011#000000,,,,,,,,1
+1000012*000001,,,,,,,,2
+10000130000002,,,,,,,,3
+10000140000003,,,,,,,,4
+10000150000004,,,,,,,,5

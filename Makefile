@@ -30,7 +30,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-.PHONY: clean-pyc install-dev install dist audit test
+.PHONY: clean-pyc install-dev install dist audit test start-dev
 
 
 clean: clean-pyc
@@ -88,3 +88,8 @@ test:
 	# We need to run the test in development mode for coverage stats to work
 	python3 setup.py develop
 	py.test --verbose
+
+
+start-dev:
+	pip3 install -r opensource_requirements.txt
+	flask run -h 0.0.0.0 -p 5000

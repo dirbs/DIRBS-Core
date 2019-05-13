@@ -1,7 +1,7 @@
 """
 Code for importing registration list data into DIRBS Core.
 
-Copyright (c) 2018 Qualcomm Technologies, Inc.
+Copyright (c) 2019 Qualcomm Technologies, Inc.
 
  All rights reserved.
 
@@ -71,7 +71,8 @@ class RegistrationListImporter(BaseDeltaImporter):
                                              model_number TEXT,
                                              brand_name   TEXT,
                                              device_type  TEXT,
-                                             radio_interface  TEXT
+                                             radio_interface  TEXT,
+                                             device_id TEXT
                                             )"""
 
     @property
@@ -83,13 +84,13 @@ class RegistrationListImporter(BaseDeltaImporter):
     def _input_csv_field_names(self):
         """Overrides BaseDeltaImporter._input_csv_field_names."""
         return ['imei', 'make', 'model', 'status',
-                'model_number', 'brand_name', 'device_type', 'radio_interface']
+                'model_number', 'brand_name', 'device_type', 'radio_interface', 'device_id']
 
     @property
     def _extra_field_names(self):
         """Overrides BaseDeltaImporter._extra_field_names."""
         return ['make', 'model', 'status', 'model_number',
-                'brand_name', 'device_type', 'radio_interface']
+                'brand_name', 'device_type', 'radio_interface', 'device_id']
 
     @property
     def _supports_imei_shards(self):

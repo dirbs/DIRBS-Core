@@ -1,7 +1,7 @@
 """
-DIRBS REST-ful db_metadata API module.
+DIRBS REST-ful MSISDN API schema module.
 
-Copyright (c) 2018 Qualcomm Technologies, Inc.
+Copyright (c) 2019 Qualcomm Technologies, Inc.
 
  All rights reserved.
 
@@ -29,32 +29,47 @@ Copyright (c) 2018 Qualcomm Technologies, Inc.
  TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 """
-
-from flask import jsonify
-from marshmallow import Schema, fields
-
-from dirbs.api.common.db import get_db_connection
-import dirbs.utils as utils
-from dirbs import db_schema_version as code_db_schema_version
-from dirbs import __version__ as dirbs_core_version
-from dirbs import report_schema_version
+from marshmallow import Schema, fields, pre_dump
 
 
-def api():
-    """DB metadata API endpoint."""
-    with get_db_connection() as db_conn:
-        return jsonify(
-            Version().dump(
-                dict(source_code_version=dirbs_core_version,
-                     code_db_schema_version=code_db_schema_version,
-                     db_schema_version=utils.query_db_schema_version(db_conn),
-                     report_schema_version=report_schema_version)).data)
+class GSMAMSISDN(Schema):
+    """Defines sub-schema for MSISDNV2 schema."""
+
+    manufacturer = fields.String()
+    model_name = fields.String()
+    brand_name = fields.String()
+
+    @pre_dump(pass_many=False)
+    def extract_fields(self, data):
+        """
+        Extract and map related fields.
+
+        :param data: dumped data
+        """
+        if data['optional_fields'] is not None:
+            for key in data['optional_fields']:
+                data[key] = data['optional_fields'][key]
 
 
-class Version(Schema):
-    """Defines the Version schema."""
+class REGISTRATION(Schema):
+    """Defines sub-schema for MSISDNV2 schema."""
 
-    source_code_version = fields.String()
-    code_db_schema_version = fields.Integer()
-    db_schema_version = fields.Integer()
-    report_schema_version = fields.Integer()
+    make = fields.String()
+    model = fields.String()
+    brand_name = fields.String()
+
+
+class MSISDN(Schema):
+    """Defines the MSISDN schema for API (version 2)."""
+
+    imei_norm = fields.String()
+    imsi = fields.String()
+    gsma = fields.Nested(GSMAMSISDN, required=True)
+    registration = fields.Nested(REGISTRATION, required=True)
+    last_seen = fields.String()
+
+
+class MSISDNResp(Schema):
+    """Defines MSISDN API (version 2.0) response schema."""
+
+    results = fields.List(fields.Nested(MSISDN, required=True))

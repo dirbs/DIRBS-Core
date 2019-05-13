@@ -171,10 +171,10 @@ def test_check_in_registration_list(flask_app, registration_list_importer, gsma_
 @pytest.mark.parametrize('registration_list_importer',
                          [RegistrationListParams(content='approved_imei,make,model,status,'
                                                          'model_number,brand_name,device_type,'
-                                                         'radio_interface\n'
-                                                         '10000000000000,,,whitelist,,,,\n'
-                                                         '10000000000001,,,whitelist,,,,\n'
-                                                         '10000000000002,,,something_else,,,,\n')],
+                                                         'radio_interface,device_id\n'
+                                                         '10000000000000,,,whitelist,,,,,1\n'
+                                                         '10000000000001,,,whitelist,,,,,2\n'
+                                                         '10000000000002,,,something_else,,,,,3\n')],
                          indirect=True)
 def test_registration_list_status_filter(flask_app, registration_list_importer, api_version):
     """Test Depot not known yet.
@@ -771,10 +771,10 @@ def test_imei_normalisation_on_pairings_api(flask_app):
 @pytest.mark.parametrize('registration_list_importer',
                          [RegistrationListParams(content='approved_imei,make,model,status,'
                                                          'model_number,brand_name,device_type,'
-                                                         'radio_interface\n'
-                                                         '38847733370026,,,whitelist,,,,\n'
-                                                         '38847733370020,,,whitelist,,,,\n'
-                                                         '10000000000002,,,something_else,,,,\n')],
+                                                         'radio_interface,device_id\n'
+                                                         '38847733370026,,,whitelist,,,,,1\n'
+                                                         '38847733370020,,,whitelist,,,,,2\n'
+                                                         '10000000000002,,,something_else,,,,,3\n')],
                          indirect=True)
 def test_pagination_on_pairings_api(flask_app, registration_list_importer, pairing_list_importer):
     """Test Depot not known yet.
@@ -817,10 +817,10 @@ def test_pagination_on_pairings_api(flask_app, registration_list_importer, pairi
 @pytest.mark.parametrize('registration_list_importer',
                          [RegistrationListParams(content='approved_imei,make,model,status,'
                                                          'model_number,brand_name,device_type,'
-                                                         'radio_interface\n'
-                                                         '38847733370026,,,whitelist,,,,\n'
-                                                         '38847733370020,,,,,,,\n'
-                                                         '10000000000002,,,something_else,,,,\n')],
+                                                         'radio_interface,device_id\n'
+                                                         '38847733370026,,,whitelist,,,,,1\n'
+                                                         '38847733370020,,,,,,,,2\n'
+                                                         '10000000000002,,,something_else,,,,,3\n')],
                          indirect=True)
 def test_imei_api_registration_status(flask_app, registration_list_importer):
     """Test Depot not known yet.
@@ -1156,54 +1156,6 @@ def test_options_method_not_allowed_on_batch_imei_api(flask_app):
     assert b'The method is not allowed for the requested URL' in rv.data
 
 
-def test_allowed_content_types_on_batch_imei_api(flask_app):
-    """Test Depot not known yet.
-
-    Verify that no other content-types then json is allowed.
-    """
-    # allowed content-type: application/json
-    imeis = ['64220297727231', '64220297727231']
-    headers = {'content-type': 'application/json'}
-    rv = flask_app.post(url_for('v2.imei_batch_api'), data=json.dumps({'imeis': imeis}), headers=headers)
-    assert rv.status_code == 200
-
-    # content-type text not allowed
-    headers = {'content-type': 'text'}
-    rv = flask_app.post(url_for('v2.imei_batch_api'), data=json.dumps({'imeis': imeis}), headers=headers)
-    assert rv.status_code == 400
-    assert b'Bad Input format' in rv.data
-
-    # content-type text/plain not allowed
-    headers = {'content-type': 'text/plain'}
-    rv = flask_app.post(url_for('v2.imei_batch_api'), data=json.dumps({'imeis': imeis}), headers=headers)
-    assert rv.status_code == 400
-    assert b'Bad Input format' in rv.data
-
-    # content-type application/javascript not allowed
-    headers = {'content-type': 'application/javascript'}
-    rv = flask_app.post(url_for('v2.imei_batch_api'), data=json.dumps({'imeis': imeis}), headers=headers)
-    assert rv.status_code == 400
-    assert b'Bad Input format' in rv.data
-
-    # content-type application/xml not allowed
-    headers = {'content-type': 'application/xml'}
-    rv = flask_app.post(url_for('v2.imei_batch_api'), data=json.dumps({'imeis': imeis}), headers=headers)
-    assert rv.status_code == 400
-    assert b'Bad Input format' in rv.data
-
-    # content-type text/xml not allowed
-    headers = {'content-type': 'text/xml'}
-    rv = flask_app.post(url_for('v2.imei_batch_api'), data=json.dumps({'imeis': imeis}), headers=headers)
-    assert rv.status_code == 400
-    assert b'Bad Input format' in rv.data
-
-    # content-type text/html not allowed
-    headers = {'content-type': 'text/html'}
-    rv = flask_app.post(url_for('v2.imei_batch_api'), data=json.dumps({'imeis': imeis}), headers=headers)
-    assert rv.status_code == 400
-    assert b'Bad Input format' in rv.data
-
-
 def test_long_short_imei_formats_on_batch_imei_api(flask_app):
     """Test Depot not known yet.
 
@@ -1333,9 +1285,9 @@ def test_imei_info_api_response(flask_app, registration_list_importer):
 @pytest.mark.parametrize('registration_list_importer',
                          [RegistrationListParams(content='approved_imei,make,model,status,'
                                                          'model_number,brand_name,device_type,'
-                                                         'radio_interface\n'
+                                                         'radio_interface,device_id\n'
                                                          '10000000000000,samsung,s9,whitelist,'
-                                                         'sw928,galaxy,smart phone,2g 3g 4g\n')],
+                                                         'sw928,galaxy,smart phone,2g 3g 4g,23e\n')],
                          indirect=True)
 def test_imei_info_api(flask_app, registration_list_importer):
     """Test Depot ID not known yet.

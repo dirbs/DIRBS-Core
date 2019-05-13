@@ -1,6 +1,6 @@
 SPDX-License-Identifier: BSD-3-Clause-Clear
 
-Copyright (c) 2018 Qualcomm Technologies, Inc.
+Copyright (c) 2019 Qualcomm Technologies, Inc.
  
 All rights reserved.
  
@@ -330,7 +330,7 @@ Running the API server locally
 To run the API server locally, simply run:
 ::
 
-    flask run -h 0.0.0.0
+    make start-dev
 
 The API server will then be available on localhost:5000 on the host machine
 
@@ -360,4 +360,4 @@ To create the distribution (wheel, assets) for a release:
 All assets to be shipped will be output to the ``dist`` directory.
 
 
-© 2016-2018 Qualcomm Technologies, Inc.  All rights reserved.
+© 2016-2019 Qualcomm Technologies, Inc.  All rights reserved.

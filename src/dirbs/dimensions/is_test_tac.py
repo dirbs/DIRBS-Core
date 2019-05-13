@@ -1,7 +1,7 @@
 """
 This function is used for determining whether an IMEI's TAC component belongs to the ranges associated with Test TACs.
 
-Copyright (c) 2018 Qualcomm Technologies, Inc.
+Copyright (c) 2019 Qualcomm Technologies, Inc.
 
  All rights reserved.
 
@@ -40,7 +40,8 @@ class IsTestTAC(Dimension):
     """Implementation of the IsTestTAC classification dimension."""
 
     def _matching_imeis_sql(self, conn, app_config, virt_imei_range_start, virt_imei_range_end, curr_date=None):
-        """Overrides Dimension._matching_imeis_sql.
+        """
+        Overrides Dimension._matching_imeis_sql.
 
         First six digits of the Test IMEI features:
         - first 2 digits are '00';
@@ -56,6 +57,13 @@ class IsTestTAC(Dimension):
         00 44
         00 86
         00 91
+
+        :param conn: database connection
+        :param app_config: dirbs config obj
+        :param virt_imei_range_start: virtual imei shard range start
+        :param virt_imei_range_end: virtual imei shard range end
+        :param curr_date: user defined current date
+        :return: SQL
         """
         """Overrides Dimension._matching_imeis_sql."""
         network_imeis_shard = partition_utils.imei_shard_name(base_name='network_imeis',

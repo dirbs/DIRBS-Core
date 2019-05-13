@@ -1,7 +1,7 @@
 """
 DIRBS base dimension class containing common code used by all duplicate algorithms.
 
-Copyright (c) 2018 Qualcomm Technologies, Inc.
+Copyright (c) 2019 Qualcomm Technologies, Inc.
 
  All rights reserved.
 
@@ -39,8 +39,15 @@ from .base import Dimension
 class DuplicateAbstractBase(Dimension):
     """Abstract base class that all duplicate dimensions should inherit from."""
 
-    def __init__(self, *, period_days, period_months, **kwargs):
-        """Constructor."""
+    def __init__(self, *, period_days, period_months, use_msisdn, **kwargs):
+        """
+        Constructor.
+
+        :param period_days: period in terms of days
+        :param period_months: period in terms of months
+        :param use_msisdn: flag to use MSISDN for analysis rather then IMSI
+        :param kwargs: kwargs
+        """
         super().__init__(**kwargs)
 
         if period_days is not None and period_months is not None:
@@ -49,8 +56,12 @@ class DuplicateAbstractBase(Dimension):
         if period_days is None and period_months is None:
             raise ValueError('Both period_days and period_months in duplicate dimension are NULL. Check config...')
 
+        if not isinstance(use_msisdn, bool):
+            raise ValueError('use_msisdn should be a boolean value (True/False). Check config...')
+
         self._period_days = int(period_days) if period_days is not None else None
         self._period_months = int(period_months) if period_months is not None else None
+        self._use_msisdn = True if use_msisdn else False
 
         if self._period_months is not None and self._period_months < 0:
             raise ValueError('Negative value for period_months passed to duplicate dimension. Check config...')
@@ -59,7 +70,13 @@ class DuplicateAbstractBase(Dimension):
             raise ValueError('Negative value for period_days passed to duplicate dimension. Check config...')
 
     def _calc_analysis_window(self, conn, curr_date=None):
-        """Method used to calculate the analysis window (as a tuple) given a curr date."""
+        """
+        Method used to calculate the analysis window (as a tuple) given a curr date.
+
+        :param conn: database connection
+        :param curr_date: user defined current date (default None)
+        :return: dates range for analysis
+        """
         analysis_end_date = compute_analysis_end_date(conn, curr_date)
         if self._period_months is not None:
             analysis_start_date = analysis_end_date - relativedelta.relativedelta(months=self._period_months)

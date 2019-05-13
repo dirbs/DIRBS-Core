@@ -1,7 +1,7 @@
 """
 DIRBS CLI for IMEI classification. Installed by setuptools as a dirbs-classify console script.
 
-Copyright (c) 2018 Qualcomm Technologies, Inc.
+Copyright (c) 2019 Qualcomm Technologies, Inc.
 
  All rights reserved.
 
@@ -50,6 +50,12 @@ class ClassifyLockException(Exception):
     pass
 
 
+class ClassifySanityCheckFailedException(Exception):
+    """Indicates that the sanity checks failed for classification."""
+
+    pass
+
+
 @click.command()
 @common.setup_initial_logging
 @click.option('--conditions',
@@ -67,6 +73,8 @@ class ClassifyLockException(Exception):
               help='DANGEROUS: Sets current date in YYYYMMDD format for testing. By default, '
                    'uses system current date.',
               callback=common.validate_date)
+@click.option('--disable-sanity-checks', is_flag=True,
+              help='If set sanity checks on classification will be disabled')
 @click.version_option()
 @common.parse_verbosity_option
 @common.parse_db_options
@@ -77,10 +85,26 @@ class ClassifyLockException(Exception):
 @common.configure_logging
 @common.cli_wrapper(command='dirbs-classify', required_role='dirbs_core_classify')
 def cli(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root, metrics_run_root,
-        conditions, safety_check, curr_date):
-    """DIRBS script to classify IMEIs.
+        conditions, safety_check, curr_date, disable_sanity_checks):
+    """
+    DIRBS script to classify IMEIs.
 
     Iterates through all configured conditions and write to the classification_state table.
+
+    :param ctx: click command context
+    :param config: dirbs config instance
+    :param statsd: statsd instance
+    :param logger: dirbs logger instance
+    :param run_id: job run id
+    :param conn: database connection
+    :param metadata_conn: database connection for job metadata
+    :param command: command name
+    :param metrics_root:
+    :param metrics_run_root:
+    :param conditions: list of user supplied conditions
+    :param safety_check: bool (enable/disable safety check)
+    :param curr_date: date to use for classification
+    :param disable_sanity_checks: bool (enable/disable sanity checks)
     """
     _warn_about_curr_date(curr_date, logger)
     _warn_about_disabled_safety_check(safety_check, logger)
@@ -89,12 +113,22 @@ def cli(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metri
     if conditions is None:
         conditions = config.conditions
 
+    # Query the job metadata table for all successful classification runs
+    successful_job_runs = metadata.query_for_command_runs(metadata_conn, 'dirbs-classify', successful_only=True)
+    if successful_job_runs and not disable_sanity_checks and not _perform_sanity_checks(
+            config, successful_job_runs[0].extra_metadata):
+            raise ClassifySanityCheckFailedException(
+                'Sanity checks failed, configurations are not identical to the last successful classification'
+            )
+
     logger.info('Classifying using conditions: {0}'.format(','.join([c.label for c in conditions])))
 
     # Store metadata
     metadata.add_optional_job_metadata(metadata_conn, command, run_id,
                                        curr_date=curr_date.isoformat() if curr_date is not None else None,
-                                       conditions=[c.as_dict() for c in conditions])
+                                       conditions=[c.as_dict() for c in conditions],
+                                       operators=[op.as_dict() for op in config.region_config.operators],
+                                       amnesty=config.amnesty_config.as_dict())
 
     # Per-condition intermediate tables
     intermediate_tables = []
@@ -182,7 +216,12 @@ def cli(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metri
 
 
 def _warn_about_curr_date(curr_date, logger):
-    """Function to print out warning about setting curr_date in production."""
+    """
+    Function to print out warning about setting curr_date in production.
+
+    :param curr_date: user supplied current date
+    :param logger: dirbs logger instance
+    """
     if curr_date is not None:
         logger.warn('*************************************************************************')
         logger.warn('WARNING: --curr-date option passed to dirbs-classify')
@@ -203,7 +242,11 @@ def _warn_about_curr_date(curr_date, logger):
 
 
 def _warn_about_disabled_safety_check(safety_check, logger):
-    """Function to print out warning about disabling safety check in production."""
+    """Function to print out warning about disabling safety check in production.
+
+    :param safety_check: safety check param
+    :param logger: dirbs logger instance
+    """
     if not safety_check:
         logger.warn('*************************************************************************')
         logger.warn('WARNING: --no-safety-check option passed to dirbs-classify')
@@ -221,7 +264,13 @@ def _warn_about_disabled_safety_check(safety_check, logger):
 
 
 def _completed_calc_jobs(futures_to_condition, per_condition_state, logger):
-    """Function to process the IMEI calculation jobs and yield results once a condition is completed."""
+    """
+    Function to process the IMEI calculation jobs and yield results once a condition is completed.
+
+    :param futures_to_condition: list of condition futures
+    :param per_condition_state: list of condition states
+    :param logger: dirbs logger instance
+    """
     for f in futures.as_completed(futures_to_condition):
         num_matched_imeis, duration = f.result()
         condition = futures_to_condition[f]
@@ -242,7 +291,13 @@ def _completed_calc_jobs(futures_to_condition, per_condition_state, logger):
 
 
 def _completed_update_jobs(futures_to_condition, per_condition_state, logger):
-    """Function to process the classification_state update jobs and yield results once a condition is completed."""
+    """
+    Function to process the classification_state update jobs and yield results once a condition is completed.
+
+    :param futures_to_condition: list of condition futures
+    :param per_condition_state: per condition state
+    :param logger: dirbs logger instance
+    """
     for f in futures.as_completed(futures_to_condition):
         duration = f.result()
         condition = futures_to_condition[f]
@@ -262,8 +317,34 @@ def _completed_update_jobs(futures_to_condition, per_condition_state, logger):
             yield condition, state
 
 
+def _perform_sanity_checks(config, extra_metadata):
+    """
+    Method to perform sanity checks on current classification run.
+
+    :param config: dirbs config instance
+    :param extra_metadata: job extra metadata dict obj
+    :return: bool (true/false)
+    """
+    curr_conditions = [c.as_dict() for c in config.conditions]
+    curr_operators = [op.as_dict() for op in config.region_config.operators]
+    curr_amnesty = config.amnesty_config.as_dict()
+
+    if curr_conditions == extra_metadata['conditions'] and \
+            curr_operators == extra_metadata['operators'] and \
+            curr_amnesty == extra_metadata['amnesty']:
+        return True
+    return False
+
+
 def _do_final_cleanup(conn, logger, is_locked, tables_to_delete):
-    """Function to perform final cleanup to remove intermediate tables and release locks."""
+    """
+    Function to perform final cleanup to remove intermediate tables and release locks.
+
+    :param conn: database connection obj
+    :param logger: dirbs logger obj
+    :param is_locked: bool (to check if there is postgres advisory lock)
+    :param tables_to_delete: list of tables to delete
+    """
     if is_locked:
         with conn.cursor() as cursor:
             cursor.execute('SELECT pg_advisory_unlock(%s::BIGINT)', [hash_string_64bit('dirbs-classify')])

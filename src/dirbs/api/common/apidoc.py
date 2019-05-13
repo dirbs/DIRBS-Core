@@ -1,7 +1,7 @@
 """
 Subclass FlaskApiSpec to add support for documenting multiple API versions.
 
-Copyright (c) 2018 Qualcomm Technologies, Inc.
+Copyright (c) 2019 Qualcomm Technologies, Inc.
 
  All rights reserved.
 
@@ -32,6 +32,7 @@ Copyright (c) 2018 Qualcomm Technologies, Inc.
 from apispec import APISpec
 from flask import Blueprint, url_for
 from flask_apispec.extension import FlaskApiSpec
+from apispec.ext.marshmallow import MarshmallowPlugin
 from flask_apispec.apidoc import ViewConverter, ResourceConverter
 
 
@@ -39,7 +40,12 @@ class ApiDoc(FlaskApiSpec):
     """Override base FlaskApiSpec constructor."""
 
     def __init__(self, app, *, version):
-        """Constructor."""
+        """
+        Constructor.
+
+        :param app: app instance
+        :param version: api version
+        """
         self.title = 'DIRBS Core'
         self.version = version
         self.apidoc_ui_url = '/apidocs/{0}/'.format(self.version)
@@ -53,17 +59,22 @@ class ApiDoc(FlaskApiSpec):
         self.app = app
         self.init_app()
 
-    def init_app(self):
-        """Override base init_app method."""
-        self.view_converter = ViewConverter(self.app)
-        self.resource_converter = ResourceConverter(self.app)
+    def init_app(self, **kwargs):
+        """
+        Override base init_app method.
+
+        :param kwargs: args
+        """
         self.spec = APISpec(
             title=self.title,
             version=self.version,
             info={'description': self.top_level_description},
-            plugins=['apispec.ext.marshmallow']
+            plugins=[MarshmallowPlugin()],
+            openapi_version='2.0'
         )
 
+        self.resource_converter = ResourceConverter(self.app, self.spec)
+        self.view_converter = ViewConverter(self.app, self.spec)
         self.add_swagger_routes()
 
         for deferred in self._deferred:
@@ -87,6 +98,13 @@ class ApiDoc(FlaskApiSpec):
             return dict(url_for=custom_url_for)
 
         def custom_url_for(endpoint, **values):
+            """
+            Method to map custom urls for swagger.
+
+            :param endpoint: swagger endpoint
+            :param values: url value to map
+            :return:
+            """
             endpoint = endpoint.replace('flask-apispec', 'flask-apispec-{0}'.format(self.version))
             return url_for(endpoint, **values)
 
@@ -114,5 +132,5 @@ class ApiDoc(FlaskApiSpec):
                       'The Core API will attempt to send the appropriate HTML status codes. ' \
                       'On error, the request response will contain details about the error cause when possible.' \
                       '\n\n' \
-                      'Copyright \xA9 2018 Qualcomm Technologies, Inc. All rights reserved.'
+                      'Copyright \xA9 2019 Qualcomm Technologies, Inc. All rights reserved.'
         return description

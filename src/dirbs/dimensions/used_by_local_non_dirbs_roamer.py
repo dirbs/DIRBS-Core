@@ -1,7 +1,7 @@
 """
 DIRBS dimension function for a IMEIs used by local non DIRBS roamer .
 
-Copyright (c) 2018 Qualcomm Technologies, Inc.
+Copyright (c) 2019 Qualcomm Technologies, Inc.
 
  All rights reserved.
 
@@ -42,7 +42,12 @@ class UsedByLocalNonDirbsRoamer(Dimension):
     """Implementation of the UsedByLocalNonDirbsRoamer classification dimension."""
 
     def __init__(self, *, lookback_days, **kwargs):
-        """Constructor."""
+        """
+        Constructor.
+
+        :param lookback_days: number of days to lookback for analysis
+        :param kwargs: kwargs
+        """
         super().__init__(**kwargs)
 
         try:
@@ -57,7 +62,16 @@ class UsedByLocalNonDirbsRoamer(Dimension):
         return 'Used by local non DIRBS roamer'
 
     def _matching_imeis_sql(self, conn, app_config, virt_imei_range_start, virt_imei_range_end, curr_date=None):
-        """Overrides Dimension._matching_imeis_sql."""
+        """
+        Overrides Dimension._matching_imeis_sql.
+
+        :param conn: database connection
+        :param app_config: dirbs config obj
+        :param virt_imei_range_start: virtual imei shard range start
+        :param virt_imei_range_end: virtual imei shard range end
+        :param curr_date: user defined current date
+        :return: SQL
+        """
         analysis_end_date = compute_analysis_end_date(conn, curr_date)
         analysis_start_date = analysis_end_date - datetime.timedelta(days=self._lookback_days)
         self._log_analysis_window(analysis_start_date, analysis_end_date)

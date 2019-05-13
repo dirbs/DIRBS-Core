@@ -1,7 +1,7 @@
 """
 Package for DIRBS REST-ful API modules.
 
-Copyright (c) 2018 Qualcomm Technologies, Inc.
+Copyright (c) 2019 Qualcomm Technologies, Inc.
 
  All rights reserved.
 
@@ -91,7 +91,12 @@ app.json_encoder = utils.JSONEncoder
 
 
 def _metrics_type_from_req_ctxt(req):
-    """Utility method to get a metrics path for the API type."""
+    """
+    Utility method to get a metrics path for the API type.
+
+    :param req: input http request
+    :return: str
+    """
     p = req.path.split('/')
     if (p[1] == 'api') and len(p) > 3:
         # Metrics are in format of 'imei.v1' to allow metrics to be aggregated across versions for the same API
@@ -131,7 +136,12 @@ def log_api_perf_start():
 
 @app.after_request
 def add_no_cache(response):
-    """Makes sure no API responses are cached by setting headers on the response."""
+    """
+    Makes sure no API responses are cached by setting headers on the response.
+
+    :param response: prep response
+    :return: response with modified headers
+    """
     response.cache_control.no_cache = True
     response.cache_control.no_store = True
     response.cache_control.must_revalidate = True
@@ -143,7 +153,12 @@ def add_no_cache(response):
 
 @app.after_request
 def log_api_successes(response):
-    """Makes sure we record the number of successful API responses for each API."""
+    """
+    Makes sure we record the number of successful API responses for each API.
+
+    :param response: prep response
+    :return: prep response
+    """
     code = response.status_code
     if 200 <= code < 300:
         statsd.incr('dirbs.api.successes.{0}.{1}'.format(_metrics_type_from_req_ctxt(request), code))
@@ -152,7 +167,12 @@ def log_api_successes(response):
 
 @app.after_request
 def add_security_headers(response):
-    """Makes sure appropriate security headers are added for each API."""
+    """
+    Makes sure appropriate security headers are added for each API.
+
+    :param response: prep response
+    :return: response with security headers
+    """
     response.headers['X-Frame-Options'] = 'DENY'
     response.headers['X-Content-Type-Options'] = 'nosniff'
     return response
@@ -160,7 +180,12 @@ def add_security_headers(response):
 
 @app.after_request
 def log_api_perf_end(response):
-    """Logs the response time of every request to StatsD."""
+    """
+    Logs the response time of every request to StatsD.
+
+    :param response: prep response
+    :return: prep response
+    """
     start_time = getattr(g, 'request_start_time', None)
     if start_time is not None:
         dt = int((time.time() - start_time) * 1000)
@@ -175,7 +200,11 @@ def log_api_perf_end(response):
 
 @app.teardown_appcontext
 def on_request_end(error):
-    """Make sure we always close the DB at the end of a request."""
+    """
+    Make sure we always close the DB at the end of a request.
+
+    :param error: error (unused)
+    """
     close_db_connection()
 
 
@@ -186,7 +215,12 @@ def on_request_end(error):
 @app.errorhandler(500)
 @app.errorhandler(Exception)
 def app_error_handler(error):
-    """Make sure we log metrics for all failures."""
+    """
+    Make sure we log metrics for all failures.
+
+    :param error: intercepted http error
+    :return: http error (logged)
+    """
     if isinstance(error, HTTPException):
         code = 400 if error.code == 422 else error.code
     else:
@@ -205,7 +239,7 @@ def app_error_handler(error):
         return BadRequest(description=error.exc.messages)
 
     if isinstance(error, HTTPException):
-        return error.get_response(), code
+        return error.get_response(environ=None), code
     elif app.propagate_exceptions:
         # In debug or testing mode, re-raise any non-HTTP exceptions to trigger the debugger
         raise error

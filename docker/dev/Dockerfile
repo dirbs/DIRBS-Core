@@ -46,12 +46,20 @@ RUN set -x && \
                                                   build-essential && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+# Upgrade node and npm versions
+# Uninstall package n
+RUN set -x && \
+    npm install npm@latest -g && \
+    npm cache clean -f && \
+    npm install -g n && \
+    n stable && \
+    npm uninstall -g n
+
 # NPM packages for verifying CSS/JS
 RUN set -x && \
     ln -s nodejs /usr/bin/node && \
     npm install -g eslint && \
-    npm install -g uncss && \
-    npm cache clean
+    npm install -g uncss
 
 # Symlink workspace assets
 RUN set -x && \

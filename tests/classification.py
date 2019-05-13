@@ -45,13 +45,12 @@ from dirbs.cli.classify import cli as dirbs_classify_cli
 from dirbs.importer.operator_data_importer import OperatorDataImporter
 from dirbs.importer.golden_list_importer import GoldenListImporter
 from dirbs.cli.listgen import cli as dirbs_listgen_cli
-from _fixtures import *    # noqa: F403, F401
+from _fixtures import *  # noqa: F403, F401
 from _helpers import get_importer, expect_success, matching_imeis_for_cond_name, find_subdirectory_in_dir, \
     logger_stream_contents, logger_stream_reset, invoke_cli_classify_with_conditions_helper, \
-    from_cond_dict_list_to_cond_list, find_file_in_dir
+    from_cond_dict_list_to_cond_list, find_file_in_dir, from_op_dict_list_to_op_list, from_amnesty_dict_to_amnesty_conf
 from _importer_params import GSMADataParams, OperatorDataParams, StolenListParams, \
     RegistrationListParams, GoldenListParams
-
 
 base_dummy_cond_config = {
     'label': 'dummy_test_condition',
@@ -103,7 +102,9 @@ def test_classification_table_structure_after_pruning(postgres,
     stolen_list_importer.import_data()
     db_conn.commit()
 
-    result = runner.invoke(dirbs_classify_cli, ['--no-safety-check', '--curr-date', '20171130'],
+    result = runner.invoke(dirbs_classify_cli, ['--no-safety-check',
+                                                '--disable-sanity-checks',
+                                                '--curr-date', '20171130'],
                            obj={'APP_CONFIG': mocked_config})
     assert result.exit_code == 0
 
@@ -606,7 +607,7 @@ def test_used_by_local_non_dirbs_roamer_dim(db_conn, tmpdir, logger, mocked_conf
     assert all(x not in matching_imeis for x in expected_not_matching_imeis_due_to_date_list)
     expected_not_matching_imeis_due_to_mcc_mnc_list = ['36222222222222', '36232323232323', '36232323232324']
     assert all(x not in matching_imeis for x in expected_not_matching_imeis_due_to_mcc_mnc_list)
-    assert('36222222222228' in matching_imeis)
+    assert ('36222222222228' in matching_imeis)
 
 
 @pytest.mark.parametrize('operator_data_importer',
@@ -1116,7 +1117,7 @@ def test_classification_state_with_golden_list(db_conn, metadata_db_conn, tmpdir
                                                                 db_conn=db_conn)
 
     exp_res = ['64220204327947', '12875502464321']
-    assert all([(x in matching_imeis)for x in exp_res]) is True
+    assert all([(x in matching_imeis) for x in exp_res]) is True
     assert len(matching_imeis) == 24
 
     db_conn.commit()
@@ -1209,7 +1210,7 @@ def test_duplicate_threshold(db_conn, operator_data_importer, tmpdir, logger, mo
     matched_imeis = invoke_cli_classify_with_conditions_helper(cond_list, mocked_config, monkeypatch,
                                                                classify_options=['--no-safety-check'],
                                                                db_conn=db_conn, curr_date='20161130')
-    assert(len(matched_imeis) == 0)
+    assert (len(matched_imeis) == 0)
 
     # Verify dirbs-classify does finds 2 duplicates
     cond_list = [{
@@ -1225,6 +1226,52 @@ def test_duplicate_threshold(db_conn, operator_data_importer, tmpdir, logger, mo
                                                                classify_options=['--no-safety-check'],
                                                                db_conn=db_conn, curr_date='20161130')
     assert (len(matched_imeis) == 1)
+
+
+@pytest.mark.parametrize('operator_data_importer',
+                         [OperatorDataParams(
+                             filename='testData1-operator-operator4-anonymized_20161101_20161130.csv',
+                             operator='operator1',
+                             extract=False,
+                             perform_leading_zero_check=False,
+                             mcc_mnc_pairs=[{'mcc': '111', 'mnc': '04'}],
+                             perform_unclean_checks=False,
+                             perform_file_daterange_check=False)],
+                         indirect=True)
+def test_duplicate_threshold_with_msisdn(db_conn, operator_data_importer, tmpdir, logger, mocked_config, monkeypatch):
+    """Verify that duplicate threshold dimension classify IMEIs using MSISDN as well rather than IMSI."""
+    operator_data_importer.import_data()
+    # Verify that dirbs-classify does not find any duplicates
+    cond_list = [{
+        'label': 'duplicate_threshold',
+        'reason': 'duplicate_threshold',
+        'dimensions': [{
+            'module': 'duplicate_threshold',
+            'parameters': {
+                'threshold': 12,
+                'period_days': 120,
+                'use_msisdn': True}}]
+    }]
+    matched_imeis = invoke_cli_classify_with_conditions_helper(cond_list, mocked_config, monkeypatch,
+                                                               classify_options=['--no-safety-check'],
+                                                               db_conn=db_conn, curr_date='20161130')
+    assert (len(matched_imeis) == 0)
+
+    # Verify that dirbs-classify does finds duplicates
+    cond_list = [{
+        'label': 'duplicate_threshold',
+        'reason': 'duplicate_threshold',
+        'dimensions': [{
+            'module': 'duplicate_threshold',
+            'parameters': {
+                'threshold': 2,
+                'period_days': 60,
+                'use_msisdn': True}}]
+    }]
+    matched_imeis = invoke_cli_classify_with_conditions_helper(cond_list, mocked_config, monkeypatch,
+                                                               classify_options=['--no-safety-check'],
+                                                               db_conn=db_conn, curr_date='20161130')
+    assert (len(matched_imeis) == 2)
 
 
 @pytest.mark.parametrize('operator_data_importer',
@@ -1260,7 +1307,7 @@ def test_duplicate_threshold_period_months(db_conn, operator_data_importer, tmpd
     matched_imeis = invoke_cli_classify_with_conditions_helper(cond_list, mocked_config, monkeypatch,
                                                                classify_options=['--no-safety-check'],
                                                                db_conn=db_conn, curr_date='20161130')
-    assert(len(matched_imeis) == 0)
+    assert (len(matched_imeis) == 0)
 
     # Verify dirbs-classify does finds 2 duplicates
     cond_list = [{
@@ -1722,7 +1769,7 @@ def test_duplicate_mk1_dirbs_527(db_conn, operator_data_importer, tmpdir, logger
     matched_imeis = invoke_cli_classify_with_conditions_helper(cond_list, mocked_config, monkeypatch,
                                                                classify_options=['--no-safety-check'],
                                                                db_conn=db_conn, curr_date='20160116')
-    assert('88888888888889' not in matched_imeis)
+    assert ('88888888888889' not in matched_imeis)
 
 
 @pytest.mark.parametrize('operator_data_importer',
@@ -1785,8 +1832,8 @@ def test_gsma_not_found(db_conn, operator_data_importer, gsma_tac_db_importer, t
     cond_list = [{
         'label': 'gsma_not_found',
         'reason': 'TAC not found in GSMA TAC database',
-        'dimensions': [{'module': 'gsma_not_found', 'parameters':
-                        {'per_rbi_delays': {'01': 5}, 'ignore_rbi_delays': False}}]
+        'dimensions': [{'module': 'gsma_not_found', 'parameters': {'per_rbi_delays': {'01': 5},
+                                                                   'ignore_rbi_delays': False}}]
     }]
 
     matched_imeis = invoke_cli_classify_with_conditions_helper(cond_list, mocked_config, monkeypatch, db_conn=db_conn,
@@ -1802,8 +1849,8 @@ def test_gsma_not_found(db_conn, operator_data_importer, gsma_tac_db_importer, t
     cond_list = [{
         'label': 'gsma_not_found',
         'reason': 'TAC not found in GSMA TAC database',
-        'dimensions': [{'module': 'gsma_not_found', 'parameters':
-                        {'per_rbi_delays': {'64': 30}, 'ignore_rbi_delays': False}}]
+        'dimensions': [{'module': 'gsma_not_found', 'parameters': {'per_rbi_delays': {'64': 30},
+                                                                   'ignore_rbi_delays': False}}]
     }]
 
     matched_imeis = invoke_cli_classify_with_conditions_helper(cond_list, mocked_config, monkeypatch, db_conn=db_conn,
@@ -2272,7 +2319,7 @@ def test_safety_check(db_conn, tmpdir, logger, mocked_config, monkeypatch,
 
     # Run dirbs-classify using db args from the temp postgres instance
     runner = CliRunner()  # noqa
-    result = runner.invoke(dirbs_classify_cli, ['--conditions', 'gsma_not_found'],
+    result = runner.invoke(dirbs_classify_cli, ['--disable-sanity-checks', '--conditions', 'gsma_not_found'],
                            obj={'APP_CONFIG': mocked_config})
 
     # Program should not exit succesfully
@@ -2289,7 +2336,8 @@ def test_safety_check(db_conn, tmpdir, logger, mocked_config, monkeypatch,
     logger_stream_reset(logger)
 
     # Try again with safety check disable
-    result = runner.invoke(dirbs_classify_cli, ['--no-safety-check', '--conditions', 'gsma_not_found'],
+    result = runner.invoke(dirbs_classify_cli, ['--no-safety-check', '--disable-sanity-checks',
+                                                '--conditions', 'gsma_not_found'],
                            obj={'APP_CONFIG': mocked_config})
     assert result.exit_code == 0
 
@@ -2306,7 +2354,7 @@ def test_safety_check(db_conn, tmpdir, logger, mocked_config, monkeypatch,
     logger_stream_reset(logger)
 
     # Now re-classify (5 out of 9 should fail, which is above config default of 10%)
-    result = runner.invoke(dirbs_classify_cli, ['--conditions', 'gsma_not_found'],
+    result = runner.invoke(dirbs_classify_cli, ['--disable-sanity-checks', '--conditions', 'gsma_not_found'],
                            obj={'APP_CONFIG': mocked_config})
     # Program should exit successfully
     assert result.exit_code != 0
@@ -2326,7 +2374,7 @@ def test_safety_check(db_conn, tmpdir, logger, mocked_config, monkeypatch,
     monkeypatch.setattr(mocked_config, 'conditions', from_cond_dict_list_to_cond_list(cond_dict_list))
 
     # Now re-classify (5 out of 9 should again fail, but should now be below safety check value of 56%)
-    result = runner.invoke(dirbs_classify_cli, ['--conditions', 'gsma_not_found'],
+    result = runner.invoke(dirbs_classify_cli, ['--disable-sanity-checks', '--conditions', 'gsma_not_found'],
                            obj={'APP_CONFIG': mocked_config})
     # Program should exit successfully
     assert result.exit_code == 0
@@ -2394,10 +2442,11 @@ def test_blocking_condition_with_status(db_conn, logger, stolen_list_importer, m
                          indirect=True)
 @pytest.mark.parametrize('registration_list_importer',
                          [RegistrationListParams(content='approved_imei,make,model,status,'
-                                                         'model_number,brand_name,device_type,radio_interface\n'
-                                                         '10000000000000,   ,   ,whiTelist,,,,\n'
-                                                         '025896314741025,   ,   ,,,,,\n'
-                                                         '645319782302145,   ,   ,any_other_status,,,,')],
+                                                         'model_number,brand_name,device_type,'
+                                                         'radio_interface,device_id\n'
+                                                         '10000000000000,   ,   ,whiTelist,,,,,1\n'
+                                                         '025896314741025,   ,   ,,,,,,2\n'
+                                                         '645319782302145,   ,   ,any_other_status,,,,,3')],
                          indirect=True)
 def test_registration_list_with_status(db_conn, operator_data_importer, registration_list_importer, mocked_config,
                                        monkeypatch):
@@ -2443,10 +2492,10 @@ def test_registration_list_with_status(db_conn, operator_data_importer, registra
 @pytest.mark.parametrize('registration_list_importer',
                          [RegistrationListParams(content='approved_imei,make,model,status,'
                                                          'model_number,brand_name,'
-                                                         'device_type,radio_interface\n'
-                                                         '10000000000000,   ,   ,whiTelist,,,,\n'
-                                                         '025896314741025,   ,   ,,,,,\n'
-                                                         '645319782302145,   ,   ,any_other_status,,,,')],
+                                                         'device_type,radio_interface,device_id\n'
+                                                         '10000000000000,   ,   ,whiTelist,,,,,1\n'
+                                                         '025896314741025,   ,   ,,,,,,2\n'
+                                                         '645319782302145,   ,   ,any_other_status,,,,,3')],
                          indirect=True)
 def test_amnesty_conditions(db_conn, operator_data_importer, registration_list_importer, mocked_config, monkeypatch):
     """Verify that the conditions' amnesty parameters are stored appropriately."""
@@ -2527,3 +2576,132 @@ def test_amnesty_conditions(db_conn, operator_data_importer, registration_list_i
         for x in cursor.fetchall():
             assert x.amnesty_granted
             assert x.block_date == datetime.date(2017, 3, 2)
+
+
+@pytest.mark.parametrize('operator_data_importer',
+                         [OperatorDataParams(
+                             filename='test_operator1_average_duplicate_threshold_20161101_20161130.csv',
+                             operator='1',
+                             extract=False,
+                             perform_leading_zero_check=False,
+                             mcc_mnc_pairs=[{'mcc': '111', 'mnc': '04'}],
+                             perform_unclean_checks=False,
+                             perform_file_daterange_check=False)],
+                         indirect=True)
+def test_duplicate_daily_avg_with_msisdn(db_conn, operator_data_importer, mocked_config,
+                                         tmpdir, logger, monkeypatch):
+    """Verify that the duplicate_daily_avg does classify with MSISDN instead of IMSI."""
+    operator_data_importer.import_data()
+    # Verify that one duplicate IMEI found when averaged over multiple days
+    cond_list = [{
+        'label': 'duplicate_daily_avg',
+        'reason': 'duplicate daily avg',
+        'dimensions': [{
+            'module': 'duplicate_daily_avg',
+            'parameters': {
+                'threshold': 2.0,
+                'period_days': 5,
+                'min_seen_days': 5,
+                'use_msisdn': True}}]
+    }]
+    matched_imeis = invoke_cli_classify_with_conditions_helper(cond_list, mocked_config, monkeypatch,
+                                                               classify_options=['--no-safety-check'],
+                                                               db_conn=db_conn, curr_date='20161121')
+    assert matched_imeis == ['21123131308879']
+
+    # Verify no duplicate IMEIs found when threshold value greater than average
+    cond_list = [{
+        'label': 'duplicate_daily_avg',
+        'reason': 'duplicate daily avg',
+        'dimensions': [{
+            'module': 'duplicate_daily_avg',
+            'parameters': {
+                'threshold': 2.1,
+                'period_days': 5,
+                'min_seen_days': 5,
+                'use_msisdn': True}}]
+    }]
+    matched_imeis = invoke_cli_classify_with_conditions_helper(cond_list, mocked_config, monkeypatch,
+                                                               classify_options=['--no-safety-check'],
+                                                               db_conn=db_conn, curr_date='20161121')
+    assert len(matched_imeis) == 0
+
+
+def test_sanity_checks_conditions(db_conn, mocked_config, tmpdir, logger, monkeypatch):
+    """Verify that the sanity checks are performed on conditions."""
+    classify_options = []
+    classify_options.extend(['--curr-date', '20161130'])
+    classify_options.extend(['--disable-sanity-checks'])
+    runner = CliRunner()
+    result = runner.invoke(dirbs_classify_cli, classify_options, obj={'APP_CONFIG': mocked_config})
+    assert result.exit_code == 0
+
+    # monkey patch conditions
+    classify_options = []
+    classify_options.extend(['--curr-date', '20161130'])
+    cond_list = [{
+        'label': 'duplicate_daily_avg',
+        'reason': 'duplicate daily avg',
+        'dimensions': [{
+            'module': 'duplicate_daily_avg',
+            'parameters': {
+                'threshold': 2.1,
+                'period_days': 5,
+                'min_seen_days': 5,
+                'use_msisdn': True}}]
+    }]
+    cond_list = from_cond_dict_list_to_cond_list(cond_list)
+    monkeypatch.setattr(mocked_config, 'conditions', cond_list)
+    result = runner.invoke(dirbs_classify_cli, classify_options, obj={'APP_CONFIG': mocked_config})
+    assert result.exit_code == 1
+
+
+def test_sanity_checks_operators(db_conn, mocked_config, tmpdir, logger, monkeypatch):
+    """Verify that the sanity checks are performed on operators config."""
+    classify_options = []
+    classify_options.extend(['--curr-date', '20161130'])
+    classify_options.extend(['--disable-sanity-checks'])
+    runner = CliRunner()
+    result = runner.invoke(dirbs_classify_cli, classify_options, obj={'APP_CONFIG': mocked_config})
+    assert result.exit_code == 0
+
+    # monkey patch operator config
+    classify_options = []
+    classify_options.extend(['--curr-date', '20161130'])
+    operator_conf = [{
+        'id': 'xyzoperatortest',
+        'name': 'First Operator',
+        'mcc_mnc_pairs': [{
+            'mcc': '111',
+            'mnc': '01'
+        }]
+    }]
+
+    operator_conf = from_op_dict_list_to_op_list(operator_conf)
+    monkeypatch.setattr(mocked_config.region_config, 'operators', operator_conf)
+    result = runner.invoke(dirbs_classify_cli, classify_options, obj={'APP_CONFIG': mocked_config})
+    assert result.exit_code == 1
+
+
+def test_sanity_checks_amnesty(db_conn, mocked_config, tmpdir, logger, monkeypatch):
+    """Verify that the sanity checks are performed on amnesty configs."""
+    classify_options = []
+    classify_options.extend(['--curr-date', '20161130'])
+    classify_options.extend(['--disable-sanity-checks'])
+    runner = CliRunner()
+    result = runner.invoke(dirbs_classify_cli, classify_options, obj={'APP_CONFIG': mocked_config})
+    assert result.exit_code == 0
+
+    # monkey patch amnesty config
+    classify_options = []
+    classify_options.extend(['--curr-date', '20161130'])
+    amnesty_config = {
+        'amnesty_enabled': False,
+        'evaluation_period_end_date': 19500202,
+        'amnesty_period_end_date': 19500302
+    }
+
+    amnesty_config = from_amnesty_dict_to_amnesty_conf(amnesty_config)
+    monkeypatch.setattr(mocked_config, 'amnesty_config', amnesty_config)
+    result = runner.invoke(dirbs_classify_cli, classify_options, obj={'APP_CONFIG': mocked_config})
+    assert result.exit_code == 1

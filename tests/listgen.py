@@ -50,7 +50,8 @@ from _helpers import job_metadata_importer, expect_success
 from _importer_params import OperatorDataParams, PairListParams, GoldenListParams,\
     StolenListParams, RegistrationListParams
 from _helpers import get_importer, from_cond_dict_list_to_cond_list, find_file_in_dir, find_subdirectory_in_dir, \
-    import_data, invoke_cli_classify_with_conditions_helper
+    import_data, invoke_cli_classify_with_conditions_helper, from_op_dict_list_to_op_list, \
+    from_amnesty_dict_to_amnesty_conf, from_listgen_dict_to_listgen_conf
 from _fixtures import *    # noqa: F403, F401
 from dirbs.metadata import query_for_command_runs
 
@@ -63,7 +64,7 @@ def _verify_per_operator_lists_generated(dir_path, type_list):
 
 
 def _cli_listgen_helper(db_conn, tmpdir, sub_temp_dir, mocked_config, date=None, base_run_id=None, no_full_list=None,
-                        no_clean_up=None, unzip_files=True, combine_deltas=True):
+                        no_clean_up=None, unzip_files=True, combine_deltas=True, disable_sanity_checks=True):
     """Helper function for CLI list-gen."""
     options_list = []
     if date:
@@ -74,6 +75,7 @@ def _cli_listgen_helper(db_conn, tmpdir, sub_temp_dir, mocked_config, date=None,
         options_list.extend(['--no-full-lists'])
     if no_clean_up:
         options_list.extend(['--no-cleanup'])
+    options_list.extend(['--disable-sanity-checks'])
     output_dir = str(tmpdir.mkdir(sub_temp_dir))
     options_list.append(output_dir)
     runner = CliRunner()
@@ -2341,8 +2343,8 @@ def test_cli_arg_no_cleanup(tmpdir, db_conn, mocked_config):
                              mcc_mnc_pairs=[{'mcc': '111', 'mnc': '01'}, {'mcc': '310', 'mnc': '03'}],
                              extract=False),
                            RegistrationListParams(content='approved_imei,make,model,status,model_number,'
-                                                          'brand_name,device_type,radio_interface\n'
-                                                          '35900000000000,   ,   ,whitelist,,,,'),
+                                                          'brand_name,device_type,radio_interface,device_id\n'
+                                                          '35900000000000,   ,   ,whitelist,,,,,23422'),
                            StolenListParams(content='IMEI,reporting_date,status\n'
                                                     '35111111111110,20160930,blacklist\n'
                                                     '35900000000000,20160930,blacklist\n'))],
@@ -2496,3 +2498,197 @@ def test_amnesty_enabled_listgen(postgres, operator_data_importer, stolen_list_i
     assert len(rows) == 3
     assert ('86222222222226', '20170201', 'not_registered', 'blocked\n') in rows
     assert ('35111111111110', '20170121', 'not_registered|stolen', 'changed\n') in rows
+
+
+def test_sanity_checks_operators(per_test_postgres, mocked_config, tmpdir, logger, monkeypatch):
+    """Verify that the sanity checks are performed on operators."""
+    options_list = []
+    options_list.extend(['--curr-date', '20161130'])
+    options_list.extend(['--disable-sanity-checks'])  # we disable sanity checks first to establish base for next one
+    output_dir = str(tmpdir.mkdir('sanity_operators'))
+    options_list.append(output_dir)
+    runner = CliRunner()
+    result = runner.invoke(dirbs_listgen_cli, options_list, obj={'APP_CONFIG': mocked_config})
+    assert result.exit_code == 0
+
+    # monkey patch operators config
+    options_list = []
+    options_list.extend(['--curr-date', '20161130'])
+    options_list.append(output_dir)
+    operator_conf = [{
+        'id': 'op_listgen',
+        'name': 'First Operator',
+        'mcc_mnc_pairs': [{
+            'mcc': '112',
+            'mnc': '09'
+        }]
+    }]
+
+    operator_conf = from_op_dict_list_to_op_list(operator_conf)
+    monkeypatch.setattr(mocked_config.region_config, 'operators', operator_conf)
+    result = runner.invoke(dirbs_listgen_cli, options_list, obj={'APP_CONFIG': mocked_config})
+    assert result.exit_code == 1
+
+
+def test_sanity_checks_amnesty(per_test_postgres, mocked_config, tmpdir, logger, monkeypatch):
+    """Verify that sanity checks are performed on amnesty configs."""
+    options_list = []
+    options_list.extend(['--curr-date', '20161130'])
+    options_list.extend(['--disable-sanity-checks'])  # we disable sanity checks first to establish base for next one
+    output_dir = str(tmpdir.mkdir('sanity_amnesty'))
+    options_list.append(output_dir)
+    runner = CliRunner()
+    result = runner.invoke(dirbs_listgen_cli, options_list, obj={'APP_CONFIG': mocked_config})
+    assert result.exit_code == 0
+
+    # monkey patch operators config
+    options_list = []
+    options_list.extend(['--curr-date', '20161130'])
+    options_list.append(output_dir)
+    amnesty_config = {
+        'amnesty_enabled': False,
+        'evaluation_period_end_date': 19400202,
+        'amnesty_period_end_date': 19400302
+    }
+
+    amnesty_config = from_amnesty_dict_to_amnesty_conf(amnesty_config)
+    monkeypatch.setattr(mocked_config, 'amnesty_config', amnesty_config)
+    result = runner.invoke(dirbs_listgen_cli, options_list, obj={'APP_CONFIG': mocked_config})
+    assert result.exit_code == 1
+
+
+def test_sanity_checks_conditions(per_test_postgres, mocked_config, tmpdir, logger, monkeypatch):
+    """Verify that the sanity checks are performed on blocking conditions."""
+    options_list = []
+    options_list.extend(['--curr-date', '20161130'])
+    options_list.extend(['--disable-sanity-checks'])  # we disable sanity checks first to establish base for next one
+    output_dir = str(tmpdir.mkdir('sanity_conditions'))
+    options_list.append(output_dir)
+    runner = CliRunner()
+    result = runner.invoke(dirbs_listgen_cli, options_list, obj={'APP_CONFIG': mocked_config})
+    assert result.exit_code == 0
+
+    # monkey patch operators config
+    options_list = []
+    options_list.extend(['--curr-date', '20161130'])
+    options_list.append(output_dir)
+    cond_list = [{
+        'label': 'duplicate_daily_avg',
+        'reason': 'duplicate daily avg',
+        'dimensions': [{
+            'module': 'duplicate_daily_avg',
+            'parameters': {
+                'threshold': 2.1,
+                'period_days': 5,
+                'min_seen_days': 5,
+                'use_msisdn': True}}]
+    }]
+    cond_list = from_cond_dict_list_to_cond_list(cond_list)
+    monkeypatch.setattr(mocked_config, 'conditions', cond_list)
+    result = runner.invoke(dirbs_listgen_cli, options_list, obj={'APP_CONFIG': mocked_config})
+    assert result.exit_code == 1
+
+
+def test_sanity_checks_loopback_days(per_test_postgres, mocked_config, tmpdir, logger, monkeypatch):
+    """Verify that sanity checks are performed on loopback days."""
+    options_list = []
+    options_list.extend(['--curr-date', '20161130'])
+    options_list.extend(['--disable-sanity-checks'])  # we disable sanity checks first to establish base for next one
+    output_dir = str(tmpdir.mkdir('sanity_conditions'))
+    options_list.append(output_dir)
+    runner = CliRunner()
+    result = runner.invoke(dirbs_listgen_cli, options_list, obj={'APP_CONFIG': mocked_config})
+    assert result.exit_code == 0
+
+    # monkey patch operators config
+    options_list = []
+    options_list.extend(['--curr-date', '20161130'])
+    options_list.append(output_dir)
+    monkeypatch.setattr(mocked_config.listgen_config, 'lookback_days', 90)
+    result = runner.invoke(dirbs_listgen_cli, options_list, obj={'APP_CONFIG': mocked_config})
+    assert result.exit_code == 1
+
+
+def test_non_active_pairs_default_behaviour(per_test_postgres, logger, mocked_config, monkeypatch, tmpdir, db_conn):
+    """Verify that Non Active Pairs list is not generated always until exclusively specified."""
+    # first generate list without activating non active pairs in config, default value should be 0
+    # we expect that the list is not generated
+    assert mocked_config.listgen_config.non_active_pairs == 0
+    _, output_dir = _cli_listgen_helper(db_conn, tmpdir, 'non_active_pairs_run_1', mocked_config, date='20170101')
+    assert not _read_rows_from_file('non_active_pairs.csv', tmpdir, output_dir=output_dir)
+
+    # now we activate non_active_pairs in config and assign a value 0, expecting list will still not
+    # be generated, monkey patching listgen config
+    list_gen_config = {
+        'lookback_days': 180,
+        'restrict_exceptions_list_to_blacklisted_imeis': False,
+        'generate_check_digit': False,
+        'output_invalid_imeis': True,
+        'non_active_pairs': 0
+    }
+    list_gen_config = from_listgen_dict_to_listgen_conf(list_gen_config)
+    monkeypatch.setattr(mocked_config, 'listgen_config', list_gen_config)
+    assert mocked_config.listgen_config.non_active_pairs == 0
+    _, output_dir = _cli_listgen_helper(db_conn, tmpdir, 'non_active_pairs_run_2', mocked_config, date='20170101')
+    assert not _read_rows_from_file('non_active_pairs.csv', tmpdir, output_dir=output_dir)
+
+    # increasing the non active pairs value should generate a non active pairs list
+    monkeypatch.setattr(mocked_config.listgen_config, 'non_active_pairs', 20)
+    assert mocked_config.listgen_config.non_active_pairs == 20
+    _, output_dir = _cli_listgen_helper(db_conn, tmpdir, 'non_active_pairs_run_3', mocked_config, date='20170101')
+    assert _read_rows_from_file('non_active_pairs.csv', tmpdir, output_dir=output_dir)
+
+
+@pytest.mark.parametrize('pairing_list_importer',
+                         [PairListParams(content='imei,imsi\n'
+                                                 '12345678901230,11107678901234\n'
+                                                 '12345678901231,11108678901234\n'
+                                                 '12345678901232,11109678901234\n'
+                                                 '12345678901233,11101678901234\n'
+                                                 '12345678901234,11101678901234\n'
+                                                 '12345678901235,11102678901234\n'
+                                                 '12345678901236,11102678901234\n')],
+                         indirect=True)
+@pytest.mark.parametrize('operator_data_importer',
+                         [OperatorDataParams(
+                             content='date,imei,imsi,msisdn\n'
+                                     '20190221,12345678901228,11105678901234,1\n'
+                                     '20190121,12345678901229,11106678901234,1\n'
+                                     '20190121,12345678901230,11107678901234,1\n'
+                                     '20180812,12345678901230,11107678901234,1\n'
+                                     '20180812,12345678901231,11108678901234,1\n'
+                                     '20180812,12345678901232,11109678901234,1',
+                             extract=False,
+                             perform_unclean_checks=False,
+                             perform_leading_zero_check=False,
+                             perform_region_checks=False,
+                             perform_home_network_check=False,
+                             operator='operator1'
+                         )],
+                         indirect=True)
+def test_non_active_pairs_listgen(per_test_postgres, mocked_config, logger, monkeypatch, tmpdir, db_conn,
+                                  pairing_list_importer, operator_data_importer):
+    """Verify non active pairs list generation functionality works correctly."""
+    operator_data_importer.import_data()
+    pairing_list_importer.import_data()
+
+    # monkey patch non active pairs value
+    monkeypatch.setattr(mocked_config.listgen_config, 'non_active_pairs', 10)
+    assert mocked_config.listgen_config.non_active_pairs == 10
+    _, output_dir = _cli_listgen_helper(db_conn, tmpdir, 'non_active_pairs_run_4', mocked_config, date='20190101')
+    rows = _read_rows_from_file('non_active_pairs.csv', tmpdir, output_dir=output_dir)
+    rows = rows = [tuple(map(str, i.split(',')))[:7] for i in rows]
+    assert len(rows) == 4
+    assert ('12345678901230', '11107678901234\n') in rows
+    assert ('12345678901232', '11109678901234\n') in rows
+    assert ('12345678901231', '11108678901234\n') in rows
+
+    # changing the current date with listgen
+    _, output_dir = _cli_listgen_helper(db_conn, tmpdir, 'non_active_pairs_run_5', mocked_config, date='20190221')
+    rows = _read_rows_from_file('non_active_pairs.csv', tmpdir, output_dir=output_dir)
+    rows = rows = [tuple(map(str, i.split(',')))[:7] for i in rows]
+    assert len(rows) == 5
+    assert ('12345678901230', '11107678901234\n') in rows
+    assert ('12345678901230', '11107678901234\n') in rows
+    assert ('12345678901232', '11109678901234\n') in rows
+    assert ('12345678901231', '11108678901234\n') in rows

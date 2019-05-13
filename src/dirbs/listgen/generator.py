@@ -1,7 +1,7 @@
 """
 DIRBS class for generating lists (blacklist, per-MNO notification lists and per-MNO exception lists).
 
-Copyright (c) 2018 Qualcomm Technologies, Inc.
+Copyright (c) 2019 Qualcomm Technologies, Inc.
 
  All rights reserved.
 
@@ -64,11 +64,17 @@ class ListGenerationInvalidBaseException(Exception):
     pass
 
 
+class ListGenerationSanityChecksFailedException(Exception):
+    """Indicates that the sanity checks for the process has failed."""
+
+    pass
+
+
 class ListsGenerator:
     """Class responsible for generating all classification lists (blacklists, notification lists, exception lists)."""
 
     def __init__(self, *, config, logger, run_id, conn, metadata_conn, output_dir,
-                 curr_date=None, no_full_lists=False, no_cleanup=False, base_run_id=-1):
+                 curr_date=None, no_full_lists=False, no_cleanup=False, base_run_id=-1, disable_sanity_checks=False):
         """Constructor."""
         self._config = config
         self._logger = logger
@@ -78,34 +84,54 @@ class ListsGenerator:
         self._no_cleanup = no_cleanup
         self._no_full_lists = no_full_lists
         self._curr_date = curr_date
+        self._disable_sanity_checks = disable_sanity_checks
         self._lookback_days = self._config.listgen_config.lookback_days
         self._restrict_exceptions_list = self._config.listgen_config.restrict_exceptions_list
         self._generate_check_digit = self._config.listgen_config.generate_check_digit
         self._output_invalid_imeis = self._config.listgen_config.output_invalid_imeis
+        self._non_active_pairs_period = self._config.listgen_config.non_active_pairs
         self._operators = self._config.region_config.operators
+        self._amnesty = self._config.amnesty_config
         self._intermediate_table_names = []
 
         # Query the job metadata table for all successful list generation runs
         successful_job_runs = metadata.query_for_command_runs(self._metadata_conn,
                                                               'dirbs-listgen',
                                                               successful_only=True)
+        # self._successful_job_run = successful_job_runs
         if base_run_id == -1:
             if not successful_job_runs:
                 self._logger.warning('No previous successful dirbs-listgen run found. Deltas will be entire lists...')
                 self._base_run_id = -1
             else:
+                if not disable_sanity_checks and not self._perform_sanity_checks():
+                    raise ListGenerationSanityChecksFailedException(
+                        'Sanity checks failed, configurations are not identical to the last successful list generation'
+                    )
                 self._base_run_id = successful_job_runs[0].run_id
         else:
             run_ids = [r.run_id for r in successful_job_runs]
             if base_run_id not in run_ids:
                 raise ListGenerationInvalidBaseException(
-                    'Specified base run id {0:d} not found in list of successful dirbs-listgen runs'
-                    .format(base_run_id))
+                    'Specified base run id {0:d} not found in list of successful dirbs-listgen runs'.format(
+                        base_run_id))
+            if not disable_sanity_checks and not self._perform_sanity_checks(base_run_id):
+                raise ListGenerationSanityChecksFailedException(
+                    'Sanity checks failed, configurations are not identical to the last successful list generation')
             self._base_run_id = base_run_id
 
         if self._base_run_id != -1:
             self._logger.info('Using previous successful dirbs-listgen run id {0:d} as base for delta lists...'
                               .format(self._base_run_id))
+
+        if self._non_active_pairs_period > 0:
+            current_date = datetime.date.today() if self._curr_date is None else self._curr_date
+            self._non_active_pairs_last_seen = datetime.date(current_date.year,
+                                                             current_date.month,
+                                                             current_date.day) - datetime.timedelta(
+                self._non_active_pairs_period)
+            self._logger.info('List of non-active pairs with last_seen less than {0} will be generated'.format(
+                self._non_active_pairs_last_seen))
 
         # We need at least 4 workers for list generation, as top-level list generation futures will themselves create
         # futures and so on.
@@ -149,7 +175,9 @@ class ListsGenerator:
                                            output_invalid_imeis=self._output_invalid_imeis,
                                            base_run_id=self._base_run_id,
                                            blocking_conditions=[c.as_dict() for c in self._blocking_conditions],
-                                           classification_run_id=self._class_run_id)
+                                           classification_run_id=self._class_run_id,
+                                           operators=[op.as_dict() for op in self._operators],
+                                           amnesty=self._amnesty.as_dict())
 
     def generate_lists(self):
         """Function that generates the CSV list outputs in the output directory."""
@@ -331,7 +359,7 @@ class ListsGenerator:
     def _notification_list_columns(self):
         notification_list_cols = ['imei', 'imsi', 'msisdn', 'block_date', 'reasons']
         include_amnesty_column = sql.SQL('')
-        if self._config.amnesty_config.amnesty_enabled:
+        if self._amnesty.amnesty_enabled:
             notification_list_cols.append('amnesty_granted')
             include_amnesty_column = sql.SQL(', amnesty_granted')
         return notification_list_cols, include_amnesty_column
@@ -355,6 +383,35 @@ class ListsGenerator:
     def _analyze_helper(self, cursor, tblname):
         """Function to DRY out exact command to use when ANALYZE'ing new tables."""
         cursor.execute(sql.SQL('ANALYZE {0}').format(sql.Identifier(tblname)))
+
+    def _perform_sanity_checks(self, base_run_id=None):
+        """Method to perform sanity checks on list gen."""
+        current_loopback_days = self._lookback_days
+        current_blocking_conditions = [c.as_dict() for c in self._config.conditions if c.blocking]
+        current_operator_configs = [op.as_dict() for op in self._operators]
+        current_amnesty_configs = self._amnesty.as_dict()
+
+        if base_run_id:
+            base_successful_job_run = metadata.query_for_command_runs(self._metadata_conn,
+                                                                      'dirbs-listgen',
+                                                                      successful_only=True,
+                                                                      run_id=base_run_id)
+            base_successful_job_run = base_successful_job_run[0]
+            base_successful_job_run = base_successful_job_run.extra_metadata
+
+        else:
+            base_successful_job_run = metadata.query_for_command_runs(self._metadata_conn,
+                                                                      'dirbs-listgen',
+                                                                      successful_only=True)
+            base_successful_job_run = base_successful_job_run[0]
+            base_successful_job_run = base_successful_job_run.extra_metadata
+
+        if current_loopback_days == base_successful_job_run['lookback_days'] and \
+                current_blocking_conditions == base_successful_job_run['blocking_conditions'] and \
+                current_operator_configs == base_successful_job_run['operators'] and \
+                current_amnesty_configs == base_successful_job_run['amnesty']:
+            return True
+        return False
 
     def _create_operator_partitions(self, conn, *, parent_tbl_name, child_name_fn,
                                     fillfactor=100, allow_existing=False, is_unlogged=True):
@@ -390,7 +447,7 @@ class ListsGenerator:
         """Function to process the results of a job to calculate an intermediate table."""
         rows, duration = future.result()
         msg = 'Calculated intermediate table containing {0} (duration {1:.3f}s)' \
-              .format(description, duration / 1000)
+            .format(description, duration / 1000)
         if rows != -1:
             msg += ' [{0:d} rows inserted]'.format(rows)
         self._logger.info(msg)
@@ -402,7 +459,7 @@ class ListsGenerator:
         rows, duration = fn(conn)
         if description is not None:
             msg = 'Calculated intermediate table containing {0} (duration {1:.3f}s)' \
-                  .format(description, duration / 1000)
+                .format(description, duration / 1000)
             if rows != -1:
                 msg += ' [{0:d} rows inserted]'.format(rows)
             self._logger.info(msg)
@@ -418,7 +475,7 @@ class ListsGenerator:
         per_type_counts, duration = future.result()
         per_type_counts_string = ', '.join(['{0} {1} changes'.format(v, k) for k, v in per_type_counts.items()])
         msg = 'Stored delta in table containing {0} (duration {1:.3f}s) [{2}]' \
-              .format(description, duration / 1000, per_type_counts_string)
+            .format(description, duration / 1000, per_type_counts_string)
         self._logger.info(msg)
 
     def _wait_for_futures(self, futures_to_cb):
@@ -691,7 +748,7 @@ class ListsGenerator:
                                                    AND {block_date_filter}) cs
                                          WHERE NOT EXISTS(SELECT 1
                                                             FROM golden_list gl
-                                                           WHERE hashed_imei_norm = md5(cs.imei_norm)::uuid)
+                                                           WHERE hashed_imei_norm = md5(cs.imei_norm)::UUID)
                                                {exclude_blacklisted_imeis_query}
                                       GROUP BY imei_norm) bl_imeis,
                                        LATERAL ({is_valid_query}) is_valid_tbl,
@@ -1649,7 +1706,7 @@ class ListsGenerator:
 
         return per_type_counts, cp.duration
 
-    def _write_csv_lists(self):
+    def _write_csv_lists(self):  # noqa: C901
         """Write full CSV lists from the intermediate tables."""
         with futures.ProcessPoolExecutor(max_workers=self._nworkers) as executor:
             # We use ProcessPoolExecutor as these tasks are CPU intensive. This means that we do not have access
@@ -1674,6 +1731,10 @@ class ListsGenerator:
                              (self._write_full_csv_exceptions_list, 'full exceptions list for operator {0}')]:
                         self._queue_csv_writer_job(executor, futures_to_cb, partial(fn, op.id), desc.format(op.id), md)
 
+            if self._non_active_pairs_period > 0:
+                self._queue_csv_writer_job(executor, futures_to_cb, self._write_non_active_pairs_csv_list,
+                                           'non active pairs list', md)
+
             self._wait_for_futures(futures_to_cb)
 
         metadata.add_optional_job_metadata(self._metadata_conn, 'dirbs-listgen', self._run_id, **md)
@@ -1684,17 +1745,25 @@ class ListsGenerator:
                 zf.write(csv_path, arcname=os.path.basename(csv_path))
                 os.remove(csv_path)
 
+        if self._non_active_pairs_period > 0:
+            with zipfile.ZipFile(os.path.join(self._output_dir, '{0}_non_active_pairs.zip'.format(self._date_str)),
+                                 'w') as zf:
+                for csv_path in glob.glob(os.path.join(self._output_dir, '{0}_non_active_pairs*.csv'.format(
+                        self._date_str))):
+                    zf.write(csv_path, arcname=os.path.basename(csv_path))
+                    os.remove(csv_path)
+
         for op in self._operators:
             with zipfile.ZipFile(os.path.join(self._output_dir,
                                               '{0}_notifications_{1}.zip'.format(self._date_str, op.id)), 'w') as zf:
                 for csv_path in glob.glob(os.path.join(self._output_dir,
-                                          '{0}_notifications_{1}*.csv'.format(self._date_str, op.id))):
+                                                       '{0}_notifications_{1}*.csv'.format(self._date_str, op.id))):
                     zf.write(csv_path, arcname=os.path.basename(csv_path))
                     os.remove(csv_path)
             with zipfile.ZipFile(os.path.join(self._output_dir,
                                               '{0}_exceptions_{1}.zip'.format(self._date_str, op.id)), 'w') as zf:
                 for csv_path in glob.glob(os.path.join(self._output_dir,
-                                          '{0}_exceptions_{1}*.csv'.format(self._date_str, op.id))):
+                                                       '{0}_exceptions_{1}*.csv'.format(self._date_str, op.id))):
                     zf.write(csv_path, arcname=os.path.basename(csv_path))
                     os.remove(csv_path)
         self._logger.info('Zipped up lists')
@@ -1760,6 +1829,33 @@ class ListsGenerator:
                                            num_records=num_records,
                                            num_written_records=num_written_records), 'blacklist', cp.duration
 
+    def _write_non_active_pairs_csv_list(self):
+        """Write non active pairs from the pairing list."""
+        if self._non_active_pairs_period > 0:
+            tblname = 'pairing_list'
+            filename = os.path.join(self._output_dir, '{0}_non_active_pairs.csv'.format(self._date_str))
+            cursor_name = 'listgen_write_non_active_pairs_csv'
+            with create_db_connection(self._config.db_config) as conn, \
+                    conn.cursor(name=cursor_name) as cursor, open(filename, 'w') as csvfile, CodeProfiler() as cp:
+                csv_writer = csv.DictWriter(csvfile, fieldnames=['imei', 'imsi'], extrasaction='ignore')
+                csv_writer.writeheader()
+                cursor.execute(sql.SQL("""SELECT t1.imei_norm AS imei, t1.imsi
+                                            FROM pairing_list AS t1
+                                      INNER JOIN monthly_network_triplets_country AS t2
+                                                 ON t1.imei_norm = t2.imei_norm
+                                             AND t1.imsi = t2.imsi
+                                           WHERE t2.last_seen < %s"""), [self._non_active_pairs_last_seen])
+                num_written_records = 0
+                for row_data in cursor:
+                    csv_writer.writerow(row_data._asdict())
+                    num_written_records += 1
+                num_records = self._get_total_record_count(conn, tblname)
+
+            return self._gen_metadata_for_list(filename,
+                                               num_records=num_records,
+                                               num_written_records=num_written_records
+                                               ), 'non_active_pairs', cp.duration
+
     def _write_delta_csv_blacklist(self):
         """Write delta CSV blacklist from the blacklist table."""
         cursor_name = 'listgen_write_delta_csv_blacklist'
@@ -1769,10 +1865,10 @@ class ListsGenerator:
                 conn.cursor(name=cursor_name) as cursor, contextlib.ExitStack() as stack, CodeProfiler() as cp:
             allowed_delta_reasons = self._allowed_delta_reasons(conn, 'blacklist')
             fnames = {r: os.path.join(self._output_dir, '{0}_blacklist_delta_{1:d}_{2:d}_{3}.csv'
-                                                        .format(self._date_str,
-                                                                self._base_run_id,
-                                                                self._run_id,
-                                                                r))
+                                      .format(self._date_str,
+                                              self._base_run_id,
+                                              self._run_id,
+                                              r))
                       for r in allowed_delta_reasons}
             files = {r: stack.enter_context(open(fn, 'w', encoding='utf8')) for r, fn in fnames.items()}
             csv_writers = {r: csv.DictWriter(f,
@@ -1804,9 +1900,8 @@ class ListsGenerator:
                 csv_writer.writerow(row_data_dict)
                 metrics[delta_reason]['num_records'] += 1
 
-        return [self._gen_metadata_for_list(fn, **metrics[r]) for r, fn in fnames.items()], \
-            'blacklist_delta', \
-            cp.duration
+        return [self._gen_metadata_for_list(
+            fn, **metrics[r]) for r, fn in fnames.items()], 'blacklist_delta', cp.duration
 
     def _write_full_csv_notifications_list(self, operator_id):
         """Write full CSV, per-MNO notifications list for a given MNO from the intermediate tables."""
@@ -1852,11 +1947,11 @@ class ListsGenerator:
                 conn.cursor(name=cursor_name) as cursor, contextlib.ExitStack() as stack, CodeProfiler() as cp:
             allowed_delta_reasons = self._allowed_delta_reasons(conn, 'notifications_lists')
             fnames = {r: os.path.join(self._output_dir, '{0}_notifications_{1}_delta_{2:d}_{3:d}_{4}.csv'
-                                                        .format(self._date_str,
-                                                                operator_id,
-                                                                self._base_run_id,
-                                                                self._run_id,
-                                                                r))
+                                      .format(self._date_str,
+                                              operator_id,
+                                              self._base_run_id,
+                                              self._run_id,
+                                              r))
                       for r in allowed_delta_reasons}
             files = {r: stack.enter_context(open(fn, 'w', encoding='utf8')) for r, fn in fnames.items()}
             csv_writers = {r: csv.DictWriter(f,
@@ -1892,9 +1987,8 @@ class ListsGenerator:
                 csv_writer.writerow(row_data_dict)
                 metrics[delta_reason]['num_records'] += 1
 
-        return [self._gen_metadata_for_list(fn, **metrics[r]) for r, fn in fnames.items()], \
-            'notifications_lists_delta', \
-            cp.duration
+        return [self._gen_metadata_for_list(
+            fn, **metrics[r]) for r, fn in fnames.items()], 'notifications_lists_delta', cp.duration
 
     def _write_full_csv_exceptions_list(self, operator_id):
         """Write full CSV, per-MNO exceptions list for a given MNO from the intermediate tables."""
@@ -1931,11 +2025,11 @@ class ListsGenerator:
                 conn.cursor(name=cursor_name) as cursor, contextlib.ExitStack() as stack, CodeProfiler() as cp:
             allowed_delta_reasons = self._allowed_delta_reasons(conn, 'exceptions_lists')
             fnames = {r: os.path.join(self._output_dir, '{0}_exceptions_{1}_delta_{2:d}_{3:d}_{4}.csv'
-                                                        .format(self._date_str,
-                                                                operator_id,
-                                                                self._base_run_id,
-                                                                self._run_id,
-                                                                r))
+                                      .format(self._date_str,
+                                              operator_id,
+                                              self._base_run_id,
+                                              self._run_id,
+                                              r))
                       for r in allowed_delta_reasons}
             files = {r: stack.enter_context(open(fn, 'w', encoding='utf8'))
                      for r, fn in fnames.items()}
@@ -1965,9 +2059,8 @@ class ListsGenerator:
                 csv_writer.writerow(row_data_dict)
                 metrics[delta_reason]['num_records'] += 1
 
-        return [self._gen_metadata_for_list(fn, **metrics[r]) for r, fn in fnames.items()], \
-            'exceptions_lists_delta', \
-            cp.duration
+        return [self._gen_metadata_for_list(
+            fn, **metrics[r]) for r, fn in fnames.items()], 'exceptions_lists_delta', cp.duration
 
     def _gen_metadata_for_list(self, filename, **extra_data):
         """Function to generate a metadata dictionary for a list filename and any extra metadata."""

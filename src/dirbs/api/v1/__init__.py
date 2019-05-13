@@ -1,7 +1,7 @@
 """
 Package for DIRBS REST-ful API (version 1).
 
-Copyright (c) 2018 Qualcomm Technologies, Inc.
+Copyright (c) 2019 Qualcomm Technologies, Inc.
 
  All rights reserved.
 
@@ -32,17 +32,20 @@ Copyright (c) 2018 Qualcomm Technologies, Inc.
 
 from flask import Blueprint
 from flask_apispec import use_kwargs, marshal_with, doc
-from werkzeug.exceptions import BadRequest
-from marshmallow import fields, validate
 
-from dirbs.api.common import catalog as catalog_common, imei as imei_common, tac as tac_common, \
-    job_metadata as job_metadata_common, version as version_common, msisdn as msisdn_common
-from dirbs.api.common.tac import GSMATacInfo
-from dirbs.api.common.catalog import Catalog, CatalogArgs
-from dirbs.api.common.version import Version
-from dirbs.api.common.msisdn import MSISDN
-from dirbs.api.common.imei import IMEI, IMEIArgs
-from dirbs.api.common.job_metadata import JobMetadata, JobMetadataArgs
+from dirbs.api.v1.resources import imei as imei_resource
+from dirbs.api.v1.resources import version as version_resource
+from dirbs.api.v1.resources import tac as tac_resource
+from dirbs.api.v1.resources import msisdn as msisdn_resource
+from dirbs.api.v1.resources import catalog as catalog_resource
+from dirbs.api.v1.resources import job_metadata as job_resource
+from dirbs.api.v1.schemas.job_metadata import JobMetadata, JobMetadataArgs
+from dirbs.api.v1.schemas.msisdn import MSISDN
+from dirbs.api.v1.schemas.tac import GSMATacInfo
+from dirbs.api.v1.schemas.catalog import Catalog, CatalogArgs
+from dirbs.api.v1.schemas.version import Version
+from dirbs.api.v1.schemas.imei import IMEI, IMEIArgs
+from dirbs.api.common.handlers import validate_error, disable_options_method
 
 
 api = Blueprint('v1', __name__.split('.')[0])
@@ -50,51 +53,21 @@ api = Blueprint('v1', __name__.split('.')[0])
 
 @api.app_errorhandler(422)
 def validation_errors(error):
-    """Transform marshmallow validation errors to custom responses to maintain backward-compatibility."""
-    field_name = error.exc.field_names[0]
-    field_value = error.exc.data[field_name]
-    field_type = error.exc.fields[0]
-    if isinstance(field_type, fields.List):
-        field_type = error.exc.fields[0].container
-        field_value = error.exc.data[field_name][next(iter(error.exc.messages[field_name]))]
-    return BadRequest(description=get_error_desc(field_type, field_name, field_value))
+    """
+    Transform marshmallow validation errors to custom responses to maintain backward-compatibility.
 
-
-def get_error_desc(field, name, value):
-    """Helper function to construct error description."""
-    error_desc = 'Bad \'{0}\':\'{1}\' argument format.'.format(name, value)
-    if isinstance(field, fields.Integer):
-        try:
-            int(value)
-            msg_allow_zero = 'or equal to ' if field.validate.min < 1 else ''
-            error_desc = 'Param \'{0}\':\'{1}\' must be greater than {2}0' \
-                .format(name, value, msg_allow_zero)
-        except ValueError:
-            error_desc = 'Bad \'{0}\':\'{1}\' argument format. Accepts only integer'.format(name, value)
-    if isinstance(field, fields.Boolean):
-        allowed_values = ['0', '1', 'true', 'false']
-        error_desc = 'Bad \'{0}\':\'{1}\' argument format. Accepts only one of {2}'\
-            .format(name, value, allowed_values)
-    if isinstance(field, fields.String) and isinstance(field.validate, validate.OneOf):
-        error_desc = 'Bad \'{0}\':\'{1}\' argument format. Accepts only one of {2}'\
-            .format(name, value, field.validate.choices)
-    if isinstance(field, fields.DateTime):
-        dateformat = 'YYYYMMDD' if field.dateformat == '%Y%m%d' else field.dateformat
-        error_desc = 'Bad \'{0}\':\'{1}\' argument format. Date must be in \'{2}\' format.'\
-            .format(name, value, dateformat)
-    return error_desc
-
-
-def disable_options_method():
-    """Decorator function to disable OPTIONS method on the endpoint."""
-    def wrapper(f):
-        f.provide_automatic_options = False
-        return f
-    return wrapper
+    :param error: intercepted http error
+    :return: modified json error response
+    """
+    return validate_error(error)
 
 
 def register_docs(apidoc):
-    """Register all endpoints with the ApiDoc object."""
+    """
+    Register all endpoints with the ApiDoc object.
+
+    :param apidoc: apidoc instance
+    """
     for endpoint in [tac_api, catalog_api, version_api, msisdn_api, imei_api, job_metadata_api]:
         apidoc.register(endpoint, blueprint='v1')
 
@@ -108,8 +81,14 @@ def register_docs(apidoc):
 @marshal_with(None, code=400, description='Bad parameter value')
 @disable_options_method()
 def imei_api(imei, **kwargs):
-    """IMEI API route."""
-    return imei_common.api(imei, **kwargs)
+    """
+    IMEI API route.
+
+    :param imei: IMEI
+    :param kwargs: args
+    :return: json
+    """
+    return imei_resource.imei_api(imei, **kwargs)
 
 
 @doc(description='Fetch GSMA TAC information', tags=['TAC'])
@@ -118,8 +97,13 @@ def imei_api(imei, **kwargs):
 @marshal_with(None, code=400, description='Bad TAC format')
 @disable_options_method()
 def tac_api(tac):
-    """TAC API route."""
-    return tac_common.api(tac)
+    """
+    TAC API route.
+
+    :param tac: gsma tac
+    :return: json
+    """
+    return tac_resource.api(tac)
 
 
 @doc(description='Information Core knows about the cataloged data files. It returns a list of files '
@@ -130,8 +114,13 @@ def tac_api(tac):
 @marshal_with(None, code=400, description='Bad parameter value')
 @disable_options_method()
 def catalog_api(**kwargs):
-    """Catalog API route."""
-    return catalog_common.api(**kwargs)
+    """
+    Catalog API route.
+
+    :param kwargs: input args
+    :return: json
+    """
+    return catalog_resource.catalog_api(**kwargs)
 
 
 @doc(description='Information Core knows about the DIRBS jobs run on the system. It is intended '
@@ -142,8 +131,13 @@ def catalog_api(**kwargs):
 @marshal_with(None, code=400, description='Bad parameter value')
 @disable_options_method()
 def job_metadata_api(**kwargs):
-    """Job Metadata API route."""
-    return job_metadata_common.api(**kwargs)
+    """
+    Job Metadata API route.
+
+    :param kwargs: input args
+    :return: json
+    """
+    return job_resource.job_metadata_api(**kwargs)
 
 
 @doc(description='Information about the code and DB schema version used by Core and presence of '
@@ -153,7 +147,7 @@ def job_metadata_api(**kwargs):
 @disable_options_method()
 def version_api():
     """Version API route."""
-    return version_common.api()
+    return version_resource.version()
 
 
 @doc(description='Information Core knows about the MSISDN. It returns a list of IMEI, IMSI, '
@@ -162,5 +156,10 @@ def version_api():
 @marshal_with(MSISDN, code=200, description='On success')
 @disable_options_method()
 def msisdn_api(msisdn):
-    """MSISDN API route."""
-    return msisdn_common.api(msisdn)
+    """
+    MSISDN API route.
+
+    :param msisdn:
+    :return: json
+    """
+    return msisdn_resource.msisdn_api(msisdn)

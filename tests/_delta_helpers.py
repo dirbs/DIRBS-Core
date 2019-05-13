@@ -76,7 +76,7 @@ def historic_table_insert_params_from_dict(db_conn, importer_name, imei_norm_to_
                              'brand_name': '',
                              'device_type': '',
                              'radio_interface': '',
-                             'provisional_only': 'false'}
+                             'device_id': '123'}
     for fn in extra_field_names:
         assert fn in extra_field_to_values.keys()
         extra_field_values.append(extra_field_to_values[fn])
@@ -128,7 +128,7 @@ def write_import_csv(tmpdir, importer_name, csv_imei_change_type_tuples, delta_i
                                      'brand_name': '',
                                      'device_type': '',
                                      'radio_interface': '',
-                                     'provisional_only': 'false'
+                                     'device_id': '123'
                                      }
             for e in extra_field_names:
                 row_dict.update({e: extra_field_to_values[e]})
@@ -172,7 +172,7 @@ importer_to_fields_dict = {
                           'normalized_imei_field_name': 'imei_norm',
                           'extra_field_names': ['make', 'model', 'status',
                                                 'model_number', 'brand_name',
-                                                'device_type', 'radio_interface'],
+                                                'device_type', 'radio_interface', 'device_id'],
                           'supports_imei_sharding': True}
 }
 

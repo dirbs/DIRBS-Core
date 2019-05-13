@@ -1243,64 +1243,6 @@ def test_batch_tacs(flask_app, gsma_tac_db_importer, api_version):
         assert b'Bad TAC Input format' in rv.data
 
 
-def test_allowed_content_type(flask_app, api_version):
-    """Test Depot ID not known.
-
-    Verify that TAC post api support headers application/json.
-    """
-    if api_version == 'v1':
-        # no content-type test for api version 1
-        pass
-    else:  # api version 2
-        # content-type: application/json
-        headers = {'content-type': 'application/json'}
-        tacs = json.dumps({'tacs': ['12345678', '12345678']})
-        rv = flask_app.post(url_for('{0}.tac_post_api'.format(api_version)), data=tacs, headers=headers)
-        assert rv.status_code == 200
-
-        # content-type: text
-        headers = {'content-type': 'text'}
-        rv = flask_app.post(url_for('{0}.tac_post_api'.format(api_version)), data=tacs, headers=headers)
-        assert rv.status_code == 400
-        assert b'Bad TAC Input format' in rv.data
-
-        # content-type: text
-        headers = {'content-type': 'text'}
-        rv = flask_app.post(url_for('{0}.tac_post_api'.format(api_version)), data=tacs, headers=headers)
-        assert rv.status_code == 400
-        assert b'Bad TAC Input format' in rv.data
-
-        # content-type: text/plain
-        headers = {'content-type': 'text/plain'}
-        rv = flask_app.post(url_for('{0}.tac_post_api'.format(api_version)), data=tacs, headers=headers)
-        assert rv.status_code == 400
-        assert b'Bad TAC Input format' in rv.data
-
-        # content-type: application/javascript
-        headers = {'content-type': 'application/javascript'}
-        rv = flask_app.post(url_for('{0}.tac_post_api'.format(api_version)), data=tacs, headers=headers)
-        assert rv.status_code == 400
-        assert b'Bad TAC Input format' in rv.data
-
-        # content-type: application/xml
-        headers = {'content-type': 'application/xml'}
-        rv = flask_app.post(url_for('{0}.tac_post_api'.format(api_version)), data=tacs, headers=headers)
-        assert rv.status_code == 400
-        assert b'Bad TAC Input format' in rv.data
-
-        # content-type: text/xml
-        headers = {'content-type': 'text/xml'}
-        rv = flask_app.post(url_for('{0}.tac_post_api'.format(api_version)), data=tacs, headers=headers)
-        assert rv.status_code == 400
-        assert b'Bad TAC Input format' in rv.data
-
-        # content-type: text/html
-        headers = {'content-type': 'text/html'}
-        rv = flask_app.post(url_for('{0}.tac_post_api'.format(api_version)), data=tacs, headers=headers)
-        assert rv.status_code == 400
-        assert b'Bad TAC Input format' in rv.data
-
-
 def test_method_put_not_allowed(flask_app, api_version):
     """Test Depot ID 96554/2.
 

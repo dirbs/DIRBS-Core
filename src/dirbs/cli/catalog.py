@@ -1,7 +1,7 @@
 """
 DIRBS CLI for cataloging data received by DIRBS. Installed by setuptools as a dirbs-classify console script.
 
-Copyright (c) 2018 Qualcomm Technologies, Inc.
+Copyright (c) 2019 Qualcomm Technologies, Inc.
 
  All rights reserved.
 
@@ -58,7 +58,20 @@ class CatalogAttributes:
     def __init__(self, filename, file_type, modified_time, compressed_size_bytes, is_valid_zip=None,
                  is_valid_format=None, md5=None, extra_attributes=None, uncompressed_size_bytes=None,
                  num_records=None):
-        """Constructor."""
+        """
+        Constructor.
+
+        :param filename: catalog file name
+        :param file_type: type of the file
+        :param modified_time: modification time
+        :param compressed_size_bytes: size in bytes when compressed
+        :param is_valid_zip: valid zip check (default None)
+        :param is_valid_format: valid format check (default None)
+        :param md5: md5 hash of file (default None)
+        :param extra_attributes: extra attributes of file (default None)
+        :param uncompressed_size_bytes: size in bytes when uncompressed (default None)
+        :param num_records: number of records (default None)
+        """
         self.filename = filename
         self.file_type = file_type
         self.modified_time = modified_time
@@ -74,7 +87,12 @@ class CatalogAttributes:
             self.extra_attributes = extra_attributes
 
     def __eq__(self, other):
-        """Define the equality behavior."""
+        """
+        Define the equality behavior.
+
+        :param other:
+        :return: bool (True/False)
+        """
         if other is None:
             return False
         if self.filename == other.filename and self.file_type == other.file_type \
@@ -85,7 +103,12 @@ class CatalogAttributes:
             return False
 
     def __ne__(self, other):
-        """Define the non-equality behavior."""
+        """
+        Define the non-equality behavior.
+
+        :param other:
+        :return: bool (negate __eq__())
+        """
         return not self.__eq__(other)
 
     def __hash__(self):
@@ -105,7 +128,20 @@ class CatalogAttributes:
 @common.configure_logging
 @common.cli_wrapper(command='dirbs-catalog', required_role='dirbs_core_catalog')
 def cli(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root, metrics_run_root):
-    """DIRBS script to catalog data files received by DIRBS Core."""
+    """
+    DIRBS script to catalog data files received by DIRBS Core.
+
+    :param ctx: click commands context object
+    :param config: dirbs config
+    :param statsd: statsd instance
+    :param logger: logger instance
+    :param run_id: current run id of the job
+    :param conn: database connection
+    :param metadata_conn: database connection to store metadata
+    :param command: job command
+    :param metrics_root:
+    :param metrics_run_root:
+    """
     # Store metadata
     metadata.add_optional_job_metadata(metadata_conn, command, run_id,
                                        prospectors=config.catalog_config.prospectors,
@@ -132,7 +168,13 @@ def cli(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metri
 
 
 def _harvest_files(prospectors, logger):
-    """Traverse all specified prospector paths and determine uncataloged files."""
+    """
+    Traverse all specified prospector paths and determine uncataloged files.
+
+    :param prospectors: file prospectors to harvest files
+    :param logger: logger instance
+    :return: dict list
+    """
     discovered_files = []
 
     # List of files specified explicitly in the prospectors
@@ -177,7 +219,12 @@ def _harvest_files(prospectors, logger):
 
 
 def _fetch_catalog_files(config):
-    """Fetch all the cataloged files from the database."""
+    """
+    Fetch all the cataloged files from the database.
+
+    :param config: dirbs config instance
+    :return: list of cataloged files
+    """
     with create_db_connection(config.db_config) as conn, conn.cursor() as cursor:
         cursor.execute('SELECT filename, file_type, modified_time, compressed_size_bytes FROM data_catalog')
         cataloged_files = []
@@ -189,7 +236,16 @@ def _fetch_catalog_files(config):
 
 
 def _populate_file_properties(config, file_list, run_id, perform_prevalidation, logger):
-    """Determine the attributes associated with the file."""
+    """
+    Determine the attributes associated with the file.
+
+    :param config: dirbs config
+    :param file_list: list of files
+    :param run_id: job run id
+    :param perform_prevalidation: bool check to perform validation
+    :param logger: dirbs logger instance
+    :return: list of files
+    """
     uncataloged_files = []
     for file_name in file_list:
         file_properties = file_name['file_properties']
@@ -241,7 +297,14 @@ def _populate_file_properties(config, file_list, run_id, perform_prevalidation, 
 
 
 def _get_extra_attributes(input_file, file_type, logger):
-    """Function to perform additional checks if they are defined for the file_type."""
+    """
+    Function to perform additional checks if they are defined for the file_type.
+
+    :param input_file: input file name
+    :param file_type: type of the file
+    :param logger: dirbs logger instance
+    :return: dict or None
+    """
     if file_type == 'operator':
         try:
             perform_operator_filename_checks(input_file)
@@ -254,7 +317,19 @@ def _get_extra_attributes(input_file, file_type, logger):
 
 
 def _prevalidate_file(config, file_descriptor, file_path, file_type, run_id, schema, files_to_delete, logger):
-    """Pre-validate the input file using the CSV validator."""
+    """
+    Pre-validate the input file using the CSV validator.
+
+    :param config: dirbs config instance
+    :param file_descriptor: file descriptor
+    :param file_path: file path
+    :param file_type: file type
+    :param run_id: job run id
+    :param schema: csv schema to validate with
+    :param files_to_delete: list of files to delete
+    :param logger: dirbs logger instance
+    :return: bool
+    """
     split_file_basename = '{0}_import_{1}_split'.format(file_type, run_id)
     split_files = list(split_file(file_descriptor, config.import_config.batch_size,
                                   dirname(file_path), logger, split_file_basename))
@@ -278,7 +353,12 @@ def _prevalidate_file(config, file_descriptor, file_path, file_type, run_id, sch
 
 
 def _update_catalog(uncataloged_files, config):
-    """Write the new and modified files to the data catalog."""
+    """
+    Write the new and modified files to the data catalog.
+
+    :param uncataloged_files: list of uncataloged files
+    :param config: dirbs config
+    """
     with create_db_connection(config.db_config) as conn, conn.cursor() as cursor:
         for f in uncataloged_files:
             cursor.execute(sql.SQL("""INSERT INTO data_catalog AS dc(filename, file_type, modified_time,

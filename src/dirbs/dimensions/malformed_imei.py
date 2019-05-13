@@ -1,7 +1,7 @@
 """
 DIRBS dimension function for malformed IMEIs.
 
-Copyright (c) 2018 Qualcomm Technologies, Inc.
+Copyright (c) 2019 Qualcomm Technologies, Inc.
 
  All rights reserved.
 
@@ -40,7 +40,16 @@ class MalformedIMEI(Dimension):
     """Implementation of the MalformedIMEI classification dimension."""
 
     def _matching_imeis_sql(self, conn, app_config, virt_imei_range_start, virt_imei_range_end, curr_date=None):
-        """Overrides Dimension._matching_imeis_sql."""
+        """
+        Overrides Dimension._matching_imeis_sql.
+
+        :param conn: database connection
+        :param app_config: dirbs config obj
+        :param virt_imei_range_start: virtual imei shard range start
+        :param virt_imei_range_end: virtual imei shard range end
+        :param curr_date: user defined current analysis
+        :return: SQL
+        """
         network_imeis_shard = partition_utils.imei_shard_name(base_name='network_imeis',
                                                               virt_imei_range_start=virt_imei_range_start,
                                                               virt_imei_range_end=virt_imei_range_end)

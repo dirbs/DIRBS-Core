@@ -1,7 +1,7 @@
 """
 DIRBS dimension function for duplicate threshold within a time period.
 
-Copyright (c) 2018 Qualcomm Technologies, Inc.
+Copyright (c) 2019 Qualcomm Technologies, Inc.
 
  All rights reserved.
 
@@ -38,9 +38,17 @@ from .duplicate_abstract_base import DuplicateAbstractBase
 class DuplicateThreshold(DuplicateAbstractBase):
     """Implementation of the DuplicateThreshold classification dimension."""
 
-    def __init__(self, *, threshold, period_days=None, period_months=None, **kwargs):
-        """Constructor."""
-        super().__init__(period_days=period_days, period_months=period_months, **kwargs)
+    def __init__(self, *, threshold, period_days=None, period_months=None, use_msisdn=False, **kwargs):
+        """
+        Constructor.
+
+        :param threshold: duplicate threshold value
+        :param period_days: analysis period in days (default None)
+        :param period_months: analysis period in months (default None)
+        :param use_msisdn: flag to use MSISDN for analysis instead of IMSI
+        :param kwargs: kwargs
+        """
+        super().__init__(period_days=period_days, period_months=period_months, use_msisdn=use_msisdn, **kwargs)
         try:
             self._threshold = int(threshold)
         except (TypeError, ValueError):
@@ -52,8 +60,36 @@ class DuplicateThreshold(DuplicateAbstractBase):
         return 'Duplicate threshold'
 
     def _matching_imeis_sql(self, conn, app_config, virt_imei_range_start, virt_imei_range_end, curr_date=None):
-        """Overrides Dimension._matching_imeis_sql."""
+        """
+        Overrides Dimension._matching_imeis_sql.
+
+        :param conn: database connection
+        :param app_config: dirbs config obj
+        :param virt_imei_range_start: virtual imei shard range start
+        :param virt_imei_range_end: virtual imei shard range end
+        :param curr_date: user defined current date for analysis
+        :return: SQL
+        """
         analysis_start_date, analysis_end_date = self._calc_analysis_window(conn, curr_date)
+
+        # if to use MSISDN instead IMSI for analysis
+        if self._use_msisdn:
+            return sql.SQL(
+                """SELECT imei_norm
+                     FROM (SELECT DISTINCT imei_norm, msisdn
+                             FROM monthly_network_triplets_country
+                            WHERE imei_norm IS NOT NULL
+                              AND last_seen >= {analysis_start_date}
+                              AND first_seen < {analysis_end_date}
+                              AND virt_imei_shard >= {virt_imei_range_start}
+                              AND virt_imei_shard < {virt_imei_range_end}
+                              AND is_valid_msisdn(msisdn)) all_seen_imei_msisdn
+                 GROUP BY imei_norm HAVING COUNT(*) >= {threshold}
+                 """).format(analysis_start_date=sql.Literal(analysis_start_date),
+                             analysis_end_date=sql.Literal(analysis_end_date),
+                             virt_imei_range_start=sql.Literal(virt_imei_range_start),
+                             virt_imei_range_end=sql.Literal(virt_imei_range_end),
+                             threshold=sql.Literal(self._threshold)).as_string(conn)
         return sql.SQL(
             """SELECT imei_norm
                  FROM (SELECT DISTINCT imei_norm, imsi

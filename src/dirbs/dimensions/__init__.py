@@ -1,7 +1,7 @@
 """
 Package for DIRBS dimension modules.
 
-Copyright (c) 2018 Qualcomm Technologies, Inc.
+Copyright (c) 2019 Qualcomm Technologies, Inc.
 
  All rights reserved.
 

@@ -2,7 +2,7 @@
 DIRBS CLI for pruning old monthly_network_triplets data or obsolete classification_state data.
 
 Installed by setuptools as a dirbs-prune console script.
-Copyright (c) 2018 Qualcomm Technologies, Inc.
+Copyright (c) 2019 Qualcomm Technologies, Inc.
 
  All rights reserved.
 
@@ -56,7 +56,12 @@ import dirbs.partition_utils as partition_utils
 @click.pass_context
 @common.configure_logging
 def cli(ctx, curr_date):
-    """DIRBS script to prune obsolete data from the DIRBS Core PostgreSQL database."""
+    """
+    DIRBS script to prune obsolete data from the DIRBS Core PostgreSQL database.
+
+    :param ctx: current cli context
+    :param curr_date: current date by user
+    """
     ctx.obj['CURR_DATE'] = curr_date
 
 
@@ -65,7 +70,20 @@ def cli(ctx, curr_date):
 @common.unhandled_exception_handler
 @common.cli_wrapper(command='dirbs-prune', subcommand='triplets', required_role='dirbs_core_power_user')
 def triplets(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root, metrics_run_root):
-    """Prune old monthly_network_triplets data."""
+    """
+    Prune old monthly_network_triplets data.
+
+    :param ctx: current cli context
+    :param config: dirbs config obj
+    :param statsd: statsd obj
+    :param logger: dirbs logger obj
+    :param run_id: job run id
+    :param conn: database connetion
+    :param metadata_conn: database metadata connection
+    :param command: command name
+    :param metrics_root:
+    :param metrics_run_root:
+    """
     curr_date = ctx.obj['CURR_DATE']
 
     # Store metadata
@@ -79,8 +97,8 @@ def triplets(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, 
     with conn.cursor() as cursor:
         logger.info('Pruning monthly_network_triplets data outside the retention window from database...')
         retention_months = config.retention_config.months_retention
-        first_month_to_drop = datetime.date(curr_date.year, curr_date.month, 1) - \
-            relativedelta.relativedelta(months=retention_months)
+        first_month_to_drop = datetime.date(curr_date.year, curr_date.month, 1) - relativedelta.relativedelta(
+            months=retention_months)
         logger.info('monthly_network_triplets partitions older than {0} will be pruned'
                     .format(first_month_to_drop))
 
@@ -139,13 +157,26 @@ def triplets(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, 
                     .format(total_rows_pruned))
 
 
-@cli.command()
+@cli.command(name='classification_state')
 @click.pass_context
 @common.unhandled_exception_handler
 @common.cli_wrapper(command='dirbs-prune', subcommand='classification_state', required_role='dirbs_core_power_user')
 def classification_state(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root,
                          metrics_run_root):
-    """Prune obsolete classification_state data."""
+    """
+    Prune obsolete classification_state data.
+
+    :param ctx: current cli context
+    :param config: dirbs config obj
+    :param statsd: statsd obj
+    :param logger: dirbs logger obj
+    :param run_id: job run id
+    :param conn: database connection
+    :param metadata_conn: database metadata connection
+    :param command: command name
+    :param metrics_root:
+    :param metrics_run_root:
+    """
     curr_date = ctx.obj['CURR_DATE']
 
     # Store metadata
@@ -162,8 +193,8 @@ def classification_state(ctx, config, statsd, logger, run_id, conn, metadata_con
     if curr_date is None:
         curr_date = datetime.date.today()
 
-    first_month_to_drop = datetime.date(curr_date.year, curr_date.month, 1) - \
-        relativedelta.relativedelta(months=retention_months)
+    first_month_to_drop = datetime.date(curr_date.year, curr_date.month, 1) - relativedelta.relativedelta(
+        months=retention_months)
     logger.info('Classification state data with end_date earlier than {0} will be '
                 'pruned'.format(first_month_to_drop))
 
@@ -211,3 +242,287 @@ def classification_state(ctx, config, statsd, logger, run_id, conn, metadata_con
         metadata.add_optional_job_metadata(metadata_conn, command, run_id, rows_after=rows_after)
 
         logger.info('Pruned {0:d} rows from classification_state table'.format(rows_after - rows_before))
+
+
+def _warn_about_prune_all(prune_all, logger):
+    """
+    Function to print out warning about setting all in production.
+
+    :param prune_all: prune all flag
+    :param logger: dirbs logger obj
+    """
+    if prune_all is not False:
+        logger.warn('*************************************************************************')
+        logger.warn('WARNING: --prune_all option passed to dirbs-prune blacklist')
+        logger.warn('*************************************************************************')
+        logger.warn('')
+        logger.warn('This should not be done in a production DIRBS deployment for the following reasons:')
+        logger.warn('')
+        logger.warn('1. All the IMEI falling in the specified pruning period will be pruned from blacklist')
+        logger.warn('   irrespective of any condition specified, all the previously blacklisted IMEIs will now')
+        logger.warn('   be removed from blacklist and allowed on network to operate.')
+        logger.warn('')
+
+
+@cli.command()
+@click.pass_context
+@common.unhandled_exception_handler
+@common.cli_wrapper(command='dirbs-prune', subcommand='blacklist', required_role='dirbs_core_power_user')
+@click.argument('condition_name', required=False, callback=common.validate_conditions)
+@click.option('--prune-all',
+              is_flag=True,
+              help='DANGEROUS: If set, will set end_date to all the imeis falling in the specified period')
+def blacklist(ctx, config, statsd, logger, run_id, conn, metadata_conn, command,
+              metrics_root, metrics_run_root, condition_name, prune_all):
+    """
+    Expire IMEIs outside the blacklist retention period from blacklist.
+
+    :param ctx: current cli context
+    :param config: dirbs config obj
+    :param statsd: statsd obj
+    :param logger: dirbs logger obj
+    :param run_id: job run id
+    :param conn: database connection
+    :param metadata_conn: metadata database connection
+    :param command: command name
+    :param metrics_root:
+    :param metrics_run_root:
+    :param condition_name: name of the condition
+    :param prune_all: prune all flag
+    """
+    current_date = datetime.date.today()
+    retention_days = config.retention_config.blacklist_retention
+
+    if condition_name is None and prune_all is False:
+        logger.info('Error: one of the arguments "condition_name" or "--prune-all" is required')
+        metadata.add_optional_job_metadata(metadata_conn, command, run_id,
+                                           curr_date=current_date.isoformat(),
+                                           retention_days=retention_days,
+                                           job_executed=False)
+    elif condition_name is not None and prune_all is True:
+        logger.info('Error: only one of the arguments "condition_name" or "--prune-all" is required')
+        metadata.add_optional_job_metadata(metadata_conn, command, run_id,
+                                           curr_date=current_date.isoformat(),
+                                           retention_days=retention_days,
+                                           job_executed=False)
+    elif retention_days == 0:
+        logger.info('Blacklist will not be prune, as retention value is set to {0}'.format(retention_days))
+        metadata.add_optional_job_metadata(metadata_conn, command, run_id,
+                                           curr_date=current_date.isoformat(),
+                                           retention_days=retention_days,
+                                           job_executed=False)
+    else:
+        _warn_about_prune_all(prune_all, logger)
+        logger.info('Pruning blacklist to remove any data related to specified condition '
+                    'outside the retention window.')
+        last_retention_date = datetime.date(current_date.year,
+                                            current_date.month,
+                                            current_date.day) - datetime.timedelta(retention_days)
+
+        # store metadata
+        logger.info('Blacklist entries with start_date earlier than {0} will be pruned'.format(last_retention_date))
+        metadata.add_optional_job_metadata(metadata_conn, command, run_id,
+                                           curr_date=current_date.isoformat(),
+                                           retention_days=retention_days,
+                                           job_executed=True,
+                                           last_retention_date=last_retention_date.isoformat())
+
+        with utils.db_role_setter(conn, role_name='dirbs_core_power_user'), conn.cursor() as cursor:
+            logger.debug('Calculating original number of rows with block_date in classification_state table...')
+
+            cursor.execute("""SELECT COUNT(*)
+                                FROM classification_state
+                               WHERE block_date IS NOT NULL
+                                 AND end_date IS NULL""")
+            rows_before = cursor.fetchone()[0]
+
+            logger.debug('Calculated original number of rows (having block_date) in classification_state table')
+            statsd.gauge('{0}rows_before'.format(metrics_run_root), rows_before)
+            metadata.add_optional_job_metadata(metadata_conn, command, run_id, rows_before=rows_before)
+
+            # if its a condition based pruning
+            if not prune_all:
+                cursor.execute(sql.SQL("""SELECT COUNT(*)
+                                            FROM classification_state
+                                           WHERE start_date < %s
+                                             AND cond_name = %s
+                                             AND end_date IS NULL
+                                             AND block_date IS NOT NULL"""),
+                               [last_retention_date, condition_name[0].label])
+                total_rows_to_prune = cursor.fetchone()[0]
+
+                logger.info('Found {0:d} rows of classification_state table '
+                            'with start_date for {1} dimension outside the blacklist '
+                            'retention window.'.format(total_rows_to_prune, condition_name[0].label))
+
+                if total_rows_to_prune > 0:
+                    cursor.execute(sql.SQL("""UPDATE classification_state
+                                                 SET end_date = '{0}'
+                                               WHERE start_date < '{1}'
+                                                 AND cond_name = '{2}'
+                                                 AND end_date IS NULL
+                                                 AND block_date IS NOT NULL""".format(current_date.isoformat(),
+                                                                                      last_retention_date,
+                                                                                      condition_name[0].label)))
+
+                logger.info('Pruned {0:d} rows from blacklist for {1} dimension'.format(
+                    total_rows_to_prune, condition_name[0].label))
+
+            # prune without any condition
+            else:
+                cursor.execute(sql.SQL("""SELECT COUNT(*)
+                                            FROM classification_state
+                                           WHERE start_date < %s
+                                             AND end_date IS NULL
+                                             AND block_date IS NOT NULL"""), [last_retention_date])
+                total_rows_to_prune = cursor.fetchone()[0]
+
+                logger.info('Found {0:d} rows of classification_state table '
+                            'with start_date outside the blacklist retention window.'.format(total_rows_to_prune))
+
+                if total_rows_to_prune > 0:
+                    cursor.execute(sql.SQL("""UPDATE classification_state
+                                                 SET end_date = '{0}'
+                                               WHERE start_date < '{1}'
+                                                 AND end_date IS NULL
+                                                 AND block_date IS NOT NULL""".format(current_date.isoformat(),
+                                                                                      last_retention_date)))
+                logger.info('Pruned {0:d} rows from blacklist'.format(total_rows_to_prune))
+
+            logger.debug('Calculating remaining number of rows with block_date (end_date is null) '
+                         'in classification_state table...')
+            cursor.execute("""SELECT COUNT(*)
+                                FROM classification_state
+                               WHERE block_date IS NOT NULL
+                                 AND end_date IS NULL""")
+            rows_after = cursor.fetchone()[0]
+
+            logger.debug('Calculated remaining number of rows (having block_date and end_date null) '
+                         'in classification_state table')
+            statsd.gauge('{0}rows_after'.format(metrics_run_root), rows_after)
+            metadata.add_optional_job_metadata(metadata_conn, command, run_id, rows_after=rows_after)
+
+
+@cli.command()
+@click.pass_context
+@common.unhandled_exception_handler
+@common.cli_wrapper(command='dirbs-prune', subcommand='lists', required_role='dirbs_core_power_user')
+def lists(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root, metrics_run_root):
+    """
+    Prune obsolete lists data.
+
+    :param ctx: current cli context
+    :param config: dirbs config obj
+    :param statsd: statsd obj
+    :param logger: dirbs logger obj
+    :param run_id: job run id
+    :param conn: database connection
+    :param metadata_conn: metadata database obj
+    :param command: command name
+    :param metrics_root:
+    :param metrics_run_root:
+    """
+    curr_date = ctx.obj['CURR_DATE']
+
+    # store metadata
+    metadata.add_optional_job_metadata(metadata_conn, command, run_id,
+                                       retention_months=config.retention_config.months_retention)
+
+    logger.info('Pruning lists tables to remove any obsolete data with end_time outside the retention window..')
+    retention_months = config.retention_config.months_retention
+
+    if curr_date is None:
+        curr_date = datetime.date.today()
+
+    first_month_to_drop = datetime.date(curr_date.year, curr_date.month, 1) - relativedelta.relativedelta(
+        months=retention_months)
+    logger.info('Lists data with end_time earlier than {0} will be pruned'.format(first_month_to_drop))
+
+    with utils.db_role_setter(conn, role_name='dirbs_core_power_user'), conn.cursor() as cursor:
+        logger.debug('Calculating original number of rows in lists tables...')
+        row_count_sql = sql.SQL("""SELECT blacklist_row_count, noft_lists_row_count, excp_lists_row_count
+                                     FROM (SELECT COUNT(*)
+                                             FROM blacklist) AS blacklist_row_count,
+                                          (SELECT COUNT(*)
+                                             FROM notifications_lists) AS noft_lists_row_count,
+                                          (SELECT COUNT(*)
+                                             FROM exceptions_lists) AS excp_lists_row_count""")
+        cursor.execute(row_count_sql)
+        rows_before = cursor.fetchone()
+        blacklist_rows_before = int(rows_before.blacklist_row_count.strip('()'))
+        notflist_rows_before = int(rows_before.noft_lists_row_count.strip('()'))
+        excplist_rows_before = int(rows_before.excp_lists_row_count.strip('()'))
+        rows_before = blacklist_rows_before + notflist_rows_before + excplist_rows_before
+        logger.debug('Calculated original number of rows in lists tables...')
+        statsd.gauge('{0}blacklist_rows_before'.format(metrics_run_root), blacklist_rows_before)
+        statsd.gauge('{0}notifications_lists_rows_before'.format(metrics_run_root), notflist_rows_before)
+        statsd.gauge('{0}exceptions_lists_rows_before'.format(metrics_run_root), excplist_rows_before)
+        metadata.add_optional_job_metadata(metadata_conn, command, run_id,
+                                           blacklist_rows_before=blacklist_rows_before,
+                                           notifications_lists_rows_before=notflist_rows_before,
+                                           exceptions_lists_rows_before=excplist_rows_before)
+
+        # Calculate number of rows in the lists table outside the retention window
+        job_metadata_filter_sql = """SELECT run_id
+                                       FROM job_metadata
+                                      WHERE command = 'dirbs-listgen'
+                                        AND end_time < '{0}'""".format(first_month_to_drop)
+
+        cursor.execute(sql.SQL("""SELECT COUNT(*)
+                                    FROM blacklist
+                                   WHERE start_run_id IN ({0})""".format(job_metadata_filter_sql)))
+        total_bl_rows_out_window_to_prune = cursor.fetchone()[0]
+        logger.info('Found {0:d} rows of blacklist table outside the retention window to prune'.format(
+            total_bl_rows_out_window_to_prune))
+
+        cursor.execute(sql.SQL("""SELECT COUNT(*)
+                                    FROM notifications_lists
+                                   WHERE start_run_id IN ({0})""".format(job_metadata_filter_sql)))
+        total_nl_rows_out_window_to_prune = cursor.fetchone()[0]
+        logger.info('Found {0:d} rows of notifications lists table outside the retention window to prune'.format(
+            total_nl_rows_out_window_to_prune))
+
+        cursor.execute(sql.SQL("""SELECT COUNT(*)
+                                    FROM exceptions_lists
+                                   WHERE start_run_id IN ({0})""".format(job_metadata_filter_sql)))
+        total_nl_rows_out_window_to_prune = cursor.fetchone()[0]
+        logger.info('Found {0:d} rows of exceptions lists table outside the retention window to prune'.format(
+            total_nl_rows_out_window_to_prune))
+
+        # We repartition the tables to re-create them, passing a condition sql
+        logger.debug('Re-creating blacklist table...')
+        num_phys_imei_shards = partition_utils.num_physical_imei_shards(conn)
+        src_filter_sql = cursor.mogrify("""WHERE start_run_id NOT IN ({0})""".format(
+            job_metadata_filter_sql))
+        partition_utils.repartition_blacklist(conn, num_physical_shards=num_phys_imei_shards,
+                                              src_filter_sql=str(src_filter_sql, encoding=conn.encoding))
+        logger.debug('Re-created blacklist table')
+
+        logger.debug('Re-creating notifications lists table...')
+        partition_utils.repartition_notifications_lists(conn, num_physical_shards=num_phys_imei_shards,
+                                                        src_filter_sql=str(src_filter_sql,
+                                                                           encoding=conn.encoding))
+        logger.debug('Re-created notifications lists table')
+
+        logger.debug('Re-creating exceptions lists table...')
+        partition_utils.repartition_exceptions_lists(conn, num_physical_shards=num_phys_imei_shards,
+                                                     src_filter_sql=str(src_filter_sql,
+                                                                        encoding=conn.encoding))
+        logger.debug('Re-created exceptions lists table')
+
+        logger.debug('Calculating new number of rows in lists tables...')
+        cursor.execute(row_count_sql)
+        rows_after = cursor.fetchone()
+        blacklist_rows_after = int(rows_after.blacklist_row_count.strip('()'))
+        notflist_rows_after = int(rows_after.noft_lists_row_count.strip('()'))
+        excplist_rows_after = int(rows_after.excp_lists_row_count.strip('()'))
+        rows_after = blacklist_rows_after + notflist_rows_after + excplist_rows_after
+        logger.debug('Calculated new number of rows in lists tables')
+        statsd.gauge('{0}blacklist_rows_after'.format(metrics_run_root), blacklist_rows_after)
+        statsd.gauge('{0}notifications_lists_rows_after'.format(metrics_run_root), notflist_rows_after)
+        statsd.gauge('{0}exceptions_lists_rows_after'.format(metrics_run_root), excplist_rows_after)
+        metadata.add_optional_job_metadata(metadata_conn, command, run_id,
+                                           blacklist_rows_before=blacklist_rows_after,
+                                           notifications_lists_rows_before=notflist_rows_after,
+                                           exceptions_lists_rows_before=excplist_rows_after)
+        logger.info('Pruned {0:d} rows from lists tables'.format(rows_after - rows_before))
