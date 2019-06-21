@@ -3,7 +3,7 @@ Reusable test helpers for stolen, pairing, registration and golden list import t
 
 SPDX-License-Identifier: BSD-4-Clause-Clear
 
-Copyright (c) 2018 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -24,7 +24,7 @@ limitations in the disclaimer below) provided that the following conditions are 
 
 SPDX-License-Identifier: ZLIB-ACKNOWLEDGEMENT
 
-Copyright (c) 2018 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
 
 This software is provided 'as-is', without any express or implied warranty. In no event will the authors be held liable
 for any damages arising from the use of this software. Permission is granted to anyone to use this software for any
