@@ -2,6 +2,7 @@
 #
 # DIRBS Core MOTD script
 #
+#
 # Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
 #
 # All rights reserved.

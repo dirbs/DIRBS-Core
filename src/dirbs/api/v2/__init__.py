@@ -17,7 +17,8 @@ limitations in the disclaimer below) provided that the following conditions are 
 - The origin of this software must not be misrepresented; you must not claim that you wrote the original software.
   If you use this software in a product, an acknowledgment is required by displaying the trademark/log as per the
   details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
-- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original
+  software.
 - This notice may not be removed or altered from any source distribution.
 
 NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY
@@ -35,7 +36,7 @@ from flask_apispec import use_kwargs, marshal_with, doc
 
 from dirbs.api.v2.resources import imei as imei_resource
 from dirbs.api.v2.schemas.imei import IMEI, BatchIMEI, IMEIBatchArgs, IMEISubscribers, \
-    SubscriberArgs, IMEIPairings, IMEIInfo
+    SubscriberArgs, IMEIPairings, IMEIInfo, IMEIArgs
 from dirbs.api.v2.resources import catalog as catalog_resource
 from dirbs.api.v2.resources import msisdn as msisdn_resource
 from dirbs.api.v2.resources import job_metadata as job_resource
@@ -126,17 +127,18 @@ def msisdn_get_api(msisdn):
                  'all conditions evaluated as part of DIRBS core. Calling systems should expose as '
                  'little or as much of this information to the end user as is appropriate.', tags=['IMEI'])
 @api.route('/imei/<imei>', methods=['GET'])
+@use_kwargs(IMEIArgs().fields_dict, locations=['query'])
 @marshal_with(IMEI, code=200, description='On success (IMEI info found in Core)')
 @marshal_with(None, code=400, description='Bad IMEI format')
 @disable_options_method()
-def imei_get_api(imei):
+def imei_get_api(imei, **kwargs):
     """
     IMEI API (version 2.0) GET route.
 
     :param imei: IMEI
     :return: json
     """
-    return imei_resource.imei_api(imei)
+    return imei_resource.imei_api(imei, **kwargs)
 
 
 @doc(description='Information Core knows about the IMSI-MSISDN pairs the IMEI has been '

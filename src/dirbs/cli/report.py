@@ -17,7 +17,8 @@ limitations in the disclaimer below) provided that the following conditions are 
 - The origin of this software must not be misrepresented; you must not claim that you wrote the original software.
   If you use this software in a product, an acknowledgment is required by displaying the trademark/log as per the
   details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
-- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original
+  software.
 - This notice may not be removed or altered from any source distribution.
 
 NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY
@@ -264,8 +265,8 @@ def _write_report(report, month, year, output_dir, filename_prefix, css_filename
                                         [compliance_stats[key] for key in value_keys])
             generated_filenames.append(per_tac_csv_filename)
         else:
-            logger.warn('No per-TAC compliance data will be output to CSV file, as compliance data was not calculated '
-                        'or is empty')
+            logger.warning('No per-TAC compliance data will be output to CSV file, as compliance data was not '
+                           'calculated or is empty')
 
     # Write the CSV condition combination data to disk
     condition_combination_table = data.get('condition_combination_table')
@@ -278,7 +279,7 @@ def _write_report(report, month, year, output_dir, filename_prefix, css_filename
                 writer.writerow(combination_list + [combination[key] for key in value_keys])
         generated_filenames.append(condition_counts_filename)
     else:
-        logger.warn('No condition counts table data will be output to CSV file, as table data is empty')
+        logger.warning('No condition counts table data will be output to CSV file, as table data is empty')
 
     # Generate the HTML report
     html = report.gen_html_report(data, css_filename, js_filename)
@@ -312,7 +313,7 @@ def _validate_data_partitions(config, conn, month, year, logger, disable_data_ch
         msg = 'Missing monthly_network_triplets_per_mno partitions for operators: {0}' \
               .format(', '.join([x[0] for x in missing_operator_ids]))
         if disable_data_check:
-            logger.warn(msg)
+            logger.warning(msg)
         else:
             logger.error(msg)
             raise exceptions.MissingOperatorDataException(msg)
@@ -322,7 +323,7 @@ def _validate_data_partitions(config, conn, month, year, logger, disable_data_ch
         msg = 'Extra monthly_network_triplets_per_mno partitions detected for unconfigured operators: {0}' \
               .format(', '.join([x[0] for x in extra_operator_ids]))
         if disable_data_check:
-            logger.warn(msg)
+            logger.warning(msg)
         else:
             logger.error(msg)
             raise exceptions.ExtraOperatorDataException(msg)
@@ -341,7 +342,7 @@ def _validate_data_partitions(config, conn, month, year, logger, disable_data_ch
               'month for the following configured operators: {0}' \
               .format(', '.join([x[0] for x in missing_invariants]))
         if disable_data_check:
-            logger.warn(msg)
+            logger.warning(msg)
         else:
             logger.error(msg)
             raise exceptions.MissingOperatorDataException(msg)
@@ -352,7 +353,7 @@ def _validate_data_partitions(config, conn, month, year, logger, disable_data_ch
               'reporting month for the following unconfigured operators: {0}' \
               .format(', '.join([x[0] for x in extra_invariants]))
         if disable_data_check:
-            logger.warn(msg)
+            logger.warning(msg)
         else:
             logger.error(msg)
             raise exceptions.ExtraOperatorDataException(msg)
@@ -364,7 +365,7 @@ def _validate_data_partitions(config, conn, month, year, logger, disable_data_ch
         if not partition_exists:
             msg = 'Missing monthly_network_triplets_country partition for year and month'
             if disable_data_check:
-                logger.warn(msg)
+                logger.warning(msg)
             else:
                 logger.error(msg)
                 raise exceptions.ExtraOperatorDataException(msg)
@@ -610,11 +611,7 @@ def _extra_missing_operator_check(config, conn, month, year, logger, disable_dat
 @click.pass_context
 @common.configure_logging
 def cli(ctx):
-    """
-    DIRBS script to output reports (operator and country) for a given MONTH and YEAR.
-
-    :param ctx: current cli context obj
-    """
+    """DIRBS script to output reports (operator and country) for a given MONTH and YEAR."""
     pass
 
 
@@ -627,27 +624,7 @@ def cli(ctx):
 def standard(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root, metrics_run_root,
              force_refresh, disable_retention_check, disable_data_check, debug_query_performance,
              month, year, output_dir):
-    """
-    Generate standard monthly operator and country-level reports.
-
-    :param ctx: current cli context
-    :param config: dirbs config obj
-    :param statsd: statsd obj
-    :param logger: dirbs logger obj
-    :param run_id: job run id
-    :param conn: database connection
-    :param metadata_conn: database metadata connection
-    :param command: command name
-    :param metrics_root:
-    :param metrics_run_root:
-    :param force_refresh: force fresh flag
-    :param disable_retention_check: retention check flag
-    :param disable_data_check: data check flag
-    :param debug_query_performance: query performance flag
-    :param month: data month
-    :param year: data year
-    :param output_dir: output directory path
-    """
+    """Generate standard monthly operator and country-level reports."""
     # Store metadata
     metadata.add_optional_job_metadata(metadata_conn, command, run_id,
                                        refreshed_data=force_refresh,
@@ -736,27 +713,7 @@ def standard(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, 
 def gsma_not_found(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root, metrics_run_root,
                    force_refresh, disable_retention_check, disable_data_check, debug_query_performance,
                    month, year, output_dir):
-    """
-    Generate report of all GSMA not found IMEIs.
-
-    :param ctx: current cli context
-    :param config: dirbs config obj
-    :param statsd: statsd obj
-    :param logger: dirbs logger obj
-    :param run_id: job run id
-    :param conn: database connection
-    :param metadata_conn: database metadata connection
-    :param command: command name
-    :param metrics_root:
-    :param metrics_run_root:
-    :param force_refresh: force refresh flag
-    :param disable_retention_check: data retention check flag
-    :param disable_data_check: data check flag
-    :param debug_query_performance: query performance flag
-    :param month: data month
-    :param year: data year
-    :param output_dir: output directory path
-    """
+    """Generate report of all GSMA not found IMEIs."""
     _reports_validation_checks(disable_retention_check, year, month, logger, config, conn,
                                disable_data_check)
     metadata.add_optional_job_metadata(metadata_conn, command, run_id,
@@ -789,27 +746,7 @@ def gsma_not_found(ctx, config, statsd, logger, run_id, conn, metadata_conn, com
 def top_duplicates(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root, metrics_run_root,
                    force_refresh, disable_retention_check, disable_data_check, debug_query_performance,
                    month, year, output_dir):
-    """
-    Generate report listing IMEIs seen with more than 5 IMSIs in a given month and year.
-
-    :param ctx: current cli context
-    :param config: dirbs config obj
-    :param statsd: statsd obj
-    :param logger: dirbs logger obj
-    :param run_id: job run id
-    :param conn: database connection
-    :param metadata_conn: database metadata connection
-    :param command: command name
-    :param metrics_root:
-    :param metrics_run_root:
-    :param force_refresh: force refresh flag
-    :param disable_retention_check: retention check flag
-    :param disable_data_check: data check flag
-    :param debug_query_performance: debug query performace flag
-    :param month: data month
-    :param year: data year
-    :param output_dir: output directory path
-    """
+    """Generate report listing IMEIs seen with more than 5 IMSIs in a given month and year."""
     _reports_validation_checks(disable_retention_check, year, month, logger, config, conn,
                                disable_data_check)
     metadata.add_optional_job_metadata(metadata_conn, command, run_id,
@@ -842,27 +779,7 @@ def top_duplicates(ctx, config, statsd, logger, run_id, conn, metadata_conn, com
 def condition_imei_overlaps(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root,
                             metrics_run_root, force_refresh, disable_retention_check, disable_data_check,
                             debug_query_performance, month, year, output_dir):
-    """
-    Generate per-condition reports showing matched IMEIs seen on more than one MNO network.
-
-    :param ctx: current cli context
-    :param config: dirbs config obj
-    :param statsd: statsd obj
-    :param logger: dirbs logger obj
-    :param run_id: job run id
-    :param conn: database connection
-    :param metadata_conn: database metadata connection
-    :param command: command name
-    :param metrics_root:
-    :param metrics_run_root:
-    :param force_refresh: force refresh flag
-    :param disable_retention_check: retention check flag
-    :param disable_data_check: data check flag
-    :param debug_query_performance: debug query performance flag
-    :param month: data month
-    :param year: data year
-    :param output_dir: output directory path
-    """
+    """Generate per-condition reports showing matched IMEIs seen on more than one MNO network."""
     _reports_validation_checks(disable_retention_check, year, month, logger, config, conn,
                                disable_data_check)
     metadata.add_optional_job_metadata(metadata_conn, command, run_id,
@@ -903,23 +820,7 @@ def condition_imei_overlaps(ctx, config, statsd, logger, run_id, conn, metadata_
               default=None)
 def stolen_violations(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root,
                       metrics_run_root, output_dir, newer_than, filter_by_conditions):
-    """
-    Generate per-MNO list of IMEIs seen on the network after they were reported stolen.
-
-    :param ctx: current cli context
-    :param config: dirbs config obj
-    :param statsd: statsd obj
-    :param logger: dirbs logger obj
-    :param run_id: job run id
-    :param conn: database connection
-    :param metadata_conn: metadata database connection
-    :param command: command name
-    :param metrics_root:
-    :param metrics_run_root:
-    :param output_dir: output directory path
-    :param newer_than: newer than flag
-    :param filter_by_conditions: flag
-    """
+    """Generate per-MNO list of IMEIs seen on the network after they were reported stolen."""
     _operators_configured_check(config, logger)
     metadata.add_optional_job_metadata(metadata_conn, command, run_id,
                                        report_schema_version=report_schema_version,

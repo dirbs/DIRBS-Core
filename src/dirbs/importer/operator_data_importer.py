@@ -17,7 +17,8 @@ limitations in the disclaimer below) provided that the following conditions are 
 - The origin of this software must not be misrepresented; you must not claim that you wrote the original software.
   If you use this software in a product, an acknowledgment is required by displaying the trademark/log as per the
   details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
-- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original
+  software.
 - This notice may not be removed or altered from any source distribution.
 
 NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY
@@ -263,12 +264,12 @@ class OperatorDataImporter(AbstractImporter):
         if self._perform_file_daterange_check:
             yield self._check_data_date_range()
         else:
-            self._logger.warn('Skipped file date range check due to command-line option')
+            self._logger.warning('Skipped file date range check due to command-line option')
 
         if self._perform_leading_zero_check:
             yield self._check_for_leading_zeroes()
         else:
-            self._logger.warn('Skipped leading zero check due to command-line option')
+            self._logger.warning('Skipped leading zero check due to command-line option')
 
     def _check_data_date_range(self):
         """Checks whether the data in the staging table matches what is specified in the filename."""
@@ -327,7 +328,7 @@ class OperatorDataImporter(AbstractImporter):
     def _threshold_validation_checks(self):
         """Overrides AbstractImporter._threshold_validation_checks."""
         if self._data_length == 0:
-            self._logger.warn('Skipped threshold checks due to zero rows in input data')
+            self._logger.warning('Skipped threshold checks due to zero rows in input data')
             return []
 
         if self._perform_null_checks:
@@ -336,40 +337,40 @@ class OperatorDataImporter(AbstractImporter):
             if self._perform_msisdn_import:
                 yield self._check_null_msisdn_ratio()
             else:
-                self._logger.warn('Skipped NULL MSISDN data threshold check due to disabled MSISDN import')
+                self._logger.warning('Skipped NULL MSISDN data threshold check due to disabled MSISDN import')
             if self._perform_rat_import:
                 yield self._check_null_rat_ratio()
             else:
-                self._logger.warn('Skipped NULL RAT data threshold check due to disabled RAT import')
+                self._logger.warning('Skipped NULL RAT data threshold check due to disabled RAT import')
             yield self._check_null_ratio()
         else:
-            self._logger.warn('Skipped NULL data threshold checks due to command-line option')
+            self._logger.warning('Skipped NULL data threshold checks due to command-line option')
 
         if self._perform_unclean_checks:
             yield self._check_unclean_imei_ratio()
             yield self._check_unclean_imsi_ratio()
             yield self._check_unclean_ratio()
         else:
-            self._logger.warn('Skipped unclean data threshold checks due to command-line option')
+            self._logger.warning('Skipped unclean data threshold checks due to command-line option')
 
         if self._perform_region_checks:
             yield self._check_out_of_region_imsi_ratio()
             if self._perform_msisdn_import:
                 yield self._check_out_of_region_msisdn_ratio()
             else:
-                self._logger.warn('Skipped out-of-region MSISDN data threshold check due to disabled MSISDN import')
+                self._logger.warning('Skipped out-of-region MSISDN data threshold check due to disabled MSISDN import')
             if self._perform_msisdn_import:
                 yield self._check_out_of_region_ratio()
             else:
-                self._logger.warn('Skipped out-of-region (combined) data threshold check due to '
-                                  'disabled MSISDN import')
+                self._logger.warning('Skipped out-of-region (combined) data threshold check due to disabled '
+                                     'MSISDN import')
         else:
-            self._logger.warn('Skipped out-of-region data threshold checks due to command-line option')
+            self._logger.warning('Skipped out-of-region data threshold checks due to command-line option')
 
         if self._perform_home_network_check:
             yield self._check_non_home_network_imsi_ratio()
         else:
-            self._logger.warn('Skipped home network data threshold check due to command-line option')
+            self._logger.warning('Skipped home network data threshold check due to command-line option')
 
     def _check_null_ratio_helper(self, *, column, check_name, threshold, metric_key):
         assert self._data_length > 0 and 'This should not be called on an empty file!'
@@ -568,17 +569,17 @@ class OperatorDataImporter(AbstractImporter):
                 if historical_imei is not None:
                     yield self._check_unique_imei_per_day(historical_imei, data_set_imei)
                 else:
-                    self._logger.warn('Skipped historic IMEI per day check due to lack of historic data')
+                    self._logger.warning('Skipped historic IMEI per day check due to lack of historic data')
                 if historical_imsi is not None:
                     yield self._check_unique_imsi_per_day(historical_imsi, data_set_imsi)
                 else:
-                    self._logger.warn('Skipped historic IMSI per day check due to lack of historic data')
+                    self._logger.warning('Skipped historic IMSI per day check due to lack of historic data')
                 if historical_msisdn is not None:
                     yield self._check_unique_msisdn_per_day(historical_msisdn, data_set_msisdn)
                 else:
-                    self._logger.warn('Skipped historic MSISDN per day check due to lack of historic data')
+                    self._logger.warning('Skipped historic MSISDN per day check due to lack of historic data')
         else:
-            self._logger.warn('Skipped historic IMEI/IMSI/MSISDN checks due to command-line option')
+            self._logger.warning('Skipped historic IMEI/IMSI/MSISDN checks due to command-line option')
 
     def _check_unique_imei_per_day(self, historic_average, data_set_average):
         """Compares the dump's average IMEI per day count again the historic average."""

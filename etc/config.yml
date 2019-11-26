@@ -242,6 +242,18 @@ golden_list_threshold:
   import_size_variation_absolute: -1
   import_size_variation_percent: 0.75
 
+barred_list_threshold:
+  import_size_variation_absolute: -1
+  import_size_variation_percent: 0.75
+
+barred_tac_list_threshold:
+  import_size_variation_absolute: -1
+  import_size_variation_percent: 0.75
+
+subscribers_list_threshold:
+  import_size_variation_absolute: 1000
+  import_size_variation_percent: 0.95
+
 # Definition of conditions used by the DIRBS system. There are zero or more
 # conditions used to drive the classification. A system with zero conditions
 # does no classification at all
@@ -273,31 +285,43 @@ conditions:
   # DIRBS Core and just an example of simple/compound conditions. They are not
   # supposed to represent suggestions for real business rules. Please consult
   # the release documentation for available dimensions and their parameters.
-  - label: simple_dimension
+#  - label: simple_dimension
+#    dimensions:
+#      - module: gsma_not_found
+#    grace_period_days: 30
+#    blocking: true
+#    reason: Violated simple dimension
+#    max_allowed_matching_ratio: 1.0
+#  - label: compound_dimension
+#    dimensions:
+#      - module: stolen_list
+#      - module: duplicate_daily_avg
+#        parameters:
+#          threshold: 3.1
+#          period_days: 30
+#          min_seen_days: 5
+#        invert: True
+#    grace_period_days: 0
+#    blocking: true
+#    reason: Violated compound dimension
+#    max_allowed_matching_ratio: 1.0
+  - label: daily_avg_uid
     dimensions:
-      - module: gsma_not_found
-    grace_period_days: 30
-    blocking: true
-    reason: Violated simple dimension
-    max_allowed_matching_ratio: 1.0
-  - label: compound_dimension
-    dimensions:
-      - module: stolen_list
-      - module: duplicate_daily_avg
+      - module: daily_avg_uid
         parameters:
-          threshold: 3.1
+          threshold: 2.5
           period_days: 30
           min_seen_days: 5
-        invert: True
-    grace_period_days: 0
+    grace_period_days: 5
     blocking: true
-    reason: Violated compound dimension
+    sticky: false
+    reason: Daily Average UID Limit Exceeded
     max_allowed_matching_ratio: 1.0
 
 # Definition of settings to be used for logging output of DIRBS system.
 logging:
   # Logging level determines the verbosity of logs. This is also set to 'debug' by the -v CLI option
-  level: info
+  level: debug
   # Format string can be configured here
   format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
   # Set this to true if you want to see logging message for StatsD

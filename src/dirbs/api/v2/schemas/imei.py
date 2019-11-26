@@ -17,7 +17,8 @@ limitations in the disclaimer below) provided that the following conditions are 
 - The origin of this software must not be misrepresented; you must not claim that you wrote the original software.
   If you use this software in a product, an acknowledgment is required by displaying the trademark/log as per the
   details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
-- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original
+  software.
 - This notice may not be removed or altered from any source distribution.
 
 NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY
@@ -33,7 +34,7 @@ import re
 from enum import Enum
 
 from flask import abort
-from marshmallow import Schema, fields, validate, post_dump
+from marshmallow import Schema, fields, validate
 
 
 class StolenStatus(Schema):
@@ -57,6 +58,8 @@ class RealtimeChecks(Schema):
     invalid_imei = fields.Boolean()
     is_paired = fields.Boolean()
     is_exempted_device = fields.Boolean()
+    gsma_not_found = fields.Boolean()
+    in_registration_list = fields.Boolean()
 
 
 class ClassificationState(Schema):
@@ -69,26 +72,13 @@ class ClassificationState(Schema):
 class IMEI(Schema):
     """Define schema for IMEI API."""
 
-    SKIP_VALUES = {None}
-
     imei_norm = fields.String(required=True)
     block_date = fields.Date(required=False)
+    first_seen = fields.Date(required=True)
     classification_state = fields.Nested(ClassificationState, required=True)
     realtime_checks = fields.Nested(RealtimeChecks, required=True)
     registration_status = fields.Nested(RegistrationStatus, required=True)
     stolen_status = fields.Nested(StolenStatus, required=True)
-
-    @post_dump
-    def skip_missing_block_date(self, data):
-        """
-        Skip block date if it is missing.
-
-        :param data: dumped data
-        :return: modified dumped data
-        """
-        if data.get('block_date') in self.SKIP_VALUES:
-            del data['block_date']
-        return data
 
 
 class BatchIMEI(Schema):
@@ -138,7 +128,10 @@ class IMEIBatchArgs(Schema):
 
     # noinspection PyProtectedMember
     imeis = fields.List(fields.String(required=True, validate=Validators.validate_imei),
-                        validate=Validators.validate_imei_list)
+                        required=True,
+                        validate=validate.Length(min=1, max=1000, error='Min 1 and Max 1000 IMEIs allowed'))
+    include_stolen_status = fields.Boolean(required=True, missing=False)
+    include_registration_status = fields.Boolean(required=True, missing=False)
 
     @property
     def fields_dict(self):
@@ -164,18 +157,26 @@ class Pairings(Schema):
 class SortingOrders(Enum):
     """Enum for supported sorting orders."""
 
-    ASC = 'Ascending'
-    DESC = 'Descending'
+    ASC = 'ASC'
+    DESC = 'DESC'
 
 
 class SubscriberArgs(Schema):
     """Defines schema for IMEI-Subscriber API arguments."""
 
-    offset = fields.Integer(required=False, description='Offset the results on the current page '
-                                                        'by the specified imsi-msisdn pair. It should be the value of '
-                                                        'imsi-msisdn pair for the last result on the previous page')
-    limit = fields.Integer(required=False, description='Number of results to return on the current page')
-    order = fields.String(required=False, validate=validate.OneOf([f.value for f in SortingOrders]),
+    offset = fields.Integer(required=True,
+                            missing=0,
+                            validate=[validate.Range(min=0, error='Value must be 0 or greater than 0')],
+                            description='Offset the results on the current page by the specified imsi-msisdn pair. It '
+                                        'should be the value of imsi-msisdn pair for the last result on the previous '
+                                        'page')
+    limit = fields.Integer(required=True,
+                           missing=10,
+                           validate=[validate.Range(min=1, error='Value must be greater than 0')],
+                           description='Number of results to return on the current page')
+    order = fields.String(required=True,
+                          missing='ASC',
+                          validate=validate.OneOf([f.value for f in SortingOrders]),
                           description='The sort order for the results using imsi-msisdn as the key')
 
     @property
@@ -187,7 +188,7 @@ class SubscriberArgs(Schema):
 class IMEIKeys(Schema):
     """Defines schema for keys of paginated result set."""
 
-    previous_key = fields.String()
+    current_key = fields.String()
     next_key = fields.String()
     result_size = fields.Integer()
 
@@ -219,3 +220,19 @@ class IMEIInfo(Schema):
     brand_name = fields.String(required=False)
     device_type = fields.String(required=False)
     radio_interface = fields.String(required=False)
+
+
+class IMEIArgs(Schema):
+    """Input argument schema for IMEI API."""
+
+    include_registration_status = fields.Boolean(required=False, missing=False,
+                                                 description='Whether or not to include \'registration_status\' '
+                                                             'field in the response')
+    include_stolen_status = fields.Boolean(required=False, missing=False,
+                                           description='Whether or not to include \'stolen_status\''
+                                                       'field in the response')
+
+    @property
+    def fields_dict(self):
+        """Convert declared fields to dictionary."""
+        return self._declared_fields

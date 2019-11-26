@@ -17,7 +17,8 @@ limitations in the disclaimer below) provided that the following conditions are 
 - The origin of this software must not be misrepresented; you must not claim that you wrote the original software.
   If you use this software in a product, an acknowledgment is required by displaying the trademark/log as per the
   details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
-- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original
+  software.
 - This notice may not be removed or altered from any source distribution.
 
 NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY
@@ -90,21 +91,6 @@ def cli(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metri
     DIRBS script to classify IMEIs.
 
     Iterates through all configured conditions and write to the classification_state table.
-
-    :param ctx: click command context
-    :param config: dirbs config instance
-    :param statsd: statsd instance
-    :param logger: dirbs logger instance
-    :param run_id: job run id
-    :param conn: database connection
-    :param metadata_conn: database connection for job metadata
-    :param command: command name
-    :param metrics_root:
-    :param metrics_run_root:
-    :param conditions: list of user supplied conditions
-    :param safety_check: bool (enable/disable safety check)
-    :param curr_date: date to use for classification
-    :param disable_sanity_checks: bool (enable/disable sanity checks)
     """
     _warn_about_curr_date(curr_date, logger)
     _warn_about_disabled_safety_check(safety_check, logger)
@@ -223,22 +209,22 @@ def _warn_about_curr_date(curr_date, logger):
     :param logger: dirbs logger instance
     """
     if curr_date is not None:
-        logger.warn('*************************************************************************')
-        logger.warn('WARNING: --curr-date option passed to dirbs-classify')
-        logger.warn('*************************************************************************')
-        logger.warn('')
-        logger.warn('This should not be done in a production DIRBS deployment for the following reasons:')
-        logger.warn('')
-        logger.warn('1. If an IMEI is classified by a condition for the first time by this invocation of')
-        logger.warn('   dirbs-classify, a block date will be calculated and stored in the classification_state')
-        logger.warn('   table based on the current date and the grace period for condition. This is stored and')
-        logger.warn('   will remain the block date for that IMEI even if dirbs-classify is run again without')
-        logger.warn('   --curr-date set. This is by design so that changes to conditions and grace periods')
-        logger.warn('   do not affect the block date previously communicated to a subscriber.')
-        logger.warn('2. Classifying based on old data can have effects on reporting numbers, where DIRBS says that')
-        logger.warn('   a certain number of IMEIs met a condition on a certain date, but on that particular run the')
-        logger.warn('   data being analyzed was not current data.')
-        logger.warn('')
+        logger.warning('*************************************************************************')
+        logger.warning('WARNING: --curr-date option passed to dirbs-classify')
+        logger.warning('*************************************************************************')
+        logger.warning('')
+        logger.warning('This should not be done in a production DIRBS deployment for the following reasons:')
+        logger.warning('')
+        logger.warning('1. If an IMEI is classified by a condition for the first time by this invocation of')
+        logger.warning('   dirbs-classify, a block date will be calculated and stored in the classification_state')
+        logger.warning('   table based on the current date and the grace period for condition. This is stored and')
+        logger.warning('   will remain the block date for that IMEI even if dirbs-classify is run again without')
+        logger.warning('   --curr-date set. This is by design so that changes to conditions and grace periods')
+        logger.warning('   do not affect the block date previously communicated to a subscriber.')
+        logger.warning('2. Classifying based on old data can have effects on reporting numbers, where DIRBS says that')
+        logger.warning('   a certain number of IMEIs met a condition on a certain date, but on that particular run')
+        logger.warning('   the data being analyzed was not current data.')
+        logger.warning('')
 
 
 def _warn_about_disabled_safety_check(safety_check, logger):
@@ -248,19 +234,19 @@ def _warn_about_disabled_safety_check(safety_check, logger):
     :param logger: dirbs logger instance
     """
     if not safety_check:
-        logger.warn('*************************************************************************')
-        logger.warn('WARNING: --no-safety-check option passed to dirbs-classify')
-        logger.warn('*************************************************************************')
-        logger.warn('')
-        logger.warn('This should not be done in a production DIRBS deployment for the following reasons:')
-        logger.warn('')
-        logger.warn('1. The safety check is in place to prevent a misconfigured condition from classifying')
-        logger.warn('   a large proportion of the subscriber population. In the worst case, a list could')
-        logger.warn('   then be generated and a large number of subscribers would be notified or blacklisted.')
-        logger.warn('   Even in the best case where the error is found before list generation, this generates')
-        logger.warn('   bloat in the classification_state table that must be pruned to avoid a performance impact')
-        logger.warn('   in other parts of DIRBS Core.')
-        logger.warn('')
+        logger.warning('*************************************************************************')
+        logger.warning('WARNING: --no-safety-check option passed to dirbs-classify')
+        logger.warning('*************************************************************************')
+        logger.warning('')
+        logger.warning('This should not be done in a production DIRBS deployment for the following reasons:')
+        logger.warning('')
+        logger.warning('1. The safety check is in place to prevent a misconfigured condition from classifying')
+        logger.warning('   a large proportion of the subscriber population. In the worst case, a list could')
+        logger.warning('   then be generated and a large number of subscribers would be notified or blacklisted.')
+        logger.warning('   Even in the best case where the error is found before list generation, this generates')
+        logger.warning('   bloat in the classification_state table that must be pruned to avoid a performance impact')
+        logger.warning('   in other parts of DIRBS Core.')
+        logger.warning('')
 
 
 def _completed_calc_jobs(futures_to_condition, per_condition_state, logger):
@@ -358,6 +344,6 @@ def _do_final_cleanup(conn, logger, is_locked, tables_to_delete):
                 remaining_tables_to_delete.remove(t)
             except:  # noqa: E722
                 for t_not_deleted in remaining_tables_to_delete:
-                    logger.warn('Failed to drop table {0} due to exception. Please issue '
-                                '\'DROP TABLE IF EXISTS {0}\' manually!'.format(t_not_deleted))
+                    logger.warning('Failed to drop table {0} due to exception. Please issue '
+                                   '\'DROP TABLE IF EXISTS {0}\' manually!'.format(t_not_deleted))
                 raise

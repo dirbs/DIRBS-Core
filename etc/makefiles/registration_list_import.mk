@@ -10,14 +10,14 @@
 # limitations in the disclaimer below) provided that the following conditions are met:
 #
 # - Redistributions of source code must retain the above copyright notice, this list of conditions and the following
-#  disclaimer.
+#   disclaimer.
 # - Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following
-#  disclaimer in the documentation and/or other materials provided with the distribution.
+#   disclaimer in the documentation and/or other materials provided with the distribution.
 # - Neither the name of Qualcomm Technologies, Inc. nor the names of its contributors may be used to endorse or promote
-#  products derived from this software without specific prior written permission.
+#   products derived from this software without specific prior written permission.
 # - The origin of this software must not be misrepresented; you must not claim that you wrote the original software.
-#  If you use this software in a product, an acknowledgment is required by displaying the trademark/log as per the
-#  details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
+#   If you use this software in a product, an acknowledgment is required by displaying the trademark/log as per the
+#   details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
 # - Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
 # - This notice may not be removed or altered from any source distribution.
 #

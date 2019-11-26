@@ -17,7 +17,8 @@ limitations in the disclaimer below) provided that the following conditions are 
 - The origin of this software must not be misrepresented; you must not claim that you wrote the original software.
   If you use this software in a product, an acknowledgment is required by displaying the trademark/log as per the
   details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
-- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original
+  software.
 - This notice may not be removed or altered from any source distribution.
 
 NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY
@@ -100,8 +101,8 @@ def test_classification_json_api(flask_app, db_conn, api_version):
         assert rv.status_code == 200
         data = json.loads(rv.data.decode('utf-8'))
         assert data['_keys']['result_size'] == 1
-        assert data['_keys']['previous_key'] == ''
-        assert data['_keys']['next_key'] == ''
+        assert data['_keys']['current_key'] == '0'
+        assert data['_keys']['next_key'] == '10'
         assert data['jobs'][0]['command'] == 'dirbs-classify'
         assert data['jobs'][0]['run_id'] == 1
         assert data['jobs'][0]['subcommand'] == ''
@@ -170,8 +171,8 @@ def test_prune_json_api(flask_app, db_conn, api_version):
         assert class_data['extra_metadata'] == extra_metadata
 
         assert data['_keys']['result_size'] == 2
-        assert data['_keys']['previous_key'] == ''
-        assert data['_keys']['next_key'] == ''
+        assert data['_keys']['current_key'] == '0'
+        assert data['_keys']['next_key'] == '10'
 
 
 def test_operator_import_json_api(flask_app, db_conn, api_version):
@@ -692,7 +693,7 @@ def test_job_metadata_bad_pos_int_params(flask_app, db_conn, api_version):
                                    show_details=False))
 
         assert rv.status_code == 400
-        assert b'Bad \'run_id\':\'aaa\' argument format. Accepts only integer' in rv.data
+        assert b'Bad \'run_id\':\'{0: [\'Not a valid integer.\']}\' argument format' in rv.data
 
         # not positive run_id
         rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version),
@@ -702,7 +703,7 @@ def test_job_metadata_bad_pos_int_params(flask_app, db_conn, api_version):
                                    show_details=False))
 
         assert rv.status_code == 400
-        assert b'Param \'run_id\':\'-1\' must be greater than 0' in rv.data
+        assert b'Bad \'run_id\':\'{0: [\'Must be at least 1.\']}\' argument format' in rv.data
 
         # not numeric max_result
         rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version),
@@ -713,7 +714,7 @@ def test_job_metadata_bad_pos_int_params(flask_app, db_conn, api_version):
                                    show_details=False))
 
         assert rv.status_code == 400
-        assert b'Bad \'max_results\':\'a\' argument format. Accepts only integer' in rv.data
+        assert b'Bad \'max_results\':\'[\'Not a valid integer.\']\' argument format. Accepts only integer' in rv.data
 
         # not positive max_result
         rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version),
@@ -724,7 +725,7 @@ def test_job_metadata_bad_pos_int_params(flask_app, db_conn, api_version):
                                    show_details=False))
 
         assert rv.status_code == 400
-        assert b'Param \'max_results\':\'0\' must be greater than 0' in rv.data
+        assert b'Bad \'max_results\':\'[\'Must be at least 1.\']\' argument format. Accepts only integer' in rv.data
 
         # list of max_result (will take just the first elem of the list)
         rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version),
@@ -761,7 +762,7 @@ def test_job_metadata_bad_pos_int_params(flask_app, db_conn, api_version):
                                    show_details=False))
 
         assert rv.status_code == 400
-        assert b'Bad \'run_id\':\'aaa\' argument format. Accepts only integer' in rv.data
+        assert b'Bad \'run_id\':\'{0: [\'Not a valid integer.\']}\' argument format' in rv.data
 
         # not positive run_id
         rv = flask_app.get(url_for('{0}.job_metadata_get_api'.format(api_version),
@@ -771,7 +772,7 @@ def test_job_metadata_bad_pos_int_params(flask_app, db_conn, api_version):
                                    show_details=False))
 
         assert rv.status_code == 400
-        assert b'Param \'run_id\':\'-1\' must be greater than 0' in rv.data
+        assert b'Bad \'run_id\':\'{0: [\'Must be at least 1.\']}\' argument format' in rv.data
 
         # set max_result to 1 and check that only one record is returned
         job_metadata_importer(db_conn=db_conn, command='dirbs-classify', run_id=1, subcommand='sub_one',
@@ -800,41 +801,37 @@ def test_job_metadata_bad_params(flask_app, api_version):
         # unknown status
         rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version), status='unknown'))
         assert rv.status_code == 400
-        assert b'Bad \'status\':\'unknown\' argument format. ' \
-               b'Accepts only one of [\'running\', \'success\', \'error\']' in rv.data
+        assert b'Bad \'status\':\'{0: [\'Not a valid choice.\']}\' argument format' in rv.data
 
         # list of status containing an unknown status
         rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version), status=['error', 'unknown']))
         assert rv.status_code == 400
-        assert b'Bad \'status\':\'unknown\' argument format. ' \
-               b'Accepts only one of [\'running\', \'success\', \'error\']' in rv.data
+        assert b'Bad \'status\':\'{1: [\'Not a valid choice.\']}\' argument format' in rv.data
 
         # not boolean show_details
         rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version),
                                    show_details='not_boolean'))
 
         assert rv.status_code == 400
-        assert b'Bad \'show_details\':\'not_boolean\' argument format. ' \
+        assert b'Bad \'show_details\':\'[\'Not a valid boolean.\']\' argument format. ' \
                b'Accepts only one of [\'0\', \'1\', \'true\', \'false\']' in rv.data
     else:  # api version 2.0
         # unknown status
         rv = flask_app.get(url_for('{0}.job_metadata_get_api'.format(api_version), status='unknown'))
         assert rv.status_code == 400
-        assert b'Bad \'status\':\'unknown\' argument format. ' \
-               b'Accepts only one of [\'running\', \'success\', \'error\']' in rv.data
+        assert b'Bad \'status\':\'{0: [\'Not a valid choice.\']}\' argument format' in rv.data
 
         # list of status containing an unknown status
         rv = flask_app.get(url_for('{0}.job_metadata_get_api'.format(api_version), status=['error', 'unknown']))
         assert rv.status_code == 400
-        assert b'Bad \'status\':\'unknown\' argument format. ' \
-               b'Accepts only one of [\'running\', \'success\', \'error\']' in rv.data
+        assert b'Bad \'status\':\'{1: [\'Not a valid choice.\']}\' argument format' in rv.data
 
         # not boolean show_details
         rv = flask_app.get(url_for('{0}.job_metadata_get_api'.format(api_version),
                                    show_details='not_boolean'))
 
         assert rv.status_code == 400
-        assert b'Bad \'show_details\':\'not_boolean\' argument format. ' \
+        assert b'Bad \'show_details\':\'[\'Not a valid boolean.\']\' argument format. ' \
                b'Accepts only one of [\'0\', \'1\', \'true\', \'false\']' in rv.data
 
 
@@ -989,9 +986,7 @@ def test_json_unknown_command_param(flask_app, db_conn, api_version):
                                    show_details=True))
 
         assert rv.status_code == 400
-        assert b'Bad \'command\':\'dirbs-unknown\' argument format. ' \
-               b'Accepts only one of [\'dirbs-catalog\', \'dirbs-classify\', ' \
-               b'\'dirbs-db\', \'dirbs-import\', \'dirbs-listgen\', \'dirbs-prune\', \'dirbs-report\']' in rv.data
+        assert b'Bad \'command\':\'{0: [\'Not a valid choice.\']}\' argument format' in rv.data
     else:  # api version 2.0
         rv = flask_app.get(url_for('{0}.job_metadata_get_api'.format(api_version),
                                    command='dirbs-unknown',
@@ -1001,9 +996,7 @@ def test_json_unknown_command_param(flask_app, db_conn, api_version):
                                    show_details=True))
 
         assert rv.status_code == 400
-        assert b'Bad \'command\':\'dirbs-unknown\' argument format. ' \
-               b'Accepts only one of [\'dirbs-catalog\', \'dirbs-classify\', ' \
-               b'\'dirbs-db\', \'dirbs-import\', \'dirbs-listgen\', \'dirbs-prune\', \'dirbs-report\']' in rv.data
+        assert b'Bad \'command\':\'{0: [\'Not a valid choice.\']}\' argument format' in rv.data
 
 
 def test_json_multiple_values_same_param(flask_app, db_conn, api_version):
@@ -1046,7 +1039,7 @@ def test_json_multiple_values_same_param(flask_app, db_conn, api_version):
                                    show_details=False))
 
         assert rv.status_code == 400
-        assert b'Param \'run_id\':\'-2\' must be greater than 0' in rv.data
+        assert b'Bad \'run_id\':\'{1: [\'Must be at least 1.\']}\' argument format' in rv.data
     else:  # api version 2.0
         rv = flask_app.get(url_for('{0}.job_metadata_get_api'.format(api_version),
                                    run_id=[1, 2],
@@ -1073,7 +1066,7 @@ def test_json_multiple_values_same_param(flask_app, db_conn, api_version):
                                    show_details=False))
 
         assert rv.status_code == 400
-        assert b'Param \'run_id\':\'-2\' must be greater than 0' in rv.data
+        assert b'Bad \'run_id\':\'{1: [\'Must be at least 1.\']}\' argument format' in rv.data
 
 
 def test_json_no_run_id_param(flask_app, db_conn, api_version):
@@ -1216,19 +1209,19 @@ def test_job_metadata_v2_pagination(flask_app, db_conn):
     assert rv.status_code == 200
     data = json.loads(rv.data.decode('utf-8'))
     assert data['_keys']['result_size'] == 20
-    assert data['_keys']['previous_key'] == ''
-    assert data['_keys']['next_key'] == ''
-    assert len(data['jobs']) == 20
+    assert data['_keys']['current_key'] == '0'
+    assert data['_keys']['next_key'] == '10'
+    assert len(data['jobs']) == 10
 
     # test pagination, start from 1st record and 5 records per page
-    offset = 1
+    offset = 0
     limit = 5
     rv = flask_app.get(url_for('v2.job_metadata_get_api', offset=offset, limit=limit))
     assert rv.status_code == 200
     data = json.loads(rv.data.decode('utf-8'))
     assert data['_keys']['result_size'] == 20
-    assert data['_keys']['previous_key'] == ''
-    assert data['_keys']['next_key'] == '?offset={0}&limit={1}'.format(offset + limit, limit)
+    assert data['_keys']['current_key'] == '0'
+    assert data['_keys']['next_key'] == str(offset + limit)
     assert len(data['jobs']) == 5
 
     next_offset = offset + limit
@@ -1236,43 +1229,43 @@ def test_job_metadata_v2_pagination(flask_app, db_conn):
     assert rv.status_code == 200
     data = json.loads(rv.data.decode('utf-8'))
     assert data['_keys']['result_size'] == 20
-    assert data['_keys']['previous_key'] == '?offset={0}&limit={1}'.format(next_offset - limit, limit)
-    assert data['_keys']['next_key'] == '?offset={0}&limit={1}'.format(next_offset + limit, limit)
+    assert data['_keys']['current_key'] == str(offset + limit)
+    assert data['_keys']['next_key'] == '10'
 
     next_offset = next_offset + limit
     rv = flask_app.get(url_for('v2.job_metadata_get_api', offset=next_offset, limit=limit))
     assert rv.status_code == 200
     data = json.loads(rv.data.decode('utf-8'))
     assert data['_keys']['result_size'] == 20
-    assert data['_keys']['previous_key'] == '?offset={0}&limit={1}'.format(next_offset - limit, limit * 2)
-    assert data['_keys']['next_key'] == '?offset={0}&limit={1}'.format(next_offset + limit, limit)
+    assert data['_keys']['current_key'] == '10'
+    assert data['_keys']['next_key'] == '15'
 
-    # pagination with sorting order ascending based on run_id
+    # pagination with sorting order ascending based on start time
     offset = 1
     limit = 5
-    order = 'Ascending'
+    order = 'ASC'
     rv = flask_app.get(url_for('v2.job_metadata_get_api', offset=offset, limit=limit, order=order))
     assert rv.status_code == 200
     data = json.loads(rv.data.decode('utf-8'))
     assert data['_keys']['result_size'] == 20
-    assert data['_keys']['previous_key'] == ''
-    assert data['_keys']['next_key'] == '?offset={0}&limit={1}'.format(offset + limit, limit)
+    assert data['_keys']['current_key'] == '1'
+    assert data['_keys']['next_key'] == '6'
     assert len(data['jobs']) == 5
-    assert data['jobs'][0]['run_id'] <= data['jobs'][1]['run_id']
-    assert data['jobs'][1]['run_id'] <= data['jobs'][2]['run_id']
-    assert data['jobs'][2]['run_id'] <= data['jobs'][3]['run_id']
-    assert data['jobs'][3]['run_id'] <= data['jobs'][4]['run_id']
+    assert data['jobs'][0]['start_time'] <= data['jobs'][1]['start_time']
+    assert data['jobs'][1]['start_time'] <= data['jobs'][2]['start_time']
+    assert data['jobs'][2]['start_time'] <= data['jobs'][3]['start_time']
+    assert data['jobs'][3]['start_time'] <= data['jobs'][4]['start_time']
 
     # order Descending
-    order = 'Descending'
+    order = 'DESC'
     rv = flask_app.get(url_for('v2.job_metadata_get_api', offset=offset, limit=limit, order=order))
     assert rv.status_code == 200
     data = json.loads(rv.data.decode('utf-8'))
     assert data['_keys']['result_size'] == 20
-    assert data['_keys']['previous_key'] == ''
-    assert data['_keys']['next_key'] == '?offset={0}&limit={1}'.format(offset + limit, limit)
+    assert data['_keys']['current_key'] == '1'
+    assert data['_keys']['next_key'] == '6'
     assert len(data['jobs']) == 5
-    assert data['jobs'][0]['run_id'] >= data['jobs'][1]['run_id']
-    assert data['jobs'][1]['run_id'] >= data['jobs'][2]['run_id']
-    assert data['jobs'][2]['run_id'] >= data['jobs'][3]['run_id']
-    assert data['jobs'][3]['run_id'] >= data['jobs'][4]['run_id']
+    assert data['jobs'][0]['start_time'] >= data['jobs'][1]['start_time']
+    assert data['jobs'][1]['start_time'] >= data['jobs'][2]['start_time']
+    assert data['jobs'][2]['start_time'] >= data['jobs'][3]['start_time']
+    assert data['jobs'][3]['start_time'] >= data['jobs'][4]['start_time']

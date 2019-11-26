@@ -17,7 +17,8 @@ limitations in the disclaimer below) provided that the following conditions are 
 - The origin of this software must not be misrepresented; you must not claim that you wrote the original software.
   If you use this software in a product, an acknowledgment is required by displaying the trademark/log as per the
   details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
-- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original
+  software.
 - This notice may not be removed or altered from any source distribution.
 
 NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY
@@ -30,7 +31,7 @@ BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 POSSIBILITY OF SUCH DAMAGE.
 """
 
-from flask import abort, jsonify
+from flask import jsonify
 
 from dirbs.api.common.db import get_db_connection
 from dirbs.api.common.tac import validate_tac
@@ -62,30 +63,20 @@ def tac_batch_api(**kwargs):
     :param kwargs: list of gsma tacs
     :return: json
     """
-    if kwargs is not None:
-        tacs = kwargs.get('tacs')
-        if tacs is not None:
-            tacs = list(set(tacs))
-        else:
-            abort(400, 'Bad TAC Input format.')
+    tacs = list(set(kwargs.get('tacs')))
 
-        if tacs is not None:
-            if not len(tacs) > 1000 and not len(tacs) == 0:
-                with get_db_connection() as db_conn, db_conn.cursor() as cursor:
-                    cursor.execute("""SELECT tac, manufacturer, bands, allocation_date, model_name, device_type,
-                                             optional_fields
-                                        FROM gsma_data
-                                       WHERE tac IN %(tacs)s""", {'tacs': tuple(tacs)})
-                    gsma_data = cursor.fetchall()
-                    response = []
-                    for rec in gsma_data:
-                        response.append(TacInfo().dump(dict(tac=rec.tac,
-                                                            gsma=rec._asdict())).data)
-                    existing_tacs = [res['tac'] for res in response]
-                    for tac in tacs:
-                        if tac not in existing_tacs:
-                            response.append(TacInfo().dump(dict(tac=tac, gsma=None)).data)
-                    return jsonify({'results': response})
-            abort(400, 'Bad TAC Input format (Minimum 1 & Maximum 1000 allowed).')
-        abort(400, 'Bad TAC Input format.')
-    abort(400, 'Bad TAC Input format.')
+    with get_db_connection() as db_conn, db_conn.cursor() as cursor:
+        cursor.execute("""SELECT tac, manufacturer, bands, allocation_date, model_name, device_type,
+                                 optional_fields
+                            FROM gsma_data
+                           WHERE tac IN %(tacs)s""", {'tacs': tuple(tacs)})
+        gsma_data = cursor.fetchall()
+        response = []
+        for rec in gsma_data:
+            response.append(TacInfo().dump(dict(tac=rec.tac,
+                                                gsma=rec._asdict())).data)
+        existing_tacs = [res['tac'] for res in response]
+        for tac in tacs:
+            if tac not in existing_tacs:
+                response.append(TacInfo().dump(dict(tac=tac, gsma=None)).data)
+        return jsonify({'results': response})

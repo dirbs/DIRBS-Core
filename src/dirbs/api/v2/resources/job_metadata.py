@@ -17,7 +17,8 @@ limitations in the disclaimer below) provided that the following conditions are 
 - The origin of this software must not be misrepresented; you must not claim that you wrote the original software.
   If you use this software in a product, an acknowledgment is required by displaying the trademark/log as per the
   details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
-- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original
+  software.
 - This notice may not be removed or altered from any source distribution.
 
 NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY
@@ -29,20 +30,21 @@ BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 """
-import operator
 
 from flask import jsonify
 from psycopg2 import sql
 
 from dirbs.api.common.db import get_db_connection
-from dirbs.api.common.pagination import Pagination
 from dirbs.api.v2.schemas.job_metadata import JobKeys, JobMetadata
 
 
-def get_metadata(command=None, subcommand=None, run_id=None, status=None):
+def get_metadata(command=None, subcommand=None, run_id=None, status=None, order='ASC', offset=0, limit=10):
     """
     Get metadata for jobs.
 
+    :param order:
+    :param limit:
+    :param offset:
     :param command: command name (default None)
     :param subcommand: sub-command name (default None)
     :param run_id: job run id (default None)
@@ -64,21 +66,25 @@ def get_metadata(command=None, subcommand=None, run_id=None, status=None):
                                            .format(sql.Identifier('run_id')), [(run_id)])
             filters_sql.append(sql.SQL(str(mogrified_sql, db_conn.encoding)))
 
-        base_sql = sql.SQL("""SELECT * FROM job_metadata""")
+        base_sql = sql.SQL("""SELECT *, COUNT(*) OVER() AS total_count FROM job_metadata""")
 
         final_sql = base_sql
 
         if len(filters_sql) > 0:
             final_sql = sql.SQL('{0} WHERE {1}').format(base_sql, sql.SQL(' AND ').join(filters_sql))
 
-        final_sql = sql.SQL('{0} ORDER BY start_time').format(final_sql)
+        final_sql = sql.SQL('{final_sql} ORDER BY start_time {order_type} OFFSET {offset} LIMIT {limit}').format(
+            final_sql=final_sql,
+            order_type=sql.SQL(order),
+            offset=sql.SQL(str(offset)),
+            limit=sql.SQL(str(limit))
+        )
 
         cursor.execute(final_sql)
         return cursor.fetchall()
 
 
-def job_metadata_api(command=None, subcommand=None, run_id=None, status=None, show_details=True,
-                     order=None, offset=None, limit=None):
+def job_metadata_api(order, offset, limit, command=None, subcommand=None, run_id=None, status=None, show_details=True):
     """
     Defines handler method for job-metadata GET API (version 2.0).
 
@@ -92,31 +98,9 @@ def job_metadata_api(command=None, subcommand=None, run_id=None, status=None, sh
     :param limit: limit of the data (default None)
     :return: json
     """
-    result = get_metadata(command, subcommand, run_id, status)
-    if order is not None or (offset is not None and limit is not None):
-        data = [rec._asdict() for rec in result]
-        paginated_data = Pagination.paginate(data, offset, limit)
-
-        if order == 'Ascending':
-            paginated_data.get('data').sort(key=operator.itemgetter('run_id'))
-        elif order == 'Descending':
-            paginated_data.get('data').sort(key=operator.itemgetter('run_id'), reverse=True)
-
-        if not show_details:
-            response = {
-                '_keys': JobKeys().dump(dict(paginated_data.get('keys'))).data,
-                'jobs': [JobMetadata(exclude=('extra_metadata',)).dump(dict(dat)).data for dat in
-                         paginated_data.get('data')]
-            }
-            return jsonify(response)
-        else:
-            response = {
-                '_keys': JobKeys().dump(dict(paginated_data.get('keys'))).data,
-                'jobs': [JobMetadata().dump(dict(dat)).data for dat in paginated_data.get('data')]
-            }
-            return jsonify(response)
-
-    keys = {'offset': '', 'limit': '', 'previous_key': '', 'next_key': '', 'result_size': len(result)}
+    result = get_metadata(command, subcommand, run_id, status, order, offset, limit)
+    result_size = result[0][-1] if result else 0
+    keys = {'current_key': offset, 'next_key': offset + limit if result else 0, 'result_size': result_size}
     if not show_details:
         response = {
             '_keys': JobKeys().dump(dict(keys)).data,

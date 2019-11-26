@@ -17,7 +17,8 @@ limitations in the disclaimer below) provided that the following conditions are 
 - The origin of this software must not be misrepresented; you must not claim that you wrote the original software.
   If you use this software in a product, an acknowledgment is required by displaying the trademark/log as per the
   details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
-- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original
+  software.
 - This notice may not be removed or altered from any source distribution.
 
 NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY
@@ -30,15 +31,13 @@ BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 POSSIBILITY OF SUCH DAMAGE.
 """
 import re
-import operator
 
-from flask import jsonify, current_app, abort
+from flask import jsonify, current_app
 from psycopg2 import sql
 
 from dirbs.api.common.db import get_db_connection
-from dirbs.api.common.imei import validate_imei, get_conditions, ever_observed_on_network, is_paired
+from dirbs.api.common.imei import validate_imei, get_conditions, is_paired, is_in_registration_list
 from dirbs.api.v2.schemas.imei import IMEIInfo, IMEI, IMEISubscribers, IMEIPairings
-from dirbs.api.common.pagination import Pagination
 
 
 def registration_list_status(cursor, imei_norm):
@@ -115,27 +114,24 @@ def block_date(cursor, imei_norm):
     :return: block date or none
     """
     # check if it is in blacklist
-    cursor.execute("""SELECT block_date, delta_reason
-                        FROM blacklist
+    cursor.execute("""SELECT MIN(block_date) AS block_date
+                        FROM classification_state
                        WHERE imei_norm = %(imei_norm)s
                          AND virt_imei_shard = calc_virt_imei_shard(%(imei_norm)s)
-                    ORDER BY start_run_id DESC""",
+                         AND end_date IS NULL""",
                    {'imei_norm': imei_norm})
-    blacklist_block_date = cursor.fetchone()
-    if blacklist_block_date is not None and blacklist_block_date.delta_reason != 'unblocked':
-        return blacklist_block_date.block_date
-    else:
-        # check if it is in notification list
-        cursor.execute("""SELECT block_date, delta_reason
-                            FROM notifications_lists
-                           WHERE imei_norm = %(imei_norm)s
-                             AND virt_imei_shard = calc_virt_imei_shard(%(imei_norm)s)
-                        ORDER BY start_run_id DESC""",
-                       {'imei_norm': imei_norm})
-        notification_block_date = cursor.fetchone()
-        if notification_block_date is not None and notification_block_date.delta_reason != 'resolved':
-            return notification_block_date.block_date
-        return None
+    imei_block_date = cursor.fetchone()
+    return imei_block_date.block_date
+
+
+def first_seen(cursor, imei_norm):
+    """Method to extract min first_seen of an IMEI."""
+    cursor.execute("""SELECT MIN(first_seen) AS first_seen
+                        FROM network_imeis
+                       WHERE imei_norm = %(imei_norm)s
+                         AND virt_imei_shard = calc_virt_imei_shard(%(imei_norm)s)""",
+                   {'imei_norm': imei_norm})
+    return cursor.fetchone().first_seen
 
 
 def is_exempted_device(cursor, imei_norm):
@@ -181,7 +177,7 @@ def imei_info_api(imei):
         return {}
 
 
-def imei_api(imei):
+def imei_api(imei, include_registration_status=False, include_stolen_status=False):
     """
     IMEI API handler.
 
@@ -189,13 +185,18 @@ def imei_api(imei):
     :return: json
     """
     imei_norm = validate_imei(imei)
+    tac = imei_norm[:8]
 
+    tac = imei_norm[:8]
     with get_db_connection() as db_conn, db_conn.cursor() as cursor:
+        cursor.execute('SELECT NOT EXISTS (SELECT * FROM gsma_data WHERE tac = %s) AS not_in_gsma', [tac])
+        rt_gsma_not_found = cursor.fetchone()[0]
+        first_seen_date = first_seen(cursor, imei_norm)
         condition_results = get_conditions(cursor, imei_norm)
-
         response = {
             'imei_norm': imei_norm,
             'block_date': block_date(cursor, imei_norm),
+            'first_seen': first_seen_date,
             'classification_state': {
                 'blocking_conditions': [
                     dict({
@@ -211,14 +212,19 @@ def imei_api(imei):
                 ]
             },
             'realtime_checks': {
-                'ever_observed_on_network': ever_observed_on_network(cursor, imei_norm),
+                'ever_observed_on_network': True if first_seen_date else False,
                 'invalid_imei': False if re.match(r'^\d{14}$', imei_norm) else True,
                 'is_paired': is_paired(cursor, imei_norm),
-                'is_exempted_device': is_exempted_device(cursor, imei_norm)
-            },
-            'registration_status': registration_list_status(cursor, imei_norm),
-            'stolen_status': stolen_list_status(cursor, imei_norm)
+                'is_exempted_device': is_exempted_device(cursor, imei_norm),
+                'in_registration_list': is_in_registration_list(db_conn, cursor, imei_norm),
+                'gsma_not_found': rt_gsma_not_found
+            }
         }
+
+        if include_registration_status:
+            response['registration_status'] = registration_list_status(cursor, imei_norm)
+        if include_stolen_status:
+            response['stolen_status'] = stolen_list_status(cursor, imei_norm)
 
         return jsonify(IMEI().dump(response).data)
 
@@ -236,37 +242,29 @@ def imei_subscribers_api(imei, **kwargs):
     limit = kwargs.get('limit')
     order = kwargs.get('order')
 
-    if offset is None:
-        offset = 1
-
-    if limit is None:
-        limit = 10
-
     with get_db_connection() as db_conn, db_conn.cursor() as cursor:
-        cursor.execute("""SELECT DISTINCT imsi, msisdn, last_seen
-                            FROM monthly_network_triplets_country_no_null_imeis
-                           WHERE imei_norm = %(imei_norm)s
-                             AND virt_imei_shard = calc_virt_imei_shard(%(imei_norm)s)""",
-                       {'imei_norm': imei_norm})
+        query = """SELECT DISTINCT imsi, msisdn, last_seen, COUNT(*) OVER() AS total_count
+                     FROM monthly_network_triplets_country_no_null_imeis
+                    WHERE imei_norm = %(imei_norm)s
+                      AND virt_imei_shard = calc_virt_imei_shard(%(imei_norm)s)
+                 ORDER BY last_seen {order_type}
+                 OFFSET {data_offset}
+                 LIMIT {data_limit}""".format(order_type=order, data_offset=offset, data_limit=limit)  # noqa Q447
+
+        cursor.execute(query, {'imei_norm': imei_norm})
         if cursor is not None:
-            subscribers = [{'imsi': x.imsi, 'msisdn': x.msisdn, 'last_seen': x.last_seen} for x in cursor]
-            paginated_data = Pagination.paginate(subscribers, offset, limit)
-
-            if order == 'Ascending':
-                paginated_data.get('data').sort(key=operator.itemgetter('last_seen'))
-                return jsonify(IMEISubscribers().dump(dict(imei_norm=imei_norm,
-                                                           subscribers=paginated_data.get('data'),
-                                                           _keys=paginated_data.get('keys'))).data)
-            elif order == 'Descending':
-                paginated_data.get('data').sort(key=operator.itemgetter('last_seen'), reverse=True)
-                return jsonify(IMEISubscribers().dump(dict(imei_norm=imei_norm,
-                                                           subscribers=paginated_data.get('data'),
-                                                           _keys=paginated_data.get('keys'))).data)
+            subscribers = [{'imsi': x.imsi,
+                            'msisdn': x.msisdn,
+                            'last_seen': x.last_seen,
+                            'total_count': x.total_count} for x in cursor]
+            keys = {'current_key': offset,
+                    'next_key': offset + limit if subscribers else '',
+                    'result_size': subscribers[0].get('total_count') if subscribers else 0}
             return jsonify(IMEISubscribers().dump(dict(imei_norm=imei_norm,
-                                                       subscribers=paginated_data.get('data'),
-                                                       _keys=paginated_data.get('keys'))).data)
+                                                       subscribers=subscribers,
+                                                       _keys=keys)).data)
 
-        keys = {'offset': offset, 'limit': limit, 'current_key': offset, 'next_key': '', 'result_size': 0}
+        keys = {'current_key': offset, 'next_key': '', 'result_size': 0}
         return jsonify(IMEISubscribers().dump(dict(imei_norm=imei_norm, subscribers=None, _keys=keys)))
 
 
@@ -283,40 +281,29 @@ def imei_pairings_api(imei, **kwargs):
     limit = kwargs.get('limit')
     order = kwargs.get('order')
 
-    if offset is None:
-        offset = 1
-
-    if limit is None:
-        limit = 10
-
     with get_db_connection() as db_conn, db_conn.cursor() as cursor:
-        cursor.execute("""SELECT pairing_list.imsi, network_triplets.last_seen
-                            FROM pairing_list
-                       LEFT JOIN monthly_network_triplets_country_no_null_imeis AS network_triplets
-                                  ON network_triplets.imsi = pairing_list.imsi
-                             AND network_triplets.imei_norm = pairing_list.imei_norm
-                           WHERE pairing_list.imei_norm = '{imei_norm}'"""
-                       .format(imei_norm=imei_norm))
+        query = """SELECT pairing_list.imsi, network_triplets.last_seen, COUNT(*) OVER() AS total_count
+                     FROM pairing_list
+                LEFT JOIN monthly_network_triplets_country_no_null_imeis AS network_triplets
+                           ON network_triplets.imsi = pairing_list.imsi
+                      AND network_triplets.imei_norm = pairing_list.imei_norm
+                    WHERE pairing_list.imei_norm = %(imei_norm)s
+                      AND pairing_list.virt_imei_shard = calc_virt_imei_shard(%(imei_norm)s)
+                ORDER BY last_seen {order_type} 
+                OFFSET {data_offset} 
+                LIMIT {data_limit}""".format(order_type=order, data_offset=offset, data_limit=limit)  # noqa Q447
+
+        cursor.execute(query, {'imei_norm': imei_norm})
         if cursor is not None:
-            pairings = [{'imsi': x.imsi, 'last_seen': x.last_seen} for x in cursor]
-            paginated_data = Pagination.paginate(pairings, offset, limit)
-
-            if order == 'Ascending':
-                paginated_data.get('data').sort(key=operator.itemgetter('last_seen'))
-                return jsonify(IMEIPairings().dump(dict(imei_norm=imei_norm,
-                                                        pairs=paginated_data.get('data'),
-                                                        _keys=paginated_data.get('keys'))).data)
-            elif order == 'Descending':
-                paginated_data.get('data').sort(key=operator.itemgetter('last_seen'), reverse=True)
-                return jsonify(IMEIPairings().dump(dict(imei_norm=imei_norm,
-                                                        pairs=paginated_data.get('data'),
-                                                        _keys=paginated_data.get('keys'))).data)
-
+            pairings = [{'imsi': x.imsi, 'last_seen': x.last_seen, 'total_count': x.total_count} for x in cursor]
+            keys = {'current_key': offset,
+                    'next_key': offset + limit if pairings else '',
+                    'result_size': pairings[0].get('total_count') if pairings else 0}
             return jsonify(IMEIPairings().dump(dict(imei_norm=imei_norm,
-                                                    pairs=paginated_data.get('data'),
-                                                    _keys=paginated_data.get('keys'))).data)
+                                                    pairs=pairings,
+                                                    _keys=keys)).data)
 
-        keys = {'offset': offset, 'limit': limit, 'current_key': offset, 'next_key': '', 'result_size': 0}
+        keys = {'current_key': offset, 'next_key': '', 'result_size': 0}
         return jsonify(IMEIPairings().dump(dict(imei_norm=imei_norm, pairs=None, _keys=keys)))
 
 
@@ -327,41 +314,52 @@ def imei_batch_api(**kwargs):
     :param kwargs: input imei list
     :return: json
     """
-    if bool(kwargs):
-        imeis = kwargs.get('imeis')
-        data = []
-        with get_db_connection() as db_conn, db_conn.cursor() as cursor:
-            for imei in imeis:
-                imei_norm = validate_imei(imei)
-                condition_results = get_conditions(cursor, imei_norm)
+    imeis = kwargs.get('imeis')
+    include_registration_status = kwargs.get('include_registration_status')
+    include_stolen_status = kwargs.get('include_stolen_status')
 
-                response = {
-                    'imei_norm': imei_norm,
-                    'block_date': block_date(cursor, imei_norm),
-                    'classification_state': {
-                        'blocking_conditions': [
-                            dict({
-                                'condition_name': key,
-                                'condition_met': value['result']
-                            }) for key, value in condition_results.items() if value['blocking']
-                        ],
-                        'informative_conditions': [
-                            dict({
-                                'condition_name': key,
-                                'condition_met': value['result']
-                            }) for key, value in condition_results.items() if not value['blocking']
-                        ]
-                    },
-                    'realtime_checks': {
-                        'ever_observed_on_network': ever_observed_on_network(cursor, imei_norm),
-                        'invalid_imei': False if re.match(r'^\d{14}$', imei_norm) else True,
-                        'is_paired': is_paired(cursor, imei_norm),
-                        'is_exempted_device': is_exempted_device(cursor, imei_norm)
-                    },
-                    'registration_status': registration_list_status(cursor, imei_norm),
-                    'stolen_status': stolen_list_status(cursor, imei_norm)
+    data = []
+    with get_db_connection() as db_conn, db_conn.cursor() as cursor:
+        for imei in imeis:
+            imei_norm = validate_imei(imei)
+            tac = imei_norm[:8]
+            condition_results = get_conditions(cursor, imei_norm)
+            first_seen_date = first_seen(cursor, imei_norm)
+            cursor.execute('SELECT NOT EXISTS (SELECT * FROM gsma_data WHERE tac = %s) AS not_in_gsma', [tac])
+            rt_gsma_not_found = cursor.fetchone()[0]
+
+            response = {
+                'imei_norm': imei_norm,
+                'block_date': block_date(cursor, imei_norm),
+                'first_seen': first_seen_date,
+                'classification_state': {
+                    'blocking_conditions': [
+                        dict({
+                            'condition_name': key,
+                            'condition_met': value['result']
+                        }) for key, value in condition_results.items() if value['blocking']
+                    ],
+                    'informative_conditions': [
+                        dict({
+                            'condition_name': key,
+                            'condition_met': value['result']
+                        }) for key, value in condition_results.items() if not value['blocking']
+                    ]
+                },
+                'realtime_checks': {
+                    'ever_observed_on_network': True if first_seen_date else False,
+                    'invalid_imei': False if re.match(r'^\d{14}$', imei_norm) else True,
+                    'is_paired': is_paired(cursor, imei_norm),
+                    'is_exempted_device': is_exempted_device(cursor, imei_norm),
+                    'gsma_not_found': rt_gsma_not_found,
+                    'in_registration_list': is_in_registration_list(db_conn, cursor, imei_norm)
                 }
+            }
 
-                data.append(IMEI().dump(response).data)
-            return jsonify({'results': data})
-    abort(400, 'Bad Input format (args cannot be empty)')
+            if include_registration_status:
+                response['registration_status'] = registration_list_status(cursor, imei_norm)
+            if include_stolen_status:
+                response['stolen_status'] = stolen_list_status(cursor, imei_norm)
+
+            data.append(IMEI().dump(response).data)
+        return jsonify({'results': data})

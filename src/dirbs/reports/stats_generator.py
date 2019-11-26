@@ -17,7 +17,8 @@ limitations in the disclaimer below) provided that the following conditions are 
 - The origin of this software must not be misrepresented; you must not claim that you wrote the original software.
   If you use this software in a product, an acknowledgment is required by displaying the trademark/log as per the
   details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
-- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original
+  software.
 - This notice may not be removed or altered from any source distribution.
 
 NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY
@@ -139,7 +140,7 @@ def _refresh_data(config, conn, month, year, statsd, metrics_run_root, run_id, d
     condition_tuples = [ConditionTuple(x.label, x.blocking) for x in config.conditions]
     condition_tuples = _sort_conditions(condition_tuples)
     if len(condition_tuples) == 0:
-        logger.warn('No conditions defined in config: No stats on classification will be generated in the report')
+        logger.warning('No conditions defined in config: No stats on classification will be generated in the report')
 
     # We need to get the list of operators out of the config
     operators = [op.id for op in config.region_config.operators]
@@ -1167,9 +1168,8 @@ def _store_report_data(conn,
     cond_report_date_map = {k: v['last_successful_run'] if v is not None else None for k, v in cond_run_info.items()}
     missing_cond_configs = [k for k, v in cond_run_info.items() if v is None]
     if len(missing_cond_configs) > 0:
-        logger.warn('No classification config for the following conditions, meaning that that '
-                    'they have never been run successfully: {0}'
-                    .format(', '.join(missing_cond_configs)))
+        logger.warning('No classification config for the following conditions, meaning that that they have never been'
+                       'run successfully: {0}'.format(', '.join(missing_cond_configs)))
 
     with conn.cursor() as cursor, utils.CodeProfiler() as cp:
         execute_values(cursor,

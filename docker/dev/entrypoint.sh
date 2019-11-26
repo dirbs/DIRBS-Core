@@ -2,6 +2,7 @@
 #
 # Bash script run to start devenv once devenv Docker image is running
 #
+#
 # Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
 #
 # All rights reserved.

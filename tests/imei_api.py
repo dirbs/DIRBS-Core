@@ -17,7 +17,8 @@ limitations in the disclaimer below) provided that the following conditions are 
 - The origin of this software must not be misrepresented; you must not claim that you wrote the original software.
   If you use this software in a product, an acknowledgment is required by displaying the trademark/log as per the
   details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
-- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original
+  software.
 - This notice may not be removed or altered from any source distribution.
 
 NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY
@@ -74,7 +75,10 @@ def test_imei_get_api_responses(api_version, flask_app):
         assert type(data['is_paired']) is bool
         assert data['imei_norm'] == imei[:14]
     else:
-        rv = flask_app.get(url_for('{0}.imei_get_api'.format(api_version), imei=imei))
+        rv = flask_app.get(url_for('{0}.imei_get_api'.format(api_version),
+                                   imei=imei,
+                                   include_registration_status=True,
+                                   include_stolen_status=True))
         assert rv.status_code == 200
         data = json.loads(rv.data.decode('utf-8'))
         assert type(data) is dict
@@ -89,6 +93,30 @@ def test_imei_get_api_responses(api_version, flask_app):
         assert type(data['realtime_checks']['invalid_imei']) is bool
         assert type(data['realtime_checks']['is_exempted_device']) is bool
         assert type(data['realtime_checks']['is_paired']) is bool
+
+
+def test_imei_api_reg_status_is_conditional(flask_app):
+    """
+    Test depot not known yet.
+
+    Verify that the imei-api registration and stolen status fields are optional.
+    """
+    # registration and stolen status are not available by default
+    rv = flask_app.get(url_for('v2.imei_get_api', imei='123456789012345'))
+    assert rv.status_code == 200
+    data = json.loads(rv.data.decode('utf-8'))
+    assert data.get('registration_status') is None
+    assert data.get('stolen_status') is None
+
+    # registration and stolen fields are included when found query params
+    rv = flask_app.get(url_for('v2.imei_get_api',
+                               imei='123456789054321',
+                               include_registration_status=True,
+                               include_stolen_status=True))
+    assert rv.status_code == 200
+    data = json.loads(rv.data.decode('utf-8'))
+    assert data.get('registration_status') is not None
+    assert data.get('stolen_status') is not None
 
 
 @pytest.mark.parametrize('registration_list_importer',
@@ -132,7 +160,10 @@ def test_check_in_registration_list(flask_app, registration_list_importer, gsma_
         # verify that imeis are in registration list
         registration_list_importer.import_data()
         for imei in imei_list:
-            rv = flask_app.get(url_for('{0}.imei_get_api'.format(api_version), imei=imei))
+            rv = flask_app.get(url_for('{0}.imei_get_api'.format(api_version),
+                                       imei=imei,
+                                       include_registration_status=True,
+                                       include_stolen_status=True))
             assert rv.status_code == 200
             data = json.loads(rv.data.decode('utf-8'))
             assert data['imei_norm'] == imei[:14]
@@ -141,7 +172,10 @@ def test_check_in_registration_list(flask_app, registration_list_importer, gsma_
 
         # verify that imei is not registered
         imei_not_reg = '20000000000000'
-        rv = flask_app.get(url_for('{0}.imei_get_api'.format(api_version), imei=imei_not_reg))
+        rv = flask_app.get(url_for('{0}.imei_get_api'.format(api_version),
+                                   imei=imei_not_reg,
+                                   include_registration_status=True,
+                                   include_stolen_status=True))
         assert rv.status_code == 200
         data = json.loads(rv.data.decode('utf-8'))
         assert data['imei_norm'] == imei_not_reg[:14]
@@ -155,14 +189,20 @@ def test_check_in_registration_list(flask_app, registration_list_importer, gsma_
         # following imeis are not in registration list but belong to exempted device types
         imei_list = ['012344022302145', '012344035454564']
         for imei in imei_list:
-            rv = flask_app.get(url_for('{0}.imei_get_api'.format(api_version), imei=imei))
+            rv = flask_app.get(url_for('{0}.imei_get_api'.format(api_version),
+                                       imei=imei,
+                                       include_registration_status=True,
+                                       include_stolen_status=True))
             assert rv.status_code == 200
             data = json.loads(rv.data.decode('utf-8'))
             assert data['realtime_checks']['is_exempted_device'] is True
 
         # following imei is not in registration list and don't belong to exempted device type
         imei = '012344014741025'
-        rv = flask_app.get(url_for('{0}.imei_get_api'.format(api_version), imei=imei))
+        rv = flask_app.get(url_for('{0}.imei_get_api'.format(api_version),
+                                   imei=imei,
+                                   include_registration_status=True,
+                                   include_stolen_status=True))
         assert rv.status_code == 200
         data = json.loads(rv.data.decode('utf-8'))
         assert data['realtime_checks']['is_exempted_device'] is False
@@ -192,12 +232,18 @@ def test_registration_list_status_filter(flask_app, registration_list_importer, 
         registration_list_importer.import_data()
         imei_list = ['10000000000000', '10000000000001']
         for imei in imei_list:
-            rv = flask_app.get(url_for('{0}.imei_get_api'.format(api_version), imei=imei))
+            rv = flask_app.get(url_for('{0}.imei_get_api'.format(api_version),
+                                       imei=imei,
+                                       include_registration_status=True,
+                                       include_stolen_status=True))
             assert rv.status_code == 200
             data = json.loads(rv.data.decode('utf-8'))
             assert data['registration_status']['status'] is not None
 
-        rv = flask_app.get(url_for('{0}.imei_get_api'.format(api_version), imei='10000000000002'))
+        rv = flask_app.get(url_for('{0}.imei_get_api'.format(api_version),
+                                   imei='10000000000002',
+                                   include_registration_status=True,
+                                   include_stolen_status=True))
         assert rv.status_code == 200
         data = json.loads(rv.data.decode('utf-8'))
         assert data['registration_status']['status'] == 'something_else'
@@ -673,7 +719,7 @@ def test_imei_pairing_api_response_structure(flask_app):
     assert data['imei_norm'] == '64220297727231'
     assert type(data['_keys']) is dict
     assert type(data['pairs']) is list
-    assert type(data['_keys']['previous_key']) is str
+    assert type(data['_keys']['current_key']) is str
     assert type(data['_keys']['next_key']) is str
     assert type(data['_keys']['result_size']) is int
 
@@ -797,9 +843,8 @@ def test_pagination_on_pairings_api(flask_app, registration_list_importer, pairi
     data = json.loads(rv.data.decode('utf-8'))
     assert data['imei_norm'] == imei
     assert len(data['pairs']) == limit
-    assert data['_keys']['previous_key'] == ''
-    assert data['_keys']['next_key'] == '?offset={new_offset}&limit={limit}'.format(
-        new_offset=offset + limit, limit=limit)
+    assert data['_keys']['current_key'] == '1'
+    assert data['_keys']['next_key'] == str(int(offset) + int(limit))
 
     # query string params, 3 results per page starting from 2
     offset = 2
@@ -810,8 +855,8 @@ def test_pagination_on_pairings_api(flask_app, registration_list_importer, pairi
     assert data['imei_norm'] == imei
     assert len(data['pairs']) == limit
     assert data['_keys']['result_size'] == 5
-    assert data['_keys']['previous_key'] == '?offset=1&limit=1'
-    assert data['_keys']['next_key'] == '?offset=5&limit=3'
+    assert data['_keys']['current_key'] == str(offset)
+    assert data['_keys']['next_key'] == str(int(offset) + int(limit))
 
 
 @pytest.mark.parametrize('registration_list_importer',
@@ -829,7 +874,10 @@ def test_imei_api_registration_status(flask_app, registration_list_importer):
     """
     registration_list_importer.import_data()
     imei = '38847733370026'
-    rv = flask_app.get(url_for('v2.imei_get_api', imei=imei))
+    rv = flask_app.get(url_for('v2.imei_get_api',
+                               imei=imei,
+                               include_registration_status=True,
+                               include_stolen_status=True))
     assert rv.status_code == 200
     data = json.loads(rv.data.decode('utf-8'))
     assert data['registration_status']['status'] == 'whitelist'
@@ -838,7 +886,10 @@ def test_imei_api_registration_status(flask_app, registration_list_importer):
     assert data['stolen_status']['provisional_only'] is None
 
     imei = '38847733370020'
-    rv = flask_app.get(url_for('v2.imei_get_api', imei=imei))
+    rv = flask_app.get(url_for('v2.imei_get_api',
+                               imei=imei,
+                               include_registration_status=True,
+                               include_stolen_status=True))
     assert rv.status_code == 200
     data = json.loads(rv.data.decode('utf-8'))
     assert data['registration_status']['status'] is None
@@ -847,7 +898,10 @@ def test_imei_api_registration_status(flask_app, registration_list_importer):
     assert data['stolen_status']['provisional_only'] is None
 
     imei = '10000000000002'
-    rv = flask_app.get(url_for('v2.imei_get_api', imei=imei))
+    rv = flask_app.get(url_for('v2.imei_get_api',
+                               imei=imei,
+                               include_registration_status=True,
+                               include_stolen_status=True))
     assert rv.status_code == 200
     data = json.loads(rv.data.decode('utf-8'))
     assert data['registration_status']['status'] == 'something_else'
@@ -869,7 +923,10 @@ def test_imei_api_stolen_status(flask_app, stolen_list_importer):
     """
     stolen_list_importer.import_data()
     imei = '622222222222222'
-    rv = flask_app.get(url_for('v2.imei_get_api', imei=imei))
+    rv = flask_app.get(url_for('v2.imei_get_api',
+                               imei=imei,
+                               include_registration_status=True,
+                               include_stolen_status=True))
     assert rv.status_code == 200
     data = json.loads(rv.data.decode('utf-8'))
     assert data['registration_status']['status'] is None
@@ -878,7 +935,10 @@ def test_imei_api_stolen_status(flask_app, stolen_list_importer):
     assert data['stolen_status']['provisional_only'] is False
 
     imei = '122222222222223'
-    rv = flask_app.get(url_for('v2.imei_get_api', imei=imei))
+    rv = flask_app.get(url_for('v2.imei_get_api',
+                               imei=imei,
+                               include_registration_status=True,
+                               include_stolen_status=True))
     assert rv.status_code == 200
     data = json.loads(rv.data.decode('utf-8'))
     assert data['registration_status']['status'] is None
@@ -887,7 +947,10 @@ def test_imei_api_stolen_status(flask_app, stolen_list_importer):
     assert data['stolen_status']['provisional_only'] is False
 
     imei = '122222222222223'
-    rv = flask_app.get(url_for('v2.imei_get_api', imei=imei))
+    rv = flask_app.get(url_for('v2.imei_get_api',
+                               imei=imei,
+                               include_registration_status=True,
+                               include_stolen_status=True))
     assert rv.status_code == 200
     data = json.loads(rv.data.decode('utf-8'))
     assert data['registration_status']['status'] is None
@@ -896,7 +959,10 @@ def test_imei_api_stolen_status(flask_app, stolen_list_importer):
     assert data['stolen_status']['provisional_only'] is False
 
     imei = '238888888888884'
-    rv = flask_app.get(url_for('v2.imei_get_api', imei=imei))
+    rv = flask_app.get(url_for('v2.imei_get_api',
+                               imei=imei,
+                               include_registration_status=True,
+                               include_stolen_status=True))
     assert rv.status_code == 200
     data = json.loads(rv.data.decode('utf-8'))
     assert data['registration_status']['status'] is None
@@ -916,7 +982,7 @@ def test_imei_subscribers_api_response_structure(flask_app):
     assert data['imei_norm'] == '64220297727231'
     assert type(data['_keys']) is dict
     assert type(data['subscribers']) is list
-    assert type(data['_keys']['previous_key']) is str
+    assert type(data['_keys']['current_key']) is str
     assert type(data['_keys']['next_key']) is str
     assert type(data['_keys']['result_size']) is int
 
@@ -1029,8 +1095,8 @@ def test_pagination_on_subscribers_api(flask_app, operator_data_importer):
     data = json.loads(rv.data.decode('utf-8'))
     assert data['imei_norm'] == '01376803870943'
     assert data['_keys']['result_size'] == len(data['subscribers'])
-    assert data['_keys']['previous_key'] == ''
-    assert data['_keys']['next_key'] == ''
+    assert data['_keys']['current_key'] == '0'
+    assert data['_keys']['next_key'] == '10'
 
     # params offset 1, limit 2
     offset = 1
@@ -1039,9 +1105,8 @@ def test_pagination_on_subscribers_api(flask_app, operator_data_importer):
     assert rv.status_code == 200
     data = json.loads(rv.data.decode('utf-8'))
     assert len(data['subscribers']) == limit
-    assert data['_keys']['previous_key'] == ''
-    assert data['_keys']['next_key'] == '?offset={new_offset}&limit={limit}'.format(
-        new_offset=offset + limit, limit=limit)
+    assert data['_keys']['current_key'] == str(offset)
+    assert data['_keys']['next_key'] == str(int(offset) + int(limit))
     assert data['_keys']['result_size'] == 6
 
     # params offset 3, limit 2
@@ -1051,34 +1116,32 @@ def test_pagination_on_subscribers_api(flask_app, operator_data_importer):
     assert rv.status_code == 200
     data = json.loads(rv.data.decode('utf-8'))
     assert len(data['subscribers']) == limit
-    assert data['_keys']['previous_key'] == '?offset={prev_offset}&limit={limit}'.format(
-        prev_offset=offset - limit, limit=limit)
-    assert data['_keys']['next_key'] == '?offset={new_offset}&limit={limit}'.format(
-        new_offset=offset + limit, limit=limit)
+    assert data['_keys']['current_key'] == str(offset)
+    assert data['_keys']['next_key'] == str(int(offset) + int(limit))
 
     # params offset 1, limit 3, order descending
     offset = 1
     limit = 6
-    order = 'Descending'
+    order = 'DESC'
     rv = flask_app.get(url_for('v2.imei_get_subscribers_api',
                                imei='01376803870943', offset=offset,
                                limit=limit, order=order))
     assert rv.status_code == 200
     data = json.loads(rv.data.decode('utf-8'))
-    assert data['subscribers'][0]['last_seen'] == '2016-11-22'
-    assert data['subscribers'][5]['last_seen'] == '2016-11-06'
+    assert data['subscribers'][0]['last_seen'] == '2016-11-12'
+    assert data['subscribers'][4]['last_seen'] == '2016-11-06'
 
     # params offset 1, limit 3, order ascending
     offset = 1
     limit = 6
-    order = 'Ascending'
+    order = 'ASC'
     rv = flask_app.get(url_for('v2.imei_get_subscribers_api',
                                imei='01376803870943', offset=offset,
                                limit=limit, order=order))
     assert rv.status_code == 200
     data = json.loads(rv.data.decode('utf-8'))
-    assert data['subscribers'][0]['last_seen'] == '2016-11-06'
-    assert data['subscribers'][5]['last_seen'] == '2016-11-22'
+    assert data['subscribers'][0]['last_seen'] == '2016-11-07'
+    assert data['subscribers'][4]['last_seen'] == '2016-11-22'
 
 
 def test_batch_imei_api_response_structure(flask_app):
@@ -1094,6 +1157,26 @@ def test_batch_imei_api_response_structure(flask_app):
     assert type(data) == dict
     assert type(data['results']) == list
 
+    for item in data['results']:
+        assert type(item['imei_norm']) == str
+        assert type(item['classification_state']) == dict
+        assert type(item['classification_state']['informative_conditions']) == list
+        assert type(item['classification_state']['blocking_conditions']) == list
+        assert type(item['realtime_checks']) == dict
+        assert type(item['realtime_checks']['ever_observed_on_network']) == bool
+        assert type(item['realtime_checks']['is_exempted_device']) == bool
+        assert type(item['realtime_checks']['invalid_imei']) == bool
+        assert type(item['realtime_checks']['is_paired']) == bool
+
+    # verify that the registration and stolen status is optional
+    payload = {
+        'imeis': imeis,
+        'include_registration_status': True,
+        'include_stolen_status': True
+    }
+    rv = flask_app.post(url_for('v2.imei_batch_api'), data=json.dumps(payload), headers=headers)
+    assert rv.status_code == 200
+    data = json.loads(rv.data.decode('utf-8'))
     for item in data['results']:
         assert type(item['imei_norm']) == str
         assert type(item['classification_state']) == dict

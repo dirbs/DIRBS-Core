@@ -17,7 +17,8 @@ limitations in the disclaimer below) provided that the following conditions are 
 - The origin of this software must not be misrepresented; you must not claim that you wrote the original software.
   If you use this software in a product, an acknowledgment is required by displaying the trademark/log as per the
   details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
-- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original
+  software.
 - This notice may not be removed or altered from any source distribution.
 
 NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY
@@ -194,7 +195,8 @@ def log_api_perf_end(response):
         statsd.timing('dirbs.api.response_time.{0}.{1}.{2}'.format(api_type, request.method, code), dt)
     else:
         logger = logging.getLogger('dirbs.flask')
-        logger.warn('request_start_time not present on app context - likely an exception in a before_request handler!')
+        logger.warning('request_start_time not present on app context - likely an exception in a before_request '
+                       'handler!')
     return response
 
 

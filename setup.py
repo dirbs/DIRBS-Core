@@ -2,12 +2,9 @@
 Setuptools configuration file
 
 Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
-
 All rights reserved.
-
 Redistribution and use in source and binary forms, with or without modification, are permitted (subject to the
 limitations in the disclaimer below) provided that the following conditions are met:
-
 - Redistributions of source code must retain the above copyright notice, this list of conditions and the following
   disclaimer.
 - Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following
@@ -19,7 +16,6 @@ limitations in the disclaimer below) provided that the following conditions are 
   details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
 - Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
 - This notice may not be removed or altered from any source distribution.
-
 NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY
 THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
 THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE

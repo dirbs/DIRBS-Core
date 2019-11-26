@@ -17,7 +17,8 @@ limitations in the disclaimer below) provided that the following conditions are 
 - The origin of this software must not be misrepresented; you must not claim that you wrote the original software.
   If you use this software in a product, an acknowledgment is required by displaying the trademark/log as per the
   details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
-- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original
+  software.
 - This notice may not be removed or altered from any source distribution.
 
 NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY
@@ -128,20 +129,7 @@ class CatalogAttributes:
 @common.configure_logging
 @common.cli_wrapper(command='dirbs-catalog', required_role='dirbs_core_catalog')
 def cli(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root, metrics_run_root):
-    """
-    DIRBS script to catalog data files received by DIRBS Core.
-
-    :param ctx: click commands context object
-    :param config: dirbs config
-    :param statsd: statsd instance
-    :param logger: logger instance
-    :param run_id: current run id of the job
-    :param conn: database connection
-    :param metadata_conn: database connection to store metadata
-    :param command: job command
-    :param metrics_root:
-    :param metrics_run_root:
-    """
+    """DIRBS script to catalog data files received by DIRBS Core."""
     # Store metadata
     metadata.add_optional_job_metadata(metadata_conn, command, run_id,
                                        prospectors=config.catalog_config.prospectors,
@@ -211,7 +199,7 @@ def _harvest_files(prospectors, logger):
                     discovered_files.append({'file_path': file_name, 'file_properties': file_properties,
                                              'schema': prospector['schema']})
                 else:
-                    logger.warn('Non-zip file found in path and will be ignored: {0}'.format(file_name))
+                    logger.warning('Non-zip file found in path and will be ignored: {0}'.format(file_name))
             logger.info('Finished fetching properties for {0} files'.format(file_type))
 
     logger.info('Harvested a total of {0} file(s)'.format(len(discovered_files)))
@@ -268,11 +256,11 @@ def _populate_file_properties(config, file_list, run_id, perform_prevalidation, 
 
         except BadZipFile as err:
             is_valid_zip = False
-            logger.warn('The zip file is invalid: {0}'.format(file_properties.filename))
-            logger.warn('Zip check error: {0}'.format(str(err)))
+            logger.warning('The zip file is invalid: {0}'.format(file_properties.filename))
+            logger.warning('Zip check error: {0}'.format(str(err)))
         except exceptions.PrevalidationCheckRawException as err:
                 is_valid_format = False
-                logger.warn('Pre-validation failed for file: {0} with error: {1}'.format(file_path, str(err)))
+                logger.warning('Pre-validation failed for file: {0} with error: {1}'.format(file_path, str(err)))
         finally:
             logger.debug('Cleanup: deleting intermediate data files...')
             for fn in files_to_delete:
@@ -311,7 +299,7 @@ def _get_extra_attributes(input_file, file_type, logger):
             filename_check = True
         except exceptions.FilenameCheckRawException:
             filename_check = False
-            logger.warn('Filename check failed on file {0} with error: {1}'.format(input_file, filename_check))
+            logger.warning('Filename check failed on file {0} with error: {1}'.format(input_file, filename_check))
         return {'filename_check': filename_check}
     return None
 

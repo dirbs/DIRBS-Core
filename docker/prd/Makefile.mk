@@ -1,6 +1,7 @@
 #
 # DIRBS Makefile for prd Docker images
 #
+#
 # Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
 #
 # All rights reserved.
@@ -38,5 +39,5 @@ build-docker:
 	docker build -t dirbs-base:latest -f $(BASE_DIR)../base/Dockerfile $(BASE_DIR)../../
 	docker build -t dirbs-api:latest -f $(BASE_DIR)api/Dockerfile $(BASE_DIR)../../
 	docker build -t dirbs-processing:latest -f $(BASE_DIR)processing/Dockerfile $(BASE_DIR)../../
-	docker build -t dirbs-postgresql10:latest -f $(BASE_DIR)postgresql10/Dockerfile $(BASE_DIR)../../
+	docker build -t dirbs-postgresql11:latest -f $(BASE_DIR)postgresql11/Dockerfile $(BASE_DIR)../../
 	docker build -t dirbs-upload:latest -f $(BASE_DIR)upload/Dockerfile $(BASE_DIR)../../

@@ -1,6 +1,7 @@
 #
 # Base Dockerfile for DIRBS
 #
+#
 # Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
 #
 # All rights reserved.
@@ -30,7 +31,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-FROM ubuntu:16.04
+FROM ubuntu:18.04
 
 # Set environment (set proper unicode locale, hush debconfig, etc.
 # Set PATH so that subsequent pip3 commands install into virtualenv.
@@ -51,7 +52,7 @@ RUN set -x && \
     apt-get -q update --fix-missing && \
     apt-get -q install -y --no-install-recommends locales apt-utils git libpq-dev python3-pip \
                                                   python3-venv zip unzip wget default-jre-headless build-essential \
-                                                  python3-dev vim && \
+                                                  python3-dev vim gnupg2 && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 #

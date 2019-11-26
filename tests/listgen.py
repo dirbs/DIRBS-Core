@@ -17,7 +17,8 @@ limitations in the disclaimer below) provided that the following conditions are 
 - The origin of this software must not be misrepresented; you must not claim that you wrote the original software.
   If you use this software in a product, an acknowledgment is required by displaying the trademark/log as per the
   details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
-- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original
+  software.
 - This notice may not be removed or altered from any source distribution.
 
 NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY
@@ -1269,18 +1270,18 @@ def test_basic_cli_listgen_zip_files(postgres, classification_data, db_conn, tmp
     with zipfile.ZipFile(zip_fn, mode='r') as zf:
         members = zf.namelist()
         assert len(members) == 4
-        assert any([re.match('^.*blacklist\.csv$', m) is not None for m in members])
+        assert any([re.match(r'^.*blacklist\.csv$', m) is not None for m in members])
         for change_type in ['blocked', 'unblocked', 'changed']:
-            assert any([re.match('^.*blacklist_.*_{0}\.csv$'.format(change_type), m) is not None for m in members])
+            assert any([re.match(r'^.*blacklist_.*_{0}\.csv$'.format(change_type), m) is not None for m in members])
 
     for op_id in range(1, 5):
         zip_fn = find_file_in_dir('*notifications_operator{0}.zip'.format(op_id), dir_path)
         with zipfile.ZipFile(zip_fn, mode='r') as zf:
             members = zf.namelist()
             assert len(members) == 6
-            assert any([re.match('^.*notifications_operator{0}.csv$'.format(op_id), m) is not None for m in members])
+            assert any([re.match(r'^.*notifications_operator{0}.csv$'.format(op_id), m) is not None for m in members])
             for change_type in ['new', 'resolved', 'blacklisted', 'no_longer_seen', 'changed']:
-                assert any([re.match('^.*notifications_operator{0}_delta_.*_{1}\.csv$'.format(op_id, change_type), m)
+                assert any([re.match(r'^.*notifications_operator{0}_delta_.*_{1}\.csv$'.format(op_id, change_type), m)
                             is not None for m in members])
 
         zip_fn = find_file_in_dir('*exceptions_operator{0}.zip'.format(op_id), dir_path)
@@ -1289,7 +1290,7 @@ def test_basic_cli_listgen_zip_files(postgres, classification_data, db_conn, tmp
             assert len(members) == 3
             assert any([re.match('^.*exceptions_operator{0}.csv$'.format(op_id), m) is not None for m in members])
             for change_type in ['added', 'removed']:
-                assert any([re.match('^.*exceptions_operator{0}_delta_.*_{1}\.csv$'.format(op_id, change_type), m)
+                assert any([re.match(r'^.*exceptions_operator{0}_delta_.*_{1}\.csv$'.format(op_id, change_type), m)
                             is not None for m in members])
 
 

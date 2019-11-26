@@ -17,7 +17,8 @@ limitations in the disclaimer below) provided that the following conditions are 
 - The origin of this software must not be misrepresented; you must not claim that you wrote the original software.
   If you use this software in a product, an acknowledgment is required by displaying the trademark/log as per the
   details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
-- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original
+  software.
 - This notice may not be removed or altered from any source distribution.
 
 NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY
@@ -38,6 +39,9 @@ from dirbs.importer.stolen_list_importer import StolenListImporter
 from dirbs.importer.pairing_list_importer import PairingListImporter
 from dirbs.importer.registration_list_importer import RegistrationListImporter
 from dirbs.importer.golden_list_importer import GoldenListImporter
+from dirbs.importer.barred_list_importer import BarredListImporter
+from dirbs.importer.barred_tac_list_importer import BarredTacListImporter
+from dirbs.importer.subscriber_reg_list_importer import SubscribersListImporter
 
 
 def make_data_importer(import_type, input_file, config, statsd, conn, metadata_conn,
@@ -61,6 +65,15 @@ def make_data_importer(import_type, input_file, config, statsd, conn, metadata_c
     elif import_type == 'golden_list':
         return make_golden_list_importer(input_file, config, statsd, conn, metadata_conn,
                                          run_id, metrics_root, metrics_run_root, **kwargs)
+    elif import_type == 'barred_list':
+        return make_barred_list_importer(input_file, config, statsd, conn, metadata_conn,
+                                         run_id, metrics_root, metrics_run_root, **kwargs)
+    elif import_type == 'barred_tac_list':
+        return make_barred_tac_list_importer(input_file, config, statsd, conn, metadata_conn,
+                                             run_id, metrics_root, metrics_run_root, **kwargs)
+    elif import_type == 'subscribers_registration_list':
+        return make_subscribers_registration_list_importer(input_file, config, statsd, conn, metadata_conn,
+                                                           run_id, metrics_root, metrics_run_root, **kwargs)
     else:
         raise NameError('No importer found for file type: {0}'.format(import_type))
 
@@ -109,6 +122,14 @@ def make_pairing_list_importer(input_file, config, statsd, conn, metadata_conn,
                                input_file, logging.getLogger('dirbs.import'), statsd, **common_params, **kwargs)
 
 
+def make_subscribers_registration_list_importer(input_file, config, statsd, conn, metadata_conn,
+                                                run_id, metrics_root, metrics_run_root, **kwargs):
+    """Create an instance of PairingListImporter."""
+    common_params = _common_config_params(config)
+    return SubscribersListImporter(conn, metadata_conn, run_id, metrics_root, metrics_run_root, config.db_config,
+                                   input_file, logging.getLogger('dirbs.import'), statsd, **common_params, **kwargs)
+
+
 def make_registration_list_importer(input_file, config, statsd, conn, metadata_conn,
                                     run_id, metrics_root, metrics_run_root, **kwargs):
     """Create an instance of RegistrationListImporter."""
@@ -123,3 +144,19 @@ def make_golden_list_importer(input_file, config, statsd, conn, metadata_conn,
     common_params = _common_config_params(config)
     return GoldenListImporter(conn, metadata_conn, run_id, metrics_root, metrics_run_root, config.db_config,
                               input_file, logging.getLogger('dirbs.import'), statsd, **common_params, **kwargs)
+
+
+def make_barred_list_importer(input_file, config, statsd, conn, metadata_conn,
+                              run_id, metrics_root, metrics_run_root, **kwargs):
+    """Create an instance of BarredListImporter."""
+    common_params = _common_config_params(config)
+    return BarredListImporter(conn, metadata_conn, run_id, metrics_root, metrics_run_root, config.db_config,
+                              input_file, logging.getLogger('dirbs.import'), statsd, **common_params, **kwargs)
+
+
+def make_barred_tac_list_importer(input_file, config, statsd, conn, metadata_conn,
+                                  run_id, metrics_root, metrics_run_root, **kwargs):
+    """Create an instance of BarredListImporter."""
+    common_params = _common_config_params(config)
+    return BarredTacListImporter(conn, metadata_conn, run_id, metrics_root, metrics_run_root, config.db_config,
+                                 input_file, logging.getLogger('dirbs.import'), statsd, **common_params, **kwargs)

@@ -2,6 +2,7 @@
 #
 # Production entrypoint script for data processing blade
 #
+#
 # Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
 #
 # All rights reserved.
@@ -84,6 +85,18 @@ chmod 2770 $ROOT_DIR/golden_list
 mkdir -p $ROOT_DIR/pairing_list
 chown 9001:9001 $ROOT_DIR/pairing_list
 chmod 2770 $ROOT_DIR/pairing_list
+
+mkdir -p $ROOT_DIR/barred_list
+chown 9001:9001 $ROOT_DIR/barred_list
+chmod 2770 $ROOT_DIR/barred_list
+
+mkdir -p $ROOT_DIR/barred_tac_list
+chown 9001:9001 $ROOT_DIR/barred_tac_list
+chmod 2770 $ROOT_DIR/barred_tac_list
+
+mkdir -p $ROOT_DIR/subscribers_list
+chown 9001:9001 $ROOT_DIR/subscribers_list
+chmod 2770 $ROOT_DIR/subscribers_list
 
 mkdir -p $ROOT_DIR/registration_list
 chown 9001:9001 $ROOT_DIR/registration_list

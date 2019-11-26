@@ -17,7 +17,8 @@ limitations in the disclaimer below) provided that the following conditions are 
 - The origin of this software must not be misrepresented; you must not claim that you wrote the original software.
   If you use this software in a product, an acknowledgment is required by displaying the trademark/log as per the
   details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
-- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original
+  software.
 - This notice may not be removed or altered from any source distribution.
 
 NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY
@@ -29,9 +30,7 @@ BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 """
-from marshmallow import Schema, fields, pre_dump
-
-from dirbs.api.common.tac import validate_tac
+from marshmallow import Schema, fields, pre_dump, validate
 
 
 class GSMA(Schema):
@@ -49,6 +48,16 @@ class GSMA(Schema):
     nfc = fields.String()
     wlan = fields.String()
     radio_interface = fields.String()
+    imeiquantitysupport = fields.String()
+    simslot = fields.String()
+    operating_system = fields.String()
+    marketing_name = fields.String()
+    country_code = fields.String()
+    fixed_code = fields.String()
+    removable_uicc = fields.String()
+    removable_euicc = fields.String()
+    nonremovable_uicc = fields.String()
+    nonremovable_euicc = fields.String()
 
     @pre_dump(pass_many=False)
     def extract_fields(self, data):
@@ -78,7 +87,10 @@ class TacArgs(Schema):
     """Input args for TAC POST API (version 2)."""
 
     # noinspection PyProtectedMember
-    tacs = fields.List(fields.String(required=True, validate=validate_tac))
+    tacs = fields.List(fields.String(required=True,
+                                     validate=validate.Length(min=8, max=8, error='TAC length must be 8 characters')),
+                       required=True,
+                       validate=validate.Length(min=1, max=1000, error='Min 1 and Max 1000 TACs are allowed'))
 
     @property
     def fields_dict(self):
