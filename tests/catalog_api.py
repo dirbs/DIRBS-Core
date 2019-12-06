@@ -17,7 +17,8 @@ limitations in the disclaimer below) provided that the following conditions are 
 - The origin of this software must not be misrepresented; you must not claim that you wrote the original software.
   If you use this software in a product, an acknowledgment is required by displaying the trademark/log as per the
   details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
-- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original
+  software.
 - This notice may not be removed or altered from any source distribution.
 
 NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY
@@ -93,7 +94,7 @@ def test_invalid_max_results(flask_app):
     """Verify the API returns 400 for non-numeric max_results argument."""
     rv = flask_app.get(url_for('v1.catalog_api', max_results='abc'))
     assert rv.status_code == 400
-    assert b'Bad \'max_results\':\'abc\' argument format' in rv.data
+    assert b'Bad \'max_results\':\'[\'Not a valid integer.\']\' argument format. Accepts only integer' in rv.data
 
 
 def test_invalid_file_type(flask_app, api_version):
@@ -101,11 +102,15 @@ def test_invalid_file_type(flask_app, api_version):
     if api_version == 'v1':
         rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version), file_type='invalid_file'))
         assert rv.status_code == 400
-        assert b'Bad \'file_type\':\'invalid_file\' argument format' in rv.data
+        assert b'Bad \'file_type\':\'[\'Not a valid choice.\']\' argument format. Accepts only one of ' \
+               b'[\'operator\', \'gsma_tac\', \'stolen_list\', \'pairing_list\', \'registration_list\', ' \
+               b'\'golden_list\']' in rv.data in rv.data
     else:  # api version 2.0
         rv = flask_app.get(url_for('{0}.catalog_get_api'.format(api_version), file_type='invalid_file'))
         assert rv.status_code == 400
-        assert b'Bad \'file_type\':\'invalid_file\' argument format' in rv.data
+        assert b'Bad \'file_type\':\'[\'Not a valid choice.\']\' argument format. Accepts only one of ' \
+               b'[\'operator\', \'gsma_tac\', \'stolen_list\', \'pairing_list\', \'registration_list\', ' \
+               b'\'golden_list\']' in rv.data
 
 
 def test_invalid_is_valid_zip(flask_app, api_version):
@@ -113,11 +118,13 @@ def test_invalid_is_valid_zip(flask_app, api_version):
     if api_version == 'v1':
         rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version), is_valid_zip='10'))
         assert rv.status_code == 400
-        assert b'Bad \'is_valid_zip\':\'10\' argument format' in rv.data
+        assert b'[\'Not a valid boolean.\']\' argument format. Accepts only one of [\'0\', \'1\', \'true\', ' \
+               b'\'false\']' in rv.data
     else:  # api version 2.0
         rv = flask_app.get(url_for('{0}.catalog_get_api'.format(api_version), is_valid_zip='10'))
         assert rv.status_code == 400
-        assert b'Bad \'is_valid_zip\':\'10\' argument format' in rv.data
+        assert b'[\'Not a valid boolean.\']\' argument format. Accepts only one of [\'0\', \'1\', \'true\', ' \
+               b'\'false\']' in rv.data
 
 
 def test_invalid_modified_since(flask_app, api_version):
@@ -125,29 +132,29 @@ def test_invalid_modified_since(flask_app, api_version):
     if api_version == 'v1':
         rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version), modified_since='abc'))
         assert rv.status_code == 400
-        assert b'Bad \'modified_since\':\'abc\' argument' in rv.data
+        assert b'Bad \'modified_since\':\'[\'Not a valid datetime.\']\' argument format' in rv.data
         rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version), modified_since='2016-01-01'))
         assert rv.status_code == 400
-        assert b'Bad \'modified_since\':\'2016-01-01\' argument' in rv.data
+        assert b'Bad \'modified_since\':\'[\'Not a valid datetime.\']\' argument format' in rv.data
         rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version), modified_since='20170101 00:00:00'))
         assert rv.status_code == 400
-        assert b'Bad \'modified_since\':\'20170101 00:00:00\' argument' in rv.data
+        assert b'Bad \'modified_since\':\'[\'Not a valid datetime.\']\' argument format' in rv.data
         rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version), modified_since='20161313'))
         assert rv.status_code == 400
-        assert b'Bad \'modified_since\':\'20161313\' argument' in rv.data
+        assert b'Bad \'modified_since\':\'[\'Not a valid datetime.\']\' argument format' in rv.data
     else:  # api version 2.0
         rv = flask_app.get(url_for('{0}.catalog_get_api'.format(api_version), modified_since='abc'))
         assert rv.status_code == 400
-        assert b'Bad \'modified_since\':\'abc\' argument' in rv.data
+        assert b'Bad \'modified_since\':\'[\'Not a valid datetime.\']\' argument format' in rv.data
         rv = flask_app.get(url_for('{0}.catalog_get_api'.format(api_version), modified_since='2016-01-01'))
         assert rv.status_code == 400
-        assert b'Bad \'modified_since\':\'2016-01-01\' argument' in rv.data
+        assert b'Bad \'modified_since\':\'[\'Not a valid datetime.\']\' argument format' in rv.data
         rv = flask_app.get(url_for('{0}.catalog_get_api'.format(api_version), modified_since='20170101 00:00:00'))
         assert rv.status_code == 400
-        assert b'Bad \'modified_since\':\'20170101 00:00:00\' argument' in rv.data
+        assert b'Bad \'modified_since\':\'[\'Not a valid datetime.\']\' argument format' in rv.data
         rv = flask_app.get(url_for('{0}.catalog_get_api'.format(api_version), modified_since='20161313'))
         assert rv.status_code == 400
-        assert b'Bad \'modified_since\':\'20161313\' argument' in rv.data
+        assert b'Bad \'modified_since\':\'[\'Not a valid datetime.\']\' argument format' in rv.data
 
 
 def test_invalid_cataloged_since(flask_app, api_version):
@@ -155,29 +162,29 @@ def test_invalid_cataloged_since(flask_app, api_version):
     if api_version == 'v1':
         rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version), cataloged_since='abc'))
         assert rv.status_code == 400
-        assert b'Bad \'cataloged_since\':\'abc\' argument' in rv.data
+        assert b'Bad \'cataloged_since\':\'[\'Not a valid datetime.\']\' argument format' in rv.data
         rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version), cataloged_since='2016-01-01'))
         assert rv.status_code == 400
-        assert b'Bad \'cataloged_since\':\'2016-01-01\' argument' in rv.data
+        assert b'Bad \'cataloged_since\':\'[\'Not a valid datetime.\']\' argument format' in rv.data
         rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version), cataloged_since='20170101 00:00:00'))
         assert rv.status_code == 400
-        assert b'Bad \'cataloged_since\':\'20170101 00:00:00\' argument' in rv.data
+        assert b'Bad \'cataloged_since\':\'[\'Not a valid datetime.\']\' argument format' in rv.data
         rv = flask_app.get(url_for('{0}.catalog_api'.format(api_version), cataloged_since='20161313'))
         assert rv.status_code == 400
-        assert b'Bad \'cataloged_since\':\'20161313\' argument' in rv.data
+        assert b'Bad \'cataloged_since\':\'[\'Not a valid datetime.\']\' argument format' in rv.data
     else:  # api version 2.0
         rv = flask_app.get(url_for('{0}.catalog_get_api'.format(api_version), cataloged_since='abc'))
         assert rv.status_code == 400
-        assert b'Bad \'cataloged_since\':\'abc\' argument' in rv.data
+        assert b'Bad \'cataloged_since\':\'[\'Not a valid datetime.\']\' argument format' in rv.data
         rv = flask_app.get(url_for('{0}.catalog_get_api'.format(api_version), cataloged_since='2016-01-01'))
         assert rv.status_code == 400
-        assert b'Bad \'cataloged_since\':\'2016-01-01\' argument' in rv.data
+        assert b'Bad \'cataloged_since\':\'[\'Not a valid datetime.\']\' argument format' in rv.data
         rv = flask_app.get(url_for('{0}.catalog_get_api'.format(api_version), cataloged_since='20170101 00:00:00'))
         assert rv.status_code == 400
-        assert b'Bad \'cataloged_since\':\'20170101 00:00:00\' argument' in rv.data
+        assert b'Bad \'cataloged_since\':\'[\'Not a valid datetime.\']\' argument format' in rv.data
         rv = flask_app.get(url_for('{0}.catalog_get_api'.format(api_version), cataloged_since='20161313'))
         assert rv.status_code == 400
-        assert b'Bad \'cataloged_since\':\'20161313\' argument' in rv.data
+        assert b'Bad \'cataloged_since\':\'[\'Not a valid datetime.\']\' argument format' in rv.data
 
 
 def test_valid_max_results(flask_app, db_conn):
@@ -376,18 +383,6 @@ def test_api_with_multiple_arguments(flask_app, db_conn, api_version):
         assert rv.status_code == 200
         data = json.loads(rv.data.decode('utf-8'))['files']
         assert len(data) == 2
-        assert data[0]['filename'] == 'stolen_file.zip'
-        assert data[0]['file_type'] == 'stolen_list'
-        assert data[0]['compressed_size_bytes'] == 54543
-        assert data[0]['is_valid_zip']
-        assert data[0]['is_valid_format']
-        assert data[0]['md5'] == '014a3782-9826-4665-8830-534013b59cc5'
-        assert data[1]['filename'] == 'operator_file.zip'
-        assert data[1]['file_type'] == 'operator'
-        assert data[1]['compressed_size_bytes'] == 46445454332
-        assert data[1]['is_valid_zip']
-        assert data[1]['is_valid_format']
-        assert data[1]['md5'] == 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'
 
 
 def test_put_not_allowed(flask_app, db_conn, tmpdir, logger, api_version):
@@ -669,9 +664,8 @@ def test_catalog_pagination(flask_app, db_conn):
     files = data['files']
 
     assert keys['result_size'] == 5
-    assert keys['previous_key'] == ''
-    assert keys['next_key'] == '?offset={new_offset}&limit={limit}'.format(
-        new_offset=offset + limit, limit=limit)
+    assert keys['current_key'] == '1'
+    assert keys['next_key'] == str(offset + limit)
     assert len(files) == limit
 
     # 2nd call, offset=2, limit=2
@@ -683,6 +677,5 @@ def test_catalog_pagination(flask_app, db_conn):
     keys = data['_keys']
     files = data['files']
     assert keys['result_size'] == 5
-    assert keys['next_key'] == '?offset={new_offset}&limit={limit}'.format(
-        new_offset=offset + limit, limit=limit)
+    assert keys['next_key'] == str(offset + limit)
     assert len(files) == limit

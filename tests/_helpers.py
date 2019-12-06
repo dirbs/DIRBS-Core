@@ -17,7 +17,8 @@ limitations in the disclaimer below) provided that the following conditions are 
 - The origin of this software must not be misrepresented; you must not claim that you wrote the original software.
   If you use this software in a product, an acknowledgment is required by displaying the trademark/log as per the
   details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
-- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original
+  software.
 - This notice may not be removed or altered from any source distribution.
 
 NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY
@@ -51,6 +52,9 @@ from dirbs.importer.pairing_list_importer import PairingListImporter
 from dirbs.importer.stolen_list_importer import StolenListImporter
 from dirbs.importer.registration_list_importer import RegistrationListImporter
 from dirbs.importer.golden_list_importer import GoldenListImporter
+from dirbs.importer.barred_list_importer import BarredListImporter
+from dirbs.importer.barred_tac_list_importer import BarredTacListImporter
+from dirbs.importer.subscriber_reg_list_importer import SubscribersListImporter
 from dirbs.cli.classify import cli as dirbs_classify_cli
 from dirbs.config import ConditionConfig, OperatorConfig, AmnestyConfig, ListGenerationConfig
 
@@ -84,7 +88,10 @@ def get_importer(importer_type,
         StolenListImporter: 'stolen_list',
         RegistrationListImporter: 'registration_list.',
         GoldenListImporter: 'golden_list',
-        OperatorDataImporter: 'operator'
+        OperatorDataImporter: 'operator',
+        BarredListImporter: 'barred_list',
+        BarredTacListImporter: 'barred_tac_list',
+        SubscribersListImporter: 'subscribers_registration_list'
     }
     subcommand = subcommand_lookup[importer_type]
 

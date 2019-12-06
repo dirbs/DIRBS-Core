@@ -1,4 +1,6 @@
 --
+-- DIRBS SQL migration script (v27-> v28)
+--
 -- Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
 --
 -- All rights reserved.

@@ -42,7 +42,8 @@ DECLARE
     import_roles TEXT[] = ARRAY['dirbs_core_import_operator', 'dirbs_core_import_gsma',
                                 'dirbs_core_import_registration_list', 'dirbs_core_import_stolen_list',
                                 'dirbs_core_import_pairing_list', 'dirbs_core_import_golden_list',
-                                'dirbs_core_listgen'];
+                                'dirbs_core_listgen', 'dirbs_core_import_barred_list',
+                                'dirbs_core_import_barred_tac_list'];
     import_role TEXT;
 BEGIN
     FOREACH import_role IN ARRAY import_roles

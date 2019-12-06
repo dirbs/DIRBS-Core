@@ -1,6 +1,7 @@
 #
 # Dockerfile to build Docker data processing image for DIRBS
 #
+#
 # Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
 #
 # All rights reserved.
@@ -39,10 +40,10 @@ RUN mkdir -p /data && chown -R dirbs.dirbs /data
 
 # Install SSH server, PostgreSQL 10 (needed by unit tests) and mark volume as writeable by DIRBS group
 RUN set -x && \
-    echo 'deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main' > /etc/apt/sources.list.d/pgdg.list && \
+    echo 'deb http://apt.postgresql.org/pub/repos/apt/ bionic-pgdg main' > /etc/apt/sources.list.d/pgdg.list && \
     wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - && \
     apt-get -q update --fix-missing && \
-    apt-get -q install -y --no-install-recommends postgresql-10 postgresql-contrib-10 postgresql-server-dev-10 \
+    apt-get -q install -y --no-install-recommends postgresql-11 postgresql-contrib-11 postgresql-server-dev-11 \
                                                   openssh-server wget unzip build-essential && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 

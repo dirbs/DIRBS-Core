@@ -17,7 +17,8 @@ limitations in the disclaimer below) provided that the following conditions are 
 - The origin of this software must not be misrepresented; you must not claim that you wrote the original software.
   If you use this software in a product, an acknowledgment is required by displaying the trademark/log as per the
   details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
-- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original
+  software.
 - This notice may not be removed or altered from any source distribution.
 
 NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY
@@ -258,15 +259,7 @@ def handle_import_check_exception(f):
 @click.pass_context
 @common.configure_logging
 def cli(ctx, no_cleanup, extract_dir, prevalidator_path, prevalidator_schema_path):
-    """
-    DIRBS script to import data into DIRBS Core PostgreSQL database.
-
-    :param ctx: current cli context obj
-    :param no_cleanup: no cleanup flag
-    :param extract_dir: dir path to extract
-    :param prevalidator_path: validator path
-    :param prevalidator_schema_path: validator schema path
-    """
+    """DIRBS script to import data into DIRBS Core PostgreSQL database."""
     ctx.obj['NO_CLEANUP'] = no_cleanup
     ctx.obj['EXTRACT_DIR'] = extract_dir
     ctx.obj['PREVALIDATOR_PATH'] = prevalidator_path
@@ -336,25 +329,6 @@ def operator(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, 
     Import the CSV operator data found in INPUT into the PostgreSQL database.
 
     OPERATOR_ID is an ID up to 16 characters to unique identify the operator.
-
-    :param ctx: current cli context obj
-    :param config: dirbs config obj
-    :param statsd: statsd obj
-    :param logger: dirbs logger obj
-    :param run_id: job run id
-    :param conn: database connection
-    :param metadata_conn: database metadata connection
-    :param command: command name
-    :param metrics_root:
-    :param metrics_run_root:
-    :param operator_id: operator id
-    :param input_file: input file name/path
-    :param disable_leading_zero_check: leading zero check flag
-    :param disable_null_check: null check flag
-    :param disable_clean_check: clean check flag
-    :param disable_region_check: region check flag
-    :param disable_home_check: home check flag
-    :param disable_historic_check: historic check flag
     """
     op_tc = config.operator_threshold_config
     params = _common_import_params(ctx)
@@ -396,22 +370,7 @@ def operator(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, 
 @common.cli_wrapper(command='dirbs-import', subcommand='gsma_tac', required_role='dirbs_core_import_gsma')
 def gsma_tac(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root, metrics_run_root,
              input_file, disable_historic_check):
-    """
-    Import the GSMA TAC DB data found in INPUT into the PostgreSQL database.
-
-    :param ctx: current cli context obj
-    :param config: dirbs config obj
-    :param statsd: statsd obj
-    :param logger: dirbs logger obj
-    :param run_id: job run id
-    :param conn: database connection
-    :param metadata_conn: metadata db connection
-    :param command: command name
-    :param metrics_root:
-    :param metrics_run_root:
-    :param input_file: input file path
-    :param disable_historic_check: historic check flag
-    """
+    """Import the GSMA TAC DB data found in INPUT into the PostgreSQL database."""
     params = _common_import_params(ctx)
     gsma_tc = config.gsma_threshold_config
     params.update({'perform_historic_check': not disable_historic_check,
@@ -433,26 +392,7 @@ def gsma_tac(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, 
 def stolen_list(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root, metrics_run_root,
                 input_file, disable_historic_check, delta, disable_delta_adds_check, disable_delta_removes_check,
                 disable_delta_updates_check):
-    """
-    Import the Stolen List data found in INPUT into the PostgreSQL database.
-
-    :param ctx: current cli context obj
-    :param config: dirbs config obj
-    :param statsd: statsd obj
-    :param logger: dirbs logger obj
-    :param run_id: job run id
-    :param conn: database connection
-    :param metadata_conn: database connection for metadata
-    :param command: command name
-    :param metrics_root:
-    :param metrics_run_root:
-    :param input_file: input file path
-    :param disable_historic_check: historic check flag
-    :param delta: delta file flag
-    :param disable_delta_adds_check: delta adds check flag
-    :param disable_delta_removes_check: delta removes check flag
-    :param disable_delta_updates_check: delta updates check flag
-    """
+    """Import the Stolen List data found in INPUT into the PostgreSQL database."""
     params = _common_import_params(ctx)
     st_tc = config.stolen_threshold_config
     params.update({'perform_historic_check': not disable_historic_check,
@@ -478,26 +418,7 @@ def stolen_list(ctx, config, statsd, logger, run_id, conn, metadata_conn, comman
 def pairing_list(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root, metrics_run_root,
                  input_file, disable_historic_check, delta, disable_delta_adds_check, disable_delta_removes_check,
                  disable_delta_updates_check):
-    """
-    Import the Pairing List data found in INPUT into the PostgreSQL database.
-
-    :param ctx: current cli context obj
-    :param config: dirbs config obj
-    :param statsd: statsd obj
-    :param logger: dirbs logger obj
-    :param run_id: job run id
-    :param conn: database connection
-    :param metadata_conn: database connection for metadata
-    :param command: command name
-    :param metrics_root:
-    :param metrics_run_root:
-    :param input_file: input file path
-    :param disable_historic_check: historic check flag
-    :param delta: delta file flag
-    :param disable_delta_adds_check: delta adds check flag
-    :param disable_delta_removes_check: delta removes check flag
-    :param disable_delta_updates_check: delta updates check flag
-    """
+    """Import the Pairing List data found in INPUT into the PostgreSQL database."""
     params = _common_import_params(ctx)
     pair_tc = config.pairing_threshold_config
     params.update({'perform_historic_check': not disable_historic_check,
@@ -524,25 +445,7 @@ def pairing_list(ctx, config, statsd, logger, run_id, conn, metadata_conn, comma
 def registration_list(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root,
                       metrics_run_root, input_file, disable_historic_check, delta, disable_delta_adds_check,
                       disable_delta_removes_check, disable_delta_updates_check):
-    """Import the Registration list data found in INPUT into the PostgreSQL database.
-
-    :param ctx: current cli context obj
-    :param config: dirbs config obj
-    :param statsd: statsd obj
-    :param logger: dirbs logger obj
-    :param run_id: job run id
-    :param conn: database connection
-    :param metadata_conn: database connection for metadata
-    :param command: command name
-    :param metrics_root:
-    :param metrics_run_root:
-    :param input_file: input file path
-    :param disable_historic_check: historic check flag
-    :param delta: delta file check
-    :param disable_delta_adds_check: delta adds check flag
-    :param disable_delta_removes_check: delta removes check flag
-    :param disable_delta_updates_check: delta updates check flag
-    """
+    """Import the Registration list data found in INPUT into the PostgreSQL database."""
     params = _common_import_params(ctx)
     reg_tc = config.import_threshold_config
     params.update({'perform_historic_check': not disable_historic_check,
@@ -577,24 +480,6 @@ def golden_list(ctx, config, statsd, logger, run_id, conn, metadata_conn, comman
     Import the Golden list data found in INPUT into the PostgreSQL database.
 
     NOTE: Use caution when adding entries to the Golden list, as any IMEIs added to this list will never be blocked.
-
-    :param ctx: current cli context obj
-    :param config: dirbs config obj
-    :param statsd: statsd obj
-    :param logger: dirbs logger obj
-    :param run_id: job run id
-    :param conn: database connection
-    :param metadata_conn: database connection for metadata
-    :param command: command name
-    :param metrics_root:
-    :param metrics_run_root:
-    :param input_file: input file path
-    :param pre_hashed: pre hashed flag
-    :param disable_historic_check: historic check flag
-    :param delta: delta file flag
-    :param disable_delta_adds_check: delta adds check flag
-    :param disable_delta_removes_check: delta removes check flag
-    :param disable_delta_updates_check: delta updates check flag
     """
     params = _common_import_params(ctx)
     golden_tc = config.golden_threshold_config
@@ -608,4 +493,87 @@ def golden_list(ctx, config, statsd, logger, run_id, conn, metadata_conn, comman
                    'perform_delta_updates_check': not disable_delta_updates_check})
     with importer_factory.make_data_importer('golden_list', input_file, config, statsd, conn, metadata_conn,
                                              run_id, metrics_root, metrics_run_root, **params) as importer:
+        importer.import_data()
+
+
+@cli.command(name='barred_list')
+@click.argument('input_file', type=click.Path(exists=True, dir_okay=False), callback=_validate_input_file_extension)
+@disable_historic_check_option
+@click.pass_context
+@common.unhandled_exception_handler
+@add_delta_options
+@handle_import_check_exception
+@common.cli_wrapper(command='dirbs-import', subcommand='barred_list', required_role='dirbs_core_import_barred_list')
+def barred_list(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root, metrics_run_root,
+                input_file, disable_historic_check, delta, disable_delta_adds_check, disable_delta_removes_check,
+                disable_delta_updates_check):
+    """Import the Barred List data found in INPUT into the PostgreSQL database."""
+    params = _common_import_params(ctx)
+    bl_tc = config.barred_threshold_config
+    params.update({'perform_historic_check': not disable_historic_check,
+                   'delta': delta,
+                   'perform_delta_adds_check': not disable_delta_adds_check,
+                   'perform_delta_removes_check': not disable_delta_removes_check,
+                   'import_size_variation_percent': bl_tc.import_size_variation_percent,
+                   'import_size_variation_absolute': bl_tc.import_size_variation_absolute,
+                   'perform_delta_updates_check': not disable_delta_updates_check})
+    with importer_factory.make_data_importer('barred_list', input_file, config, statsd, conn, metadata_conn,
+                                             run_id, metrics_root, metrics_run_root, **params) as importer:
+        importer.import_data()
+
+
+@cli.command(name='barred_tac_list')
+@click.argument('input_file', type=click.Path(exists=True, dir_okay=False), callback=_validate_input_file_extension)
+@disable_historic_check_option
+@click.pass_context
+@common.unhandled_exception_handler
+@add_delta_options
+@handle_import_check_exception
+@common.cli_wrapper(command='dirbs-import', subcommand='barred_tac_list',
+                    required_role='dirbs_core_import_barred_list')
+def barred_tac_list(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root, metrics_run_root,
+                    input_file, disable_historic_check, delta, disable_delta_adds_check, disable_delta_removes_check,
+                    disable_delta_updates_check):
+    """Import the Barred TAC List data found in INPUT into the PostgreSQL database."""
+    params = _common_import_params(ctx)
+    btl_tc = config.barred_tac_threshold_config
+    params.update({'perform_historic_check': not disable_historic_check,
+                   'delta': delta,
+                   'perform_delta_adds_check': not disable_delta_adds_check,
+                   'perform_delta_removes_check': not disable_delta_removes_check,
+                   'import_size_variation_percent': btl_tc.import_size_variation_percent,
+                   'import_size_variation_absolute': btl_tc.import_size_variation_absolute,
+                   'perform_delta_updates_check': not disable_delta_updates_check})
+    with importer_factory.make_data_importer('barred_tac_list', input_file, config, statsd, conn, metadata_conn,
+                                             run_id, metrics_root, metrics_run_root, **params) as importer:
+        importer.import_data()
+
+
+@cli.command(name='subscribers_registration_list')
+@click.argument('input_file', type=click.Path(exists=True, dir_okay=False), callback=_validate_input_file_extension)
+@disable_historic_check_option
+@click.pass_context
+@common.unhandled_exception_handler
+@add_delta_options
+@handle_import_check_exception
+@common.cli_wrapper(command='dirbs-import',
+                    subcommand='subscribers_registration_list',
+                    required_role='dirbs_core_import_subscribers_registration_list')
+def subscribers_registration_list(ctx, config, statsd, logger, run_id, conn, metadata_conn, command,
+                                  metrics_root, metrics_run_root, input_file, disable_historic_check,
+                                  delta, disable_delta_adds_check, disable_delta_removes_check,
+                                  disable_delta_updates_check):
+    """Import the Subscribers Registration List data found in INPUT into the PostgreSQL database."""
+    params = _common_import_params(ctx)
+    subscribers_tc = config.subscribers_threshold_config
+    params.update({'perform_historic_check': not disable_historic_check,
+                   'delta': delta,
+                   'perform_delta_adds_check': not disable_delta_adds_check,
+                   'perform_delta_removes_check': not disable_delta_removes_check,
+                   'import_size_variation_percent': subscribers_tc.import_size_variation_percent,
+                   'import_size_variation_absolute': subscribers_tc.import_size_variation_absolute,
+                   'perform_delta_updates_check': not disable_delta_updates_check})
+    with importer_factory.make_data_importer('subscribers_registration_list', input_file, config, statsd, conn,
+                                             metadata_conn, run_id, metrics_root,
+                                             metrics_run_root, **params) as importer:
         importer.import_data()

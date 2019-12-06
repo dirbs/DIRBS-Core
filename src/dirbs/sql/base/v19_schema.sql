@@ -5,7 +5,7 @@
 -- Dumped from database version 9.6.1
 -- Dumped by pg_dump version 9.6.2
 --
--- Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+--- Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
 --
 -- All rights reserved.
 --

@@ -17,7 +17,8 @@ limitations in the disclaimer below) provided that the following conditions are 
 - The origin of this software must not be misrepresented; you must not claim that you wrote the original software.
   If you use this software in a product, an acknowledgment is required by displaying the trademark/log as per the
   details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
-- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original
+  software.
 - This notice may not be removed or altered from any source distribution.
 
 NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY
@@ -308,6 +309,15 @@ def _grant_perms_registration_list(conn, *, part_name):
         part_id = sql.Identifier(part_name)
         cursor.execute(sql.SQL('GRANT SELECT ON {0} TO dirbs_core_classify, dirbs_core_api').format(part_id))
         cursor.execute(sql.SQL('GRANT SELECT, INSERT, UPDATE ON {0} TO dirbs_core_import_registration_list')
+                       .format(part_id))
+
+
+def _grant_perms_barred_list(conn, *, part_name):
+    """Method to DRY out granting of permissions to barred_list partitions."""
+    with conn.cursor() as cursor:
+        part_id = sql.Identifier(part_name)
+        cursor.execute(sql.SQL('GRANT SELECT ON {0} TO dirbs_core_classify, dirbs_core_api').format(part_id))
+        cursor.execute(sql.SQL('GRANT SELECT, INSERT, UPDATE ON {0} TO dirbs_core_import_barred_list')
                        .format(part_id))
 
 

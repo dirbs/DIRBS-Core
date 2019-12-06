@@ -17,7 +17,8 @@ limitations in the disclaimer below) provided that the following conditions are 
 - The origin of this software must not be misrepresented; you must not claim that you wrote the original software.
   If you use this software in a product, an acknowledgment is required by displaying the trademark/log as per the
   details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
-- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original
+  software.
 - This notice may not be removed or altered from any source distribution.
 
 NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY
@@ -218,7 +219,7 @@ class ListsGenerator:
                         cursor.execute(sql.SQL('DROP TABLE {0} CASCADE').format(sql.Identifier(tblname)))
                         self._logger.debug('Cleanup: dropped intermediate table {0}'.format(tblname))
             else:
-                self._logger.warn('Skipping intermediate table cleanup due to command-line option')
+                self._logger.warning('Skipping intermediate table cleanup due to command-line option')
 
     def __getstate__(self):
         """Custom function to allow use of this class in ProcessPoolExecutor."""

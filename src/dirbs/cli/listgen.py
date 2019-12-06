@@ -17,7 +17,8 @@ limitations in the disclaimer below) provided that the following conditions are 
 - The origin of this software must not be misrepresented; you must not claim that you wrote the original software.
   If you use this software in a product, an acknowledgment is required by displaying the trademark/log as per the
   details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
-- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original
+  software.
 - This notice may not be removed or altered from any source distribution.
 
 NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY
@@ -65,41 +66,22 @@ from dirbs.listgen import ListsGenerator
 @common.cli_wrapper(command='dirbs-listgen', required_role='dirbs_core_listgen')
 def cli(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root, metrics_run_root,
         curr_date, no_full_lists, no_cleanup, base, disable_sanity_checks, output_dir):
-    """
-    DIRBS script to output CSV lists (blacklist, exception, notification) for the current classification state.
-
-    :param ctx: current cli context obj
-    :param config: dirbs config obj
-    :param statsd: dirbs statsd obj
-    :param logger: dirbs logger obj
-    :param run_id: job run id
-    :param conn: database connection
-    :param metadata_conn: database connection for metadata
-    :param command: command name
-    :param metrics_root:
-    :param metrics_run_root:
-    :param curr_date: current date
-    :param no_full_lists: no full list flag
-    :param no_cleanup: no cleanup flag
-    :param base: base param for run id
-    :param disable_sanity_checks: sanity checks flag
-    :param output_dir: output directory path
-    """
+    """DIRBS script to output CSV lists (blacklist, exception, notification) for the current classification state."""
     if curr_date is not None:
-        logger.warn('*************************************************************************')
-        logger.warn('WARNING: --curr-date option passed to dirbs-listgen')
-        logger.warn('*************************************************************************')
-        logger.warn('')
-        logger.warn('This should not be done in a production DIRBS deployment for the following reasons:')
-        logger.warn('')
-        logger.warn('1. Current date determines which of the blacklist or the notifications list a classified')
-        logger.warn('   IMEI ends up on. If --curr-date is set to a date in the future, it is possible that ')
-        logger.warn('   classified IMEIs might erroneously end up on the blacklist before their grace period has')
-        logger.warn('   expired. If set to the past, blacklisted IMEIs will potentially be considered to be in their')
-        logger.warn('   grace period again and be re-notified.')
-        logger.warn('2. Because changing the current date can affect whether IMEIs are on the blacklist vs.')
-        logger.warn('   the notifications lists, this can produce large, invalid delta files in the lists.')
-        logger.warn('')
+        logger.warning('*************************************************************************')
+        logger.warning('WARNING: --curr-date option passed to dirbs-listgen')
+        logger.warning('*************************************************************************')
+        logger.warning('')
+        logger.warning('This should not be done in a production DIRBS deployment for the following reasons:')
+        logger.warning('')
+        logger.warning('1. Current date determines which of the blacklist or the notifications list a classified')
+        logger.warning('   IMEI ends up on. If --curr-date is set to a date in the future, it is possible that ')
+        logger.warning('   classified IMEIs might erroneously end up on the blacklist before their grace period has')
+        logger.warning('   expired. If set to the past, blacklisted IMEIs will potentially be considered to be')
+        logger.warning('   in their grace period again and be re-notified.')
+        logger.warning('2. Because changing the current date can affect whether IMEIs are on the blacklist vs.')
+        logger.warning('   the notifications lists, this can produce large, invalid delta files in the lists.')
+        logger.warning('')
 
     list_generator = ListsGenerator(config=config, logger=logger, run_id=run_id, conn=conn,
                                     metadata_conn=metadata_conn, curr_date=curr_date, no_full_lists=no_full_lists,

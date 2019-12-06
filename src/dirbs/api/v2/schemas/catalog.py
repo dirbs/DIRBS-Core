@@ -17,7 +17,8 @@ limitations in the disclaimer below) provided that the following conditions are 
 - The origin of this software must not be misrepresented; you must not claim that you wrote the original software.
   If you use this software in a product, an acknowledgment is required by displaying the trademark/log as per the
   details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
-- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original
+  software.
 - This notice may not be removed or altered from any source distribution.
 
 NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY
@@ -79,8 +80,8 @@ class CatalogFile(Schema):
 class SortingOrders(Enum):
     """Enum for supported sorting orders."""
 
-    ASC = 'Ascending'
-    DESC = 'Descending'
+    ASC = 'ASC'
+    DESC = 'DESC'
 
 
 class CatalogArgs(Schema):
@@ -97,11 +98,19 @@ class CatalogArgs(Schema):
                                 load_from='cataloged_since', dump_to='cataloged_since',
                                 description='Filter results to include only files that were '
                                             'cataloged since the specified time')
-    offset = fields.Integer(required=False, description='Offset the results on the current page by the specified '
-                                                        'file_id. It should be the value of file_id for the '
-                                                        'last result on the previous page')
-    limit = fields.Integer(required=False, description='Number of results to return on the current page')
-    order = fields.String(required=False, validate=validate.OneOf([f.value for f in SortingOrders]),
+    offset = fields.Integer(required=True,
+                            missing=0,
+                            validate=[validate.Range(min=0, error='Value must be 0 or greater than 0')],
+                            description='Offset the results on the current page by the specified '
+                                        'file_id. It should be the value of file_id for the '
+                                        'last result on the previous page')
+    limit = fields.Integer(required=True,
+                           missing=10,
+                           validate=validate.Range(min=1, error='Value must be greater than 0'),
+                           description='Number of results to return on the current page')
+    order = fields.String(required=True,
+                          missing='ASC',
+                          validate=validate.OneOf([f.value for f in SortingOrders]),
                           description='The sort order for the results using imsi-msisdn as the key')
 
     @property
@@ -113,7 +122,7 @@ class CatalogArgs(Schema):
 class Keys(Schema):
     """Defines schema for keys of paginated result set."""
 
-    previous_key = fields.String()
+    current_key = fields.String()
     next_key = fields.String()
     result_size = fields.Integer()
 

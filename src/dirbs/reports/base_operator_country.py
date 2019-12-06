@@ -17,7 +17,8 @@ limitations in the disclaimer below) provided that the following conditions are 
 - The origin of this software must not be misrepresented; you must not claim that you wrote the original software.
   If you use this software in a product, an acknowledgment is required by displaying the trademark/log as per the
   details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
-- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original
+  software.
 - This notice may not be removed or altered from any source distribution.
 
 NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY
@@ -136,8 +137,8 @@ class BaseOperatorCountryReport:
                            [self.data_id])
             _conditions = cursor.fetchall()
             if len(_conditions) == 0:
-                self.logger.warn('No monthly condition config available for operator {0} and data_id {1:d}'
-                                 .format(self.operator_id, self.data_id))
+                self.logger.warning('No monthly condition config available for operator {0} and data_id {1:d}'
+                                    .format(self.operator_id, self.data_id))
 
             classification_conditions = [{'label': c.cond_name,
                                           'blocking': c.was_blocking,
@@ -152,8 +153,8 @@ class BaseOperatorCountryReport:
                            [self.data_id, self.operator_id])
             _daily_stats = cursor.fetchall()
             if len(_daily_stats) == 0:
-                self.logger.warn('No daily stats available for operator {0} and data_id {1:d}'
-                                 .format(self.operator_id, self.data_id))
+                self.logger.warning('No daily stats available for operator {0} and data_id {1:d}'
+                                    .format(self.operator_id, self.data_id))
 
             cursor.execute("""SELECT *
                                 FROM report_monthly_condition_stats
@@ -162,8 +163,8 @@ class BaseOperatorCountryReport:
                            [self.data_id, self.operator_id])
             _condition_stats = cursor.fetchall()
             if len(_condition_stats) == 0:
-                self.logger.warn('No monthly condition stats available for operator {0} and data_id {1:d}'
-                                 .format(self.operator_id, self.data_id))
+                self.logger.warning('No monthly condition stats available for operator {0} and data_id {1:d}'
+                                    .format(self.operator_id, self.data_id))
 
             cursor.execute("""SELECT *
                                 FROM report_monthly_top_models_imei
@@ -173,8 +174,8 @@ class BaseOperatorCountryReport:
                            [self.data_id, self.operator_id])
             _top_models_imei = cursor.fetchall()
             if len(_top_models_imei) == 0:
-                self.logger.warn('No monthly top models by IMEI available for operator {0} and data_id {1:d}'
-                                 .format(self.operator_id, self.data_id))
+                self.logger.warning('No monthly top models by IMEI available for operator {0} and data_id {1:d}'
+                                    .format(self.operator_id, self.data_id))
 
             cursor.execute("""SELECT *
                                 FROM report_monthly_top_models_gross_adds
@@ -184,8 +185,8 @@ class BaseOperatorCountryReport:
                            [self.data_id, self.operator_id])
             _top_models_gross_adds = cursor.fetchall()
             if len(_top_models_gross_adds) == 0:
-                self.logger.warn('No monthly top models by gross adds available for operator {0} and data_id {1:d}'
-                                 .format(self.operator_id, self.data_id))
+                self.logger.warning('No monthly top models by gross adds available for operator {0} and data_id {1:d}'
+                                    .format(self.operator_id, self.data_id))
 
             cursor.execute("""SELECT *
                                 FROM report_monthly_imei_imsi_overloading
@@ -195,8 +196,8 @@ class BaseOperatorCountryReport:
                            [self.data_id, self.operator_id])
             _imei_imsi_overloading = cursor.fetchall()
             if len(_imei_imsi_overloading) == 0:
-                self.logger.warn('No monthly IMEI/IMSI overloading stats available for operator {0} and data_id {1:d}'
-                                 .format(self.operator_id, self.data_id))
+                self.logger.warning('No monthly IMEI/IMSI overloading stats available for operator {0} and '
+                                    'data_id {1:d}'.format(self.operator_id, self.data_id))
 
             cursor.execute("""SELECT *
                                 FROM report_monthly_average_imei_imsi_overloading
@@ -206,9 +207,8 @@ class BaseOperatorCountryReport:
                            [self.data_id, self.operator_id])
             _daily_imei_imsi_overloading = cursor.fetchall()
             if len(_daily_imei_imsi_overloading) == 0:
-                self.logger.warn(('No monthly average IMEI/IMSI overloading stats available for '
-                                  'operator {0} and data_id {1:d}')
-                                 .format(self.operator_id, self.data_id))
+                self.logger.warning(('No monthly average IMEI/IMSI overloading stats available for '
+                                     'operator {0} and data_id {1:d}').format(self.operator_id, self.data_id))
 
             cursor.execute("""SELECT *
                                 FROM report_monthly_imsi_imei_overloading
@@ -218,8 +218,8 @@ class BaseOperatorCountryReport:
                            [self.data_id, self.operator_id])
             _imsi_imei_overloading = cursor.fetchall()
             if len(_imsi_imei_overloading) == 0:
-                self.logger.warn('No monthly IMSI/IMEI overloading stats available for operator {0} and data_id {1:d}'
-                                 .format(self.operator_id, self.data_id))
+                self.logger.warning('No monthly IMSI/IMEI overloading stats available for operator {0} and '
+                                    'data_id {1:d}'.format(self.operator_id, self.data_id))
 
             cursor.execute("""SELECT *
                                 FROM report_monthly_condition_stats_combinations
@@ -228,8 +228,8 @@ class BaseOperatorCountryReport:
                            [self.data_id, self.operator_id])
             _condition_combination_stats = cursor.fetchall()
             if len(_condition_combination_stats) == 0:
-                self.logger.warn('No monthly condition combination stats available for operator {0} and data_id {1:d}'
-                                 .format(self.operator_id, self.data_id))
+                self.logger.warning('No monthly condition combination stats available for operator {0} and '
+                                    'data_id {1:d}'.format(self.operator_id, self.data_id))
 
         report_data = {
             'start_date': self.start_date.isoformat(),

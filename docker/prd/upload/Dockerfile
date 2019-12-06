@@ -1,6 +1,7 @@
 #
 # Dockerfile to build sample Docker operator upload image for DIRBS
 #
+#
 # Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
 #
 # All rights reserved.
@@ -30,7 +31,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-FROM ubuntu:16.04
+FROM ubuntu:18.04
 
 # Set environment (set proper unicode locale, hush debconfig, etc.
 # Set PATH so that subsequent pip3 commands install into virtualenv.

@@ -17,7 +17,8 @@ limitations in the disclaimer below) provided that the following conditions are 
 - The origin of this software must not be misrepresented; you must not claim that you wrote the original software.
   If you use this software in a product, an acknowledgment is required by displaying the trademark/log as per the
   details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
-- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original
+  software.
 - This notice may not be removed or altered from any source distribution.
 
 NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY
@@ -52,7 +53,7 @@ _logger = logging.getLogger('dirbs.config')
 
 def parse_alphanum(string, bad_symbol_error_message):
     """Check that string contains only letters, underscores and digits(0-9)."""
-    if not re.match('^\w*$', string):
+    if not re.match(r'^\w*$', string):
         msg = bad_symbol_error_message.format(string)
         _logger.error(msg)
         raise ConfigParseException(msg)
@@ -132,6 +133,10 @@ class AppConfig:
         self.pairing_threshold_config = PairingListThresholdConfig(ignore_env=ignore_env,
                                                                    **(yaml_config.get('pairing_list_threshold', {}) or
                                                                       {}))
+        self.subscribers_threshold_config = SubscribersListThresholdConfig(ignore_env=ignore_env,
+                                                                           **(yaml_config.get(
+                                                                               'subscribers_list_threshold', {}) or
+                                                                              {}))
         self.stolen_threshold_config = StolenListThresholdConfig(ignore_env=ignore_env,
                                                                  **(yaml_config.get('stolen_list_threshold',
                                                                                     {}) or {}))
@@ -141,6 +146,12 @@ class AppConfig:
         self.golden_threshold_config = GoldenListThresholdConfig(ignore_env=ignore_env,
                                                                  **(yaml_config.get('golden_list_threshold',
                                                                                     {}) or {}))
+        self.barred_threshold_config = BarredListThresholdConfig(ignore_env=ignore_env,
+                                                                 **(yaml_config.get('barred_list_threshold',
+                                                                                    {}) or {}))
+        self.barred_tac_threshold_config = BarredTacListThresholdConfig(ignore_env=ignore_env,
+                                                                        **(yaml_config.get('barred_tac_list_threshold',
+                                                                                           {}) or {}))
         self.retention_config = RetentionConfig(ignore_env=ignore_env, **(yaml_config.get('data_retention', {}) or {}))
         self.listgen_config = ListGenerationConfig(ignore_env=ignore_env,
                                                    **(yaml_config.get('list_generation', {}) or {}))
@@ -816,6 +827,27 @@ class PairingListThresholdConfig(BaseThresholdConfig):
         }
 
 
+class SubscribersListThresholdConfig(BaseThresholdConfig):
+    """Class representing the configuration of thresholds used for validating subscribers registration data."""
+
+    def __init__(self, **subscribers_list_threshold_config):
+        """Constructor which parses the threshold config for pairing list import data."""
+        super(SubscribersListThresholdConfig, self).__init__(**subscribers_list_threshold_config)
+
+    @property
+    def section_name(self):
+        """Property for the section name."""
+        return 'SubscribersListThresholdConfig'
+
+    @property
+    def defaults(self):
+        """Property describing defaults for config values."""
+        return {
+            'import_size_variation_percent': 0.95,
+            'import_size_variation_absolute': 1000
+        }
+
+
 class StolenListThresholdConfig(BaseThresholdConfig):
     """Class representing the configuration of thresholds used for validating operator data."""
 
@@ -848,6 +880,48 @@ class GoldenListThresholdConfig(BaseThresholdConfig):
     def section_name(self):
         """Property for the section name."""
         return 'GoldenListThresholdConfig'
+
+    @property
+    def defaults(self):
+        """Property describing defaults for config values."""
+        return {
+            'import_size_variation_percent': 0.75,
+            'import_size_variation_absolute': -1
+        }
+
+
+class BarredListThresholdConfig(BaseThresholdConfig):
+    """Class representing the configuration of thresholds used for validating barred list data."""
+
+    def __init__(self, **barred_threshold_config):
+        """Constructor which parses the threshold config for barred list import data."""
+        super(BarredListThresholdConfig, self).__init__(**barred_threshold_config)
+
+    @property
+    def section_name(self):
+        """Property for the section name."""
+        return 'BarredListThresholdConfig'
+
+    @property
+    def defaults(self):
+        """Property describing defaults for config values."""
+        return {
+            'import_size_variation_percent': 0.75,
+            'import_size_variation_absolute': -1
+        }
+
+
+class BarredTacListThresholdConfig(BaseThresholdConfig):
+    """Class representing the configuration of thresholds used for validating barred tac list data."""
+
+    def __init__(self, **barred_tac_threshold_config):
+        """Constructor which parses the threshold config for barred tac list import data."""
+        super(BarredTacListThresholdConfig, self).__init__(**barred_tac_threshold_config)
+
+    @property
+    def section_name(self):
+        """Property for the section name."""
+        return 'BarredTacListThresholdConfig'
 
     @property
     def defaults(self):

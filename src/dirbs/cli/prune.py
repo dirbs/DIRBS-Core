@@ -2,7 +2,6 @@
 DIRBS CLI for pruning old monthly_network_triplets data or obsolete classification_state data.
 
 Installed by setuptools as a dirbs-prune console script.
-
 Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
 
 All rights reserved.
@@ -19,7 +18,8 @@ limitations in the disclaimer below) provided that the following conditions are 
 - The origin of this software must not be misrepresented; you must not claim that you wrote the original software.
   If you use this software in a product, an acknowledgment is required by displaying the trademark/log as per the
   details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
-- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original
+  software.
 - This notice may not be removed or altered from any source distribution.
 
 NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY
@@ -57,12 +57,7 @@ import dirbs.partition_utils as partition_utils
 @click.pass_context
 @common.configure_logging
 def cli(ctx, curr_date):
-    """
-    DIRBS script to prune obsolete data from the DIRBS Core PostgreSQL database.
-
-    :param ctx: current cli context
-    :param curr_date: current date by user
-    """
+    """DIRBS script to prune obsolete data from the DIRBS Core PostgreSQL database."""
     ctx.obj['CURR_DATE'] = curr_date
 
 
@@ -71,20 +66,7 @@ def cli(ctx, curr_date):
 @common.unhandled_exception_handler
 @common.cli_wrapper(command='dirbs-prune', subcommand='triplets', required_role='dirbs_core_power_user')
 def triplets(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root, metrics_run_root):
-    """
-    Prune old monthly_network_triplets data.
-
-    :param ctx: current cli context
-    :param config: dirbs config obj
-    :param statsd: statsd obj
-    :param logger: dirbs logger obj
-    :param run_id: job run id
-    :param conn: database connetion
-    :param metadata_conn: database metadata connection
-    :param command: command name
-    :param metrics_root:
-    :param metrics_run_root:
-    """
+    """Prune old monthly_network_triplets data."""
     curr_date = ctx.obj['CURR_DATE']
 
     # Store metadata
@@ -125,7 +107,7 @@ def triplets(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, 
             invariants_list = utils.table_invariants_list(conn, [tblname], ['triplet_month', 'triplet_year'])
             assert len(invariants_list) <= 1
             if len(invariants_list) == 0:
-                logger.warn('Found empty partition {0}. Dropping...'.format(tblname))
+                logger.warning('Found empty partition {0}. Dropping...'.format(tblname))
                 cursor.execute(sql.SQL("""DROP TABLE {0} CASCADE""").format(sql.Identifier(tblname)))
             else:
                 month, year = tuple(invariants_list[0])
@@ -164,20 +146,7 @@ def triplets(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, 
 @common.cli_wrapper(command='dirbs-prune', subcommand='classification_state', required_role='dirbs_core_power_user')
 def classification_state(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root,
                          metrics_run_root):
-    """
-    Prune obsolete classification_state data.
-
-    :param ctx: current cli context
-    :param config: dirbs config obj
-    :param statsd: statsd obj
-    :param logger: dirbs logger obj
-    :param run_id: job run id
-    :param conn: database connection
-    :param metadata_conn: database metadata connection
-    :param command: command name
-    :param metrics_root:
-    :param metrics_run_root:
-    """
+    """Prune obsolete classification_state data."""
     curr_date = ctx.obj['CURR_DATE']
 
     # Store metadata
@@ -253,16 +222,16 @@ def _warn_about_prune_all(prune_all, logger):
     :param logger: dirbs logger obj
     """
     if prune_all is not False:
-        logger.warn('*************************************************************************')
-        logger.warn('WARNING: --prune_all option passed to dirbs-prune blacklist')
-        logger.warn('*************************************************************************')
-        logger.warn('')
-        logger.warn('This should not be done in a production DIRBS deployment for the following reasons:')
-        logger.warn('')
-        logger.warn('1. All the IMEI falling in the specified pruning period will be pruned from blacklist')
-        logger.warn('   irrespective of any condition specified, all the previously blacklisted IMEIs will now')
-        logger.warn('   be removed from blacklist and allowed on network to operate.')
-        logger.warn('')
+        logger.warning('*************************************************************************')
+        logger.warning('WARNING: --prune_all option passed to dirbs-prune blacklist')
+        logger.warning('*************************************************************************')
+        logger.warning('')
+        logger.warning('This should not be done in a production DIRBS deployment for the following reasons:')
+        logger.warning('')
+        logger.warning('1. All the IMEI falling in the specified pruning period will be pruned from blacklist')
+        logger.warning('   irrespective of any condition specified, all the previously blacklisted IMEIs will now')
+        logger.warning('   be removed from blacklist and allowed on network to operate.')
+        logger.warning('')
 
 
 @cli.command()
@@ -275,22 +244,7 @@ def _warn_about_prune_all(prune_all, logger):
               help='DANGEROUS: If set, will set end_date to all the imeis falling in the specified period')
 def blacklist(ctx, config, statsd, logger, run_id, conn, metadata_conn, command,
               metrics_root, metrics_run_root, condition_name, prune_all):
-    """
-    Expire IMEIs outside the blacklist retention period from blacklist.
-
-    :param ctx: current cli context
-    :param config: dirbs config obj
-    :param statsd: statsd obj
-    :param logger: dirbs logger obj
-    :param run_id: job run id
-    :param conn: database connection
-    :param metadata_conn: metadata database connection
-    :param command: command name
-    :param metrics_root:
-    :param metrics_run_root:
-    :param condition_name: name of the condition
-    :param prune_all: prune all flag
-    """
+    """Expire IMEIs outside the blacklist retention period from blacklist."""
     current_date = datetime.date.today()
     retention_days = config.retention_config.blacklist_retention
 
@@ -409,20 +363,7 @@ def blacklist(ctx, config, statsd, logger, run_id, conn, metadata_conn, command,
 @common.unhandled_exception_handler
 @common.cli_wrapper(command='dirbs-prune', subcommand='lists', required_role='dirbs_core_power_user')
 def lists(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root, metrics_run_root):
-    """
-    Prune obsolete lists data.
-
-    :param ctx: current cli context
-    :param config: dirbs config obj
-    :param statsd: statsd obj
-    :param logger: dirbs logger obj
-    :param run_id: job run id
-    :param conn: database connection
-    :param metadata_conn: metadata database obj
-    :param command: command name
-    :param metrics_root:
-    :param metrics_run_root:
-    """
+    """Prune obsolete lists data."""
     curr_date = ctx.obj['CURR_DATE']
 
     # store metadata

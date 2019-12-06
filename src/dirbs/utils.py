@@ -17,7 +17,8 @@ limitations in the disclaimer below) provided that the following conditions are 
 - The origin of this software must not be misrepresented; you must not claim that you wrote the original software.
   If you use this software in a product, an acknowledgment is required by displaying the trademark/log as per the
   details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
-- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original
+  software.
 - This notice may not be removed or altered from any source distribution.
 
 NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY
@@ -187,8 +188,8 @@ def warn_if_db_superuser(conn):
     """Warn if the current DB user is a PostgreSQL superuser."""
     logger = logging.getLogger('dirbs.db')
     if is_db_user_superuser(conn):
-        logger.warn('Running as PostgreSQL superuser -- for security reasons, we recommend running all '
-                    'DIRBS tasks as a normal user')
+        logger.warning('Running as PostgreSQL superuser -- for security reasons, we recommend running all '
+                       'DIRBS tasks as a normal user')
 
 
 def verify_db_roles_installed(conn):
@@ -322,7 +323,7 @@ def is_db_user_superuser(conn):
                         WHERE rolname = CURRENT_USER""")
         res = cur.fetchone()
         if res is None:
-            logger.warn('Failed to find CURRENT_USER in pg_roles table')
+            logger.warning('Failed to find CURRENT_USER in pg_roles table')
             return False
         return res[0]
 
@@ -348,7 +349,7 @@ def can_db_user_create_roles(conn):
                         WHERE rolname = CURRENT_USER""")
         res = cur.fetchone()
         if res is None:
-            logger.warn('Failed to find CURRENT_USER in pg_roles table')
+            logger.warning('Failed to find CURRENT_USER in pg_roles table')
             return False
         return res[0]
 
@@ -364,7 +365,7 @@ def query_db_ownership(conn):
                         WHERE datname = current_database()""")
         res = cur.fetchone()
         if res is None:
-            logger.warn('Failed to determing DB owner for current_database')
+            logger.warning('Failed to determing DB owner for current_database')
             return None
         return res[0]
 
@@ -388,7 +389,7 @@ def query_schema_ownership(conn, schema_name):
                         WHERE nspname = %s""", [schema_name])
         res = cur.fetchone()
         if res is None:
-            logger.warn('Failed to determing owner for current_schema')
+            logger.warning('Failed to determing owner for current_schema')
             return None
         return res[0]
 

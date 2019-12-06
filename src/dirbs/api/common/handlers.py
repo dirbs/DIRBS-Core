@@ -17,7 +17,8 @@ limitations in the disclaimer below) provided that the following conditions are 
 - The origin of this software must not be misrepresented; you must not claim that you wrote the original software.
   If you use this software in a product, an acknowledgment is required by displaying the trademark/log as per the
   details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
-- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original
+  software.
 - This notice may not be removed or altered from any source distribution.
 
 NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY
@@ -42,11 +43,13 @@ def validate_error(error):
     :return: custom http error response
     """
     field_name = error.exc.field_names[0]
-    field_value = error.exc.data[field_name]
+    field_value = error.exc.data[field_name] if error.exc.data else None
     field_type = error.exc.fields[0]
-    if isinstance(field_type, fields.List):
+    if isinstance(field_type, fields.List) and field_value and isinstance(error.exc.messages, list):
         field_type = error.exc.fields[0].container
         field_value = error.exc.data[field_name][next(iter(error.exc.messages[field_name]))]
+    else:
+        field_value = error.exc.messages[field_name]
     return BadRequest(description=get_error_desc(field_type, field_name, field_value))
 
 
@@ -62,10 +65,13 @@ def get_error_desc(field, name, value):
     error_desc = 'Bad \'{0}\':\'{1}\' argument format.'.format(name, value)
     if isinstance(field, fields.Integer):
         try:
-            int(value)
-            msg_allow_zero = 'or equal to ' if field.validate.min < 1 else ''
-            error_desc = 'Param \'{0}\':\'{1}\' must be greater than {2}0' \
-                .format(name, value, msg_allow_zero)
+            if isinstance(value, str):
+                int(value)
+                msg_allow_zero = 'or equal to ' if field.validate.min < 1 else ''
+                error_desc = 'Param \'{0}\':\'{1}\' must be greater than {2}0' \
+                    .format(name, value, msg_allow_zero)
+            else:
+                raise ValueError
         except ValueError:
             error_desc = 'Bad \'{0}\':\'{1}\' argument format. Accepts only integer'.format(name, value)
     if isinstance(field, fields.Boolean):

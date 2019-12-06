@@ -3,6 +3,7 @@
 #
 # Assumes that the DIRBS git repo is bind-mounted to /home/dirbs/git
 #
+#
 # Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
 #
 # All rights reserved.
@@ -38,10 +39,10 @@ ENV HLL_VERSION=2.10.2
 
 # Install Postgres 10, git and eslint
 RUN set -x && \
-    echo 'deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main' > /etc/apt/sources.list.d/pgdg.list && \
+    echo 'deb http://apt.postgresql.org/pub/repos/apt/ bionic-pgdg main' > /etc/apt/sources.list.d/pgdg.list && \
     wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - && \
     apt-get -q update --fix-missing && \
-    apt-get -q install -y --no-install-recommends postgresql-10 postgresql-contrib-10 postgresql-server-dev-10 \
+    apt-get -q install -y --no-install-recommends postgresql-11 postgresql-contrib-11 postgresql-server-dev-11 \
                                                   postgresql-common git nodejs npm rsync wget unzip \
                                                   build-essential && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
@@ -57,7 +58,7 @@ RUN set -x && \
 
 # NPM packages for verifying CSS/JS
 RUN set -x && \
-    ln -s nodejs /usr/bin/node && \
+    #ln -s nodejs /usr/bin/node && \
     npm install -g eslint && \
     npm install -g uncss
 

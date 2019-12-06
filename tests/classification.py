@@ -17,7 +17,8 @@ limitations in the disclaimer below) provided that the following conditions are 
 - The origin of this software must not be misrepresented; you must not claim that you wrote the original software.
   If you use this software in a product, an acknowledgment is required by displaying the trademark/log as per the
   details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
-- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original
+  software.
 - This notice may not be removed or altered from any source distribution.
 
 NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY
@@ -44,13 +45,14 @@ from dirbs.config import OperatorConfig
 from dirbs.cli.classify import cli as dirbs_classify_cli
 from dirbs.importer.operator_data_importer import OperatorDataImporter
 from dirbs.importer.golden_list_importer import GoldenListImporter
+from dirbs.importer.subscriber_reg_list_importer import SubscribersListImporter
 from dirbs.cli.listgen import cli as dirbs_listgen_cli
 from _fixtures import *  # noqa: F403, F401
 from _helpers import get_importer, expect_success, matching_imeis_for_cond_name, find_subdirectory_in_dir, \
     logger_stream_contents, logger_stream_reset, invoke_cli_classify_with_conditions_helper, \
     from_cond_dict_list_to_cond_list, find_file_in_dir, from_op_dict_list_to_op_list, from_amnesty_dict_to_amnesty_conf
 from _importer_params import GSMADataParams, OperatorDataParams, StolenListParams, \
-    RegistrationListParams, GoldenListParams
+    RegistrationListParams, GoldenListParams, BarredListParams, BarredTacListParams, SubscribersListParams
 
 base_dummy_cond_config = {
     'label': 'dummy_test_condition',
@@ -1913,6 +1915,96 @@ def test_registration_list(db_conn, operator_data_importer, registration_list_im
 @pytest.mark.parametrize('operator_data_importer',
                          [OperatorDataParams(
                              content='date,imei,imsi,msisdn\n'
+                                     '20190415,920000000043212,123456789012345,123456789012345\n'
+                                     '20190415,625896314741126,123456789012345,123456789012345\n'
+                                     '20190415,745309782312055,123456789012345,123456789012345',
+                             extract=False,
+                             perform_unclean_checks=False,
+                             perform_region_checks=False,
+                             perform_home_network_check=False,
+                             operator='operator1'
+                         )],
+                         indirect=True)
+@pytest.mark.parametrize('barred_list_importer',
+                         [BarredListParams(filename='sample_barred_list_v2.csv')],
+                         indirect=True)
+def test_exists_in_barred_list_dim(db_conn, operator_data_importer, barred_list_importer, mocked_config, monkeypatch):
+    """Test Depot ID not known yet.
+
+    Verify that a regulator/partner should be able to classify whether
+    IMEIs are blacklisted because they are on barred list.
+    """
+    operator_data_importer.import_data()
+    barred_list_importer.import_data()
+    db_conn.commit()
+
+    with db_conn.cursor() as cursor:
+        cursor.execute('SELECT imei_norm FROM classification_state')
+        res_list = cursor.fetchall()
+        assert len(res_list) is 0
+
+    cond_list = [{
+        'label': 'exists_in_barred_list',
+        'reason': 'IMEI found on local barred_list',
+        'max_allowed_matching_ratio': 1.0,
+        'dimensions': [{'module': 'exists_in_barred_list'}]
+    }]
+    matched_imeis = invoke_cli_classify_with_conditions_helper(cond_list, mocked_config, monkeypatch, db_conn=db_conn,
+                                                               classify_options=['--no-safety-check'])
+    matched_imeis.sort()
+    assert '74530978231205' in matched_imeis
+
+
+@pytest.mark.parametrize('operator_data_importer',
+                         [OperatorDataParams(
+                             content='date,imei,imsi,msisdn\n'
+                                     '20190415,920000010043212,123456789012345,123456789012345\n'
+                                     '20190415,625896324741126,123456789012345,123456789012345\n'
+                                     '20190415,745309792312055,123456789012345,123456789012345',
+                             extract=False,
+                             perform_unclean_checks=False,
+                             perform_region_checks=False,
+                             perform_home_network_check=False,
+                             operator='operator1'
+                         )],
+                         indirect=True)
+@pytest.mark.parametrize('barred_tac_list_importer',
+                         [BarredTacListParams(
+                             content='TAC\n'
+                                     '62589632\n'
+                                     '74530979'
+                         )],
+                         indirect=True)
+def test_is_barred_tac_dim(db_conn, operator_data_importer, barred_tac_list_importer, mocked_config, monkeypatch):
+    """Test Depot ID not known yet.
+
+    Verify that a regulator/partner should be able to classify whether
+    IMEIs are blacklisted because their tac is on barred_tac list.
+    """
+    operator_data_importer.import_data()
+    barred_tac_list_importer.import_data()
+    db_conn.commit()
+
+    with db_conn.cursor() as cursor:
+        cursor.execute('SELECT imei_norm FROM classification_state')
+        res_list = cursor.fetchall()
+        assert len(res_list) is 0
+
+    cond_list = [{
+        'label': 'tac_in_barred_list',
+        'reason': 'IMEI TAC is in barred tac list',
+        'max_allowed_matching_ratio': 1.0,
+        'dimensions': [{'module': 'is_barred_tac'}]
+    }]
+    matched_imeis = invoke_cli_classify_with_conditions_helper(cond_list, mocked_config, monkeypatch, db_conn=db_conn,
+                                                               classify_options=['--no-safety-check'])
+    matched_imeis.sort()
+    assert matched_imeis == ['62589632474112', '74530979231205']
+
+
+@pytest.mark.parametrize('operator_data_importer',
+                         [OperatorDataParams(
+                             content='date,imei,imsi,msisdn\n'
                                      '20161115,10000000000000,123456789012345,123456789012345\n'
                                      '20161115,012344014741025,123456789012345,123456789012345\n'
                                      '20161115,012344022302145,123456789012345,123456789012345\n'
@@ -2705,3 +2797,48 @@ def test_sanity_checks_amnesty(db_conn, mocked_config, tmpdir, logger, monkeypat
     monkeypatch.setattr(mocked_config, 'amnesty_config', amnesty_config)
     result = runner.invoke(dirbs_classify_cli, classify_options, obj={'APP_CONFIG': mocked_config})
     assert result.exit_code == 1
+
+
+@pytest.mark.parametrize('operator_data_importer',
+                         [OperatorDataParams(
+                             filename='operator1_duplicate_uid_20190925_20191025.csv',
+                             operator='1',
+                             extract=False,
+                             perform_leading_zero_check=False,
+                             mcc_mnc_pairs=[{'mcc': '111', 'mnc': '04'}],
+                             perform_unclean_checks=False,
+                             perform_file_daterange_check=False,
+                             perform_region_checks=False,
+                             perform_home_network_check=False,
+                             perform_historic_checks=False
+                         )],
+                         indirect=True)
+@pytest.mark.parametrize('subscribers_list_importer',
+                         [SubscribersListParams(
+                             filename='subscribers1_list_duplicate_uid.csv',
+                             extract=False
+                         )],
+                         indirect=True)
+def test_daily_avg_uid(db_conn, operator_data_importer, subscribers_list_importer, mocked_config,
+                       tmpdir, logger, monkeypatch, metadata_db_conn, mocked_statsd):
+    """Verify that the duplicate_daily_uid dimension correctly flags the IMEI(s) based on the data."""
+    # detection case, importing operator data with duplicate entries
+    operator_data_importer.import_data()
+    # importing 3 uid-imsi pairs with different uid(s) and different imsi(s)
+    subscribers_list_importer.import_data()
+    # configure condition
+    cond_list = [{
+        'label': 'daily_avg_uid',
+        'reason': 'daily avg uid',
+        'dimensions': [{
+            'module': 'daily_avg_uid',
+            'parameters': {
+                'threshold': 2.5,
+                'period_days': 30,
+                'min_seen_days': 5}}]
+    }]
+
+    matched_imeis = invoke_cli_classify_with_conditions_helper(cond_list, mocked_config, monkeypatch,
+                                                               classify_options=['--no-safety-check'],
+                                                               db_conn=db_conn, curr_date='20191025')
+    assert matched_imeis == ['35236015100001', '86422502001110', '86422502012303', '86544602033101']

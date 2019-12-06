@@ -17,7 +17,8 @@ limitations in the disclaimer below) provided that the following conditions are 
 - The origin of this software must not be misrepresented; you must not claim that you wrote the original software.
   If you use this software in a product, an acknowledgment is required by displaying the trademark/log as per the
   details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
-- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original
+  software.
 - This notice may not be removed or altered from any source distribution.
 
 NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY
@@ -76,11 +77,7 @@ def _store_job_metadata(config, subcommand):
 @click.pass_context
 @common.configure_logging
 def cli(ctx):
-    """
-    DIRBS script to intiliaze, configure and upgrade the PostgreSQL schema.
-
-    :param ctx: current cli context obj
-    """
+    """DIRBS script to intiliaze, configure and upgrade the PostgreSQL schema."""
     config = common.ensure_config(ctx)
     db_config = config.db_config
     logger = logging.getLogger('dirbs.db')
@@ -112,11 +109,7 @@ def cli(ctx):
 @click.pass_context
 @common.unhandled_exception_handler
 def check(ctx):
-    """
-    Checks whether DB schema matches software DB version.
-
-    :param ctx: current cli context obj
-    """
+    """Checks whether DB schema matches software DB version."""
     db_config = common.ensure_config(ctx).db_config
 
     logger = logging.getLogger('dirbs.db')
@@ -148,11 +141,7 @@ def check(ctx):
 @click.pass_context
 @common.unhandled_exception_handler
 def upgrade(ctx):
-    """
-    Upgrades the current DB schema to the version supported by this code using migration scripts.
-
-    :param ctx: current cli context obj
-    """
+    """Upgrades the current DB schema to the version supported by this code using migration scripts."""
     logger = logging.getLogger('dirbs.db')
     config = common.ensure_config(ctx)
     db_config = config.db_config
@@ -224,12 +213,7 @@ def upgrade(ctx):
 @click.pass_context
 @common.unhandled_exception_handler
 def install(ctx):
-    """
-    Installs latest schema on clean DB instance.
-
-    :param ctx: current cli context obj
-    :return: status
-    """
+    """Installs latest schema on clean DB instance."""
     logger = logging.getLogger('dirbs.db')
     config = common.ensure_config(ctx)
     db_config = config.db_config
@@ -279,11 +263,7 @@ def install(ctx):
 @click.pass_context
 @common.unhandled_exception_handler
 def install_roles(ctx):
-    """
-    Creates DIRBS Core PostgreSQL base roles if they don't exist.
-
-    :param ctx: current cli context obj
-    """
+    """Creates DIRBS Core PostgreSQL base roles if they don't exist."""
     logger = logging.getLogger('dirbs.db')
     config = common.ensure_config(ctx)
     db_config = copy.copy(config.db_config)
@@ -326,12 +306,7 @@ def num_physical_shards_option(f):
 @common.unhandled_exception_handler
 @num_physical_shards_option
 def repartition(ctx, num_physical_shards):
-    """
-    Repartition DIRBS Core tables into a new number of physical IMEI shards.
-
-    :param ctx: current cli context obj
-    :param num_physical_shards: number of physical shards
-    """
+    """Repartition DIRBS Core tables into a new number of physical IMEI shards."""
     logger = logging.getLogger('dirbs.db')
     config = common.ensure_config(ctx)
     with utils.create_db_connection(config.db_config) as conn, conn.cursor() as cursor:
