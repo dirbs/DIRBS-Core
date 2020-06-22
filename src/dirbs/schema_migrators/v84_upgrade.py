@@ -60,6 +60,14 @@ class SchemaMigrator(dirbs.schema_migrators.AbstractMigrator):
                                     """))
         logger.debug('unique_bitcount() function definition successful')
 
+    def _create_index_on_device_id(self, logger, conn):
+        """Method to create index on device_id in registration_list."""
+        logger.info('Creating index on device_id in historic_registration_list...')
+        idx_metadata = [part_utils.IndexMetadatum(idx_cols=['device_id'],
+                                                  is_unique=False,
+                                                  partial_sql='WHERE end_date IS NULL')]
+        part_utils.add_indices(conn, tbl_name='historic_registration_list', idx_metadata=idx_metadata)
+
     def _migrate_barred_list(self, logger, conn):
         """Method to migrate barred imeis list."""
         with conn.cursor() as cursor:
@@ -180,6 +188,7 @@ class SchemaMigrator(dirbs.schema_migrators.AbstractMigrator):
         self._migrate_subscriber_registration_list(logger, conn)
         logger.info('Created historic_subscriber_registration_list')
         self._define_unique_bitcount_func(logger, conn)
+        self._create_index_on_device_id(logger, conn)
 
 
 migrator = SchemaMigrator

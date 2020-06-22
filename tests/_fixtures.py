@@ -52,6 +52,8 @@ from dirbs.importer.golden_list_importer import GoldenListImporter
 from dirbs.importer.barred_list_importer import BarredListImporter
 from dirbs.importer.barred_tac_list_importer import BarredTacListImporter
 from dirbs.importer.subscriber_reg_list_importer import SubscribersListImporter
+from dirbs.importer.device_association_list_importer import DeviceAssociationListImporter
+from dirbs.importer.monitoring_list_importer import MonitoringListImporter
 from dirbs.logging import StatsClient
 import dirbs.logging
 from _helpers import get_importer
@@ -163,6 +165,8 @@ def _postgres_impl(mocked_config):
         cursor.execute('CREATE ROLE dirbs_import_barred_tac_list_user IN ROLE dirbs_core_import_barred_tac_list LOGIN')
         cursor.execute('CREATE ROLE dirbs_core_import_subscribers_registration_list_user IN ROLE'
                        ' dirbs_core_import_subscribers_registration_list LOGIN')
+        cursor.execute('CREATE ROLE dirbs_import_device_association_list_user IN ROLE '
+                       'dirbs_core_import_device_association_list LOGIN')
         cursor.execute('CREATE ROLE dirbs_classify_user IN ROLE dirbs_core_classify LOGIN')
         cursor.execute('CREATE ROLE dirbs_listgen_user IN ROLE dirbs_core_listgen LOGIN')
         cursor.execute('CREATE ROLE dirbs_report_user IN ROLE dirbs_core_report LOGIN')
@@ -344,6 +348,21 @@ def barred_list_importer(db_conn, metadata_db_conn, mocked_config, tmpdir, logge
 
 
 @pytest.fixture()
+def monitoring_list_importer(db_conn, metadata_db_conn, mocked_config, tmpdir, logger, mocked_statsd, request):
+    """Monitoring list importer fixture. Parameters for importer come in via request.param."""
+    monitoring_list_imp_params = request.param
+    with get_importer(MonitoringListImporter,
+                      db_conn,
+                      metadata_db_conn,
+                      mocked_config.db_config,
+                      tmpdir,
+                      logger,
+                      mocked_statsd,
+                      monitoring_list_imp_params) as imp:
+        yield imp
+
+
+@pytest.fixture()
 def barred_tac_list_importer(db_conn, metadata_db_conn, mocked_config, tmpdir, logger, mocked_statsd, request):
     """Barred tac list importer fixture. Parameters for importer come in via request.param."""
     barred_tac_list_imp_params = request.param
@@ -370,6 +389,21 @@ def subscribers_list_importer(db_conn, metadata_db_conn, mocked_config, tmpdir, 
                       logger,
                       mocked_statsd,
                       subscribers_list_params) as imp:
+        yield imp
+
+
+@pytest.fixture()
+def device_association_list_importer(db_conn, metadata_db_conn, mocked_config, tmpdir, logger, mocked_statsd, request):
+    """Device association list importer fixture. Params for importer come in via request.param."""
+    association_list_params = request.param
+    with get_importer(DeviceAssociationListImporter,
+                      db_conn,
+                      metadata_db_conn,
+                      mocked_config.db_config,
+                      tmpdir,
+                      logger,
+                      mocked_statsd,
+                      association_list_params) as imp:
         yield imp
 
 

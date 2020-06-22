@@ -118,4 +118,5 @@ class DailyAvgUidThreshold(DuplicateAbstractBase):
                        min_seen_days_threshold=sql.Literal(self._min_seen_days),
                        threshold=sql.Literal(self._threshold)).as_string(conn)
 
+
 dimension = DailyAvgUidThreshold

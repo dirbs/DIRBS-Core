@@ -32,10 +32,10 @@ POSSIBILITY OF SUCH DAMAGE.
 """
 
 # Bump the version number as per semantic versioning guidelines
-__version__ = '11.0.0'
+__version__ = '12.0.0'
 
 # Bump this version everytime the schema is modified
-db_schema_version = 84
+db_schema_version = 85
 
 # Bump this version everytime the reports change in an incompatible way
 report_schema_version = 8

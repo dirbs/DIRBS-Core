@@ -49,10 +49,10 @@ from dirbs.importer.operator_data_importer import OperatorDataImporter
 from dirbs.config import ConditionConfig
 from _helpers import job_metadata_importer, expect_success
 from _importer_params import OperatorDataParams, PairListParams, GoldenListParams,\
-    StolenListParams, RegistrationListParams
+    StolenListParams, RegistrationListParams, BarredListParams, BarredTacListParams
 from _helpers import get_importer, from_cond_dict_list_to_cond_list, find_file_in_dir, find_subdirectory_in_dir, \
     import_data, invoke_cli_classify_with_conditions_helper, from_op_dict_list_to_op_list, \
-    from_amnesty_dict_to_amnesty_conf, from_listgen_dict_to_listgen_conf
+    from_amnesty_dict_to_amnesty_conf
 from _fixtures import *    # noqa: F403, F401
 from dirbs.metadata import query_for_command_runs
 
@@ -301,9 +301,9 @@ def test_cli_arg_no_full_lists(tmpdir, db_conn, mocked_config):
     rows_exc_op_two_delta = _read_rows_from_file('exceptions_operator2_delta', tmpdir, dir_name='run1')
     rows_not_op_two = _read_rows_from_file('notifications_operator2.csv', tmpdir, dir_name='run1')
     assert row_bl_op_one == ['imei,block_date,reasons\n']
-    assert rows_exc_op_two == ['imei,imsi\n']
+    assert rows_exc_op_two == ['imei,imsi,msisdn\n']
     assert rows_not_op_two == ['imei,imsi,msisdn,block_date,reasons\n']
-    assert rows_exc_op_two_delta == ['imei,imsi,change_type\n']
+    assert rows_exc_op_two_delta == ['imei,imsi,msisdn,change_type\n']
 
 
 def test_cli_invalid_arg_base_test(tmpdir, db_conn, mocked_config):
@@ -567,8 +567,8 @@ def test_notifications_list_delta_new(postgres, db_conn, tmpdir, mocked_config, 
                          ['classification_state/imei_api_class_state_v5.csv'],
                          indirect=True)
 @pytest.mark.parametrize('pairing_list_importer',
-                         [PairListParams(content='imei,imsi\n'
-                                                 '12345678901230,11101678901234')],
+                         [PairListParams(content='imei,imsi,msisdn\n'
+                                                 '12345678901230,11101678901234,222222222334443')],
                          indirect=True)
 @pytest.mark.parametrize('golden_list_importer',
                          [GoldenListParams(content='GOLDEN_IMEI\n'
@@ -631,8 +631,8 @@ def test_notifications_list_delta_resolved(postgres, db_conn, tmpdir, mocked_con
                          ['classification_state/imei_api_class_state_v5.csv'],
                          indirect=True)
 @pytest.mark.parametrize('pairing_list_importer',
-                         [PairListParams(content='imei,imsi\n'
-                                                 '12345678901230,11101678901234')],
+                         [PairListParams(content='imei,imsi,msisdn\n'
+                                                 '12345678901230,11101678901234,12345678901230')],
                          indirect=True)
 @pytest.mark.parametrize('golden_list_importer',
                          [GoldenListParams(content='GOLDEN_IMEI\n'
@@ -771,17 +771,17 @@ def test_notifications_list_delta_changed(postgres, db_conn, tmpdir, mocked_conf
 
 
 @pytest.mark.parametrize('pairing_list_importer',
-                         [PairListParams(content='imei,imsi\n'
-                                                 '12345678901228,11105678901234\n'
-                                                 '12345678901229,11106678901234\n'
-                                                 '12345678901230,11107678901234\n'
-                                                 '12345678901231,11108678901234\n'
-                                                 '12345678901232,11109678901234\n'
-                                                 '12345678901227,11110678901234\n'
-                                                 '12345678901233,11101678901234\n'
-                                                 '12345678901234,11101678901234\n'
-                                                 '12345678901235,11102678901234\n'
-                                                 '12345678901236,11102678901234')],
+                         [PairListParams(content='imei,imsi,msisdn\n'
+                                                 '12345678901228,11105678901234,12345678901228\n'
+                                                 '12345678901229,11106678901234,12345678901229\n'
+                                                 '12345678901230,11107678901234,12345678901230\n'
+                                                 '12345678901231,11108678901234,12345678901231\n'
+                                                 '12345678901232,11109678901234,12345678901232\n'
+                                                 '12345678901227,11110678901234,12345678901227\n'
+                                                 '12345678901233,11101678901234,12345678901233\n'
+                                                 '12345678901234,11101678901234,12345678901234\n'
+                                                 '12345678901235,11102678901234,12345678901235\n'
+                                                 '12345678901236,11102678901234,12345678901236')],
                          indirect=True)
 @pytest.mark.parametrize('operator_data_importer',
                          [OperatorDataParams(
@@ -841,34 +841,34 @@ def test_exceptions_list_delta_added(postgres, db_conn, tmpdir, mocked_config, p
     # or where the IMSI did not match any operator
     # The change_type should be 'added'.
     assert len(rows_op_one_list) == 9
-    assert rows_op_one_list[0] == 'imei,imsi,change_type\n'
-    assert set(rows_op_one_list[1:]) == {'12345678901228,11105678901234,added\n',
-                                         '12345678901229,11106678901234,added\n',
-                                         '12345678901230,11107678901234,added\n',
-                                         '12345678901233,11101678901234,added\n',
-                                         '12345678901234,11101678901234,added\n',
-                                         '12345678901231,11108678901234,added\n',
-                                         '12345678901227,11110678901234,added\n',
-                                         '12345678901232,11109678901234,added\n'}
+    assert rows_op_one_list[0] == 'imei,imsi,msisdn,change_type\n'
+    assert set(rows_op_one_list[1:]) == {'12345678901228,11105678901234,12345678901228,added\n',
+                                         '12345678901229,11106678901234,12345678901229,added\n',
+                                         '12345678901230,11107678901234,12345678901230,added\n',
+                                         '12345678901233,11101678901234,12345678901233,added\n',
+                                         '12345678901234,11101678901234,12345678901234,added\n',
+                                         '12345678901231,11108678901234,12345678901231,added\n',
+                                         '12345678901227,11110678901234,12345678901227,added\n',
+                                         '12345678901232,11109678901234,12345678901232,added\n'}
 
     # - Delta exceptions list for operator 2 contains all the IMEI-IMSIs where the prefix started with
     # Operator 2's MCC-MNC or where the IMSI did not match any operator. The change_type should be 'added'.
     rows_op_two_list = _read_rows_from_file('exceptions_operator2_delta', tmpdir, dir_name='run0')
     assert len(rows_op_two_list) == 9
-    assert rows_op_two_list[0] == 'imei,imsi,change_type\n'
-    assert set(rows_op_two_list[1:]) == {'12345678901229,11106678901234,added\n',
-                                         '12345678901231,11108678901234,added\n',
-                                         '12345678901235,11102678901234,added\n',
-                                         '12345678901236,11102678901234,added\n',
-                                         '12345678901227,11110678901234,added\n',
-                                         '12345678901232,11109678901234,added\n',
-                                         '12345678901230,11107678901234,added\n',
-                                         '12345678901228,11105678901234,added\n'}
+    assert rows_op_two_list[0] == 'imei,imsi,msisdn,change_type\n'
+    assert set(rows_op_two_list[1:]) == {'12345678901229,11106678901234,12345678901229,added\n',
+                                         '12345678901231,11108678901234,12345678901231,added\n',
+                                         '12345678901235,11102678901234,12345678901235,added\n',
+                                         '12345678901236,11102678901234,12345678901236,added\n',
+                                         '12345678901227,11110678901234,12345678901227,added\n',
+                                         '12345678901232,11109678901234,12345678901232,added\n',
+                                         '12345678901230,11107678901234,12345678901230,added\n',
+                                         '12345678901228,11105678901234,12345678901228,added\n'}
     # - Delta exceptions list for all operators contain any "unknown" IMEIs that were not seen with any operator
     # rows_op_one is a list of str
     # i.e. ['imei,imsi,change_type\n','12345678901228,11105678901234,added\n','12345678901229,11106678901234,added\n']
     for rows_op_list in [rows_op_one_list, rows_op_two_list]:
-        assert len(set([r[:14] for r in rows_op_list]) & {'12345678901232', '12345678901227'}) == 2
+        assert len(set([r[:14] for r in rows_op_list]) & {'12345678901232', '12345678901227', ''}) == 2
     # IMSIs that were "unknown" and seen with both operator 1 and operator 2 should be in both operators'
     # delta exceptions lists with a change_type of added.
     for rows_op_list in [rows_op_one_list, rows_op_two_list]:
@@ -876,14 +876,14 @@ def test_exceptions_list_delta_added(postgres, db_conn, tmpdir, mocked_config, p
 
 
 @pytest.mark.parametrize('pairing_list_importer',
-                         [PairListParams(content='imei,imsi\n'
-                                                 '12345678901230,11107678901234\n'
-                                                 '12345678901231,11108678901234\n'
-                                                 '12345678901232,11109678901234\n'
-                                                 '12345678901233,11101678901234\n'
-                                                 '12345678901234,11101678901234\n'
-                                                 '12345678901235,11102678901234\n'
-                                                 '12345678901236,11102678901234\n')],
+                         [PairListParams(content='imei,imsi,msisdn\n'
+                                                 '12345678901230,11107678901234,333333333333331\n'
+                                                 '12345678901231,11108678901234,333333333333332\n'
+                                                 '12345678901232,11109678901234,333333333333333\n'
+                                                 '12345678901233,11101678901234,333333333333334\n'
+                                                 '12345678901234,11101678901234,333333333333335\n'
+                                                 '12345678901235,11102678901234,333333333333336\n'
+                                                 '12345678901236,11102678901234,333333333333337\n')],
                          indirect=True)
 def test_exceptions_list_delta_removed(postgres, db_conn, tmpdir, mocked_config, pairing_list_importer, logger):
     """Test exceptions_list_delta_removed."""
@@ -905,26 +905,26 @@ def test_exceptions_list_delta_removed(postgres, db_conn, tmpdir, mocked_config,
                                         delta_fn='exceptions_operator1_delta')
     # Verify that rows have been added
     assert len(rows) == 6
-    assert rows[0] == 'imei,imsi,change_type\n'
-    assert set(rows[1:]) == {'12345678901233,11101678901234,added\n',
-                             '12345678901234,11101678901234,added\n',
-                             '12345678901230,11107678901234,added\n',
-                             '12345678901231,11108678901234,added\n',
-                             '12345678901232,11109678901234,added\n'}
+    assert rows[0] == 'imei,imsi,msisdn,change_type\n'
+    assert set(rows[1:]) == {'12345678901233,11101678901234,333333333333334,added\n',
+                             '12345678901234,11101678901234,333333333333335,added\n',
+                             '12345678901230,11107678901234,333333333333331,added\n',
+                             '12345678901231,11108678901234,333333333333332,added\n',
+                             '12345678901232,11109678901234,333333333333333,added\n'}
     rows = _read_rows_from_file('exceptions_operator2_delta', tmpdir, dir_name='run0')
     assert len(rows) == 6
-    assert rows[0] == 'imei,imsi,change_type\n'
-    assert set(rows[1:]) == {'12345678901235,11102678901234,added\n',
-                             '12345678901236,11102678901234,added\n',
-                             '12345678901230,11107678901234,added\n',
-                             '12345678901231,11108678901234,added\n',
-                             '12345678901232,11109678901234,added\n'}
+    assert rows[0] == 'imei,imsi,msisdn,change_type\n'
+    assert set(rows[1:]) == {'12345678901235,11102678901234,333333333333336,added\n',
+                             '12345678901236,11102678901234,333333333333337,added\n',
+                             '12345678901230,11107678901234,333333333333331,added\n',
+                             '12345678901231,11108678901234,333333333333332,added\n',
+                             '12345678901232,11109678901234,333333333333333,added\n'}
     rows = _read_rows_from_file('exceptions_operator3_delta', tmpdir, dir_name='run0')
     assert len(rows) == 4
-    assert rows[0] == 'imei,imsi,change_type\n'
-    assert set(rows[1:]) == {'12345678901230,11107678901234,added\n',
-                             '12345678901231,11108678901234,added\n',
-                             '12345678901232,11109678901234,added\n'}
+    assert rows[0] == 'imei,imsi,msisdn,change_type\n'
+    assert set(rows[1:]) == {'12345678901230,11107678901234,333333333333331,added\n',
+                             '12345678901231,11108678901234,333333333333332,added\n',
+                             '12345678901232,11109678901234,333333333333333,added\n'}
     # Remove a pairing per each operator delta list
     with db_conn, db_conn.cursor() as cursor:
         cursor.execute("""DELETE
@@ -935,17 +935,17 @@ def test_exceptions_list_delta_removed(postgres, db_conn, tmpdir, mocked_config,
     rows, _ = _run_list_gen_rows_run_id(db_conn, tmpdir, mocked_config, 'run1',
                                         delta_fn='exceptions_operator1_delta')
     assert len(rows) == 3
-    assert rows[0] == 'imei,imsi,change_type\n'
-    assert set(rows[1:]) == {'12345678901233,11101678901234,removed\n',
-                             '12345678901230,11107678901234,removed\n'}
+    assert rows[0] == 'imei,imsi,msisdn,change_type\n'
+    assert set(rows[1:]) == {'12345678901233,11101678901234,333333333333334,removed\n',
+                             '12345678901230,11107678901234,333333333333331,removed\n'}
     rows = _read_rows_from_file('exceptions_operator2_delta', tmpdir, dir_name='run1')
     assert len(rows) == 3
-    assert rows[0] == 'imei,imsi,change_type\n'
-    assert set(rows[1:]) == {'12345678901236,11102678901234,removed\n',
-                             '12345678901230,11107678901234,removed\n'}
+    assert rows[0] == 'imei,imsi,msisdn,change_type\n'
+    assert set(rows[1:]) == {'12345678901236,11102678901234,333333333333337,removed\n',
+                             '12345678901230,11107678901234,333333333333331,removed\n'}
     rows = _read_rows_from_file('exceptions_operator3_delta', tmpdir, dir_name='run1')
     assert len(rows) == 2
-    assert set(rows[1:]) == {'12345678901230,11107678901234,removed\n'}
+    assert set(rows[1:]) == {'12345678901230,11107678901234,333333333333331,removed\n'}
 
 
 def test_aggregate_blacklist_changes(postgres, db_conn, tmpdir, mocked_config):
@@ -1110,17 +1110,17 @@ def test_aggregate_exceptions_list_changes(postgres, db_conn, tmpdir, mocked_con
     # Manually populate one operator's exceptions_list
     with db_conn, db_conn.cursor() as cursor:
         cursor.execute("""INSERT INTO exceptions_lists_operator1 (operator_id, imei_norm, imsi, start_run_id,
-                                                                  end_run_id, delta_reason, virt_imei_shard)
+                                                                  end_run_id, delta_reason, virt_imei_shard, msisdn)
                                VALUES ('operator1', '12345678901234', '12345678901234', 1116, NULL, 'removed',
-                                       calc_virt_imei_shard('12345678901234')),
+                                       calc_virt_imei_shard('12345678901234'), '12345678901234'),
                                       ('operator1', '12345678901234', '12345678901234', 1113, 1116, 'added',
-                                       calc_virt_imei_shard('12345678901234')),
+                                       calc_virt_imei_shard('12345678901234'), '12345678901234'),
                                       ('operator1', '12345678901234', '12345678901234', 1112, 1113, 'removed',
-                                       calc_virt_imei_shard('12345678901234')),
+                                       calc_virt_imei_shard('12345678901234'), '12345678901234'),
                                       ('operator1', '12345678901234', '12345678901234', 1004, 1112, 'added',
-                                       calc_virt_imei_shard('12345678901234')),
+                                       calc_virt_imei_shard('12345678901234'), '12345678901234'),
                                       ('operator1', '12345678901234', '12345678901234', 1000, 1004, 'removed',
-                                       calc_virt_imei_shard('12345678901234'))""")
+                                       calc_virt_imei_shard('12345678901234'), '12345678901234')""")
         cursor.execute('SELECT COUNT(*) AS count_ex FROM exceptions_lists_operator1')
         assert cursor.fetchone().count_ex == 5
 
@@ -1129,25 +1129,25 @@ def test_aggregate_exceptions_list_changes(postgres, db_conn, tmpdir, mocked_con
                               status='success', extra_metadata={})
     # Run dirbs-listgen with --base 900, should throw an exception
     rows, _ = _run_list_gen_rows_run_id(db_conn, tmpdir, mocked_config, 'run1', base_run_id=900)
-    assert rows == ['imei,imsi,change_type\n', '12345678901234,12345678901234,removed\n']
+    assert rows == ['imei,imsi,msisdn,change_type\n', '12345678901234,12345678901234,12345678901234,removed\n']
     # Run dirbs-listgen with --base 1000, should throw an exception
     rows, _ = _run_list_gen_rows_run_id(db_conn, tmpdir, mocked_config, 'run2', base_run_id=1000)
-    assert rows == ['imei,imsi,change_type\n']
+    assert rows == ['imei,imsi,msisdn,change_type\n']
     # Run dirbs-listgen with --base 1003, should be no change
     rows, _ = _run_list_gen_rows_run_id(db_conn, tmpdir, mocked_config, 'run3', base_run_id=1003)
-    assert rows == ['imei,imsi,change_type\n']
+    assert rows == ['imei,imsi,msisdn,change_type\n']
     # Run dirbs-listgen with --base 1004, should be no change
     rows, _ = _run_list_gen_rows_run_id(db_conn, tmpdir, mocked_config, 'run4', base_run_id=1004)
-    assert rows == ['imei,imsi,change_type\n', '12345678901234,12345678901234,removed\n']
+    assert rows == ['imei,imsi,msisdn,change_type\n', '12345678901234,12345678901234,12345678901234,removed\n']
     # Run dirbs-listgen with --base 1112, should be no change
     rows, _ = _run_list_gen_rows_run_id(db_conn, tmpdir, mocked_config, 'run5', base_run_id=1112)
-    assert rows == ['imei,imsi,change_type\n']
+    assert rows == ['imei,imsi,msisdn,change_type\n']
     # Run dirbs-listgen with --base 1113 should be "removed"
     rows, _ = _run_list_gen_rows_run_id(db_conn, tmpdir, mocked_config, 'run6', base_run_id=1113)
-    assert rows == ['imei,imsi,change_type\n', '12345678901234,12345678901234,removed\n']
+    assert rows == ['imei,imsi,msisdn,change_type\n', '12345678901234,12345678901234,12345678901234,removed\n']
     # Run dirbs-listgen with --base 1116 should be no change.
     rows, _ = _run_list_gen_rows_run_id(db_conn, tmpdir, mocked_config, 'run7', base_run_id=1116)
-    assert rows == ['imei,imsi,change_type\n']
+    assert rows == ['imei,imsi,msisdn,change_type\n']
 
 
 @pytest.mark.parametrize('classification_data',
@@ -1181,10 +1181,10 @@ def test_store_list_in_db_blacklist(classification_data, db_conn, tmpdir, mocked
                                             {'mcc': '310', 'mnc': '03'}],
                              extract=False),
                            PairListParams(
-                               content='imei,imsi\n'
-                                       '811111013136460,111018001111111\n'
-                                       '311111060451100,111025111111111\n'
-                                       '411111013659809,310035111111111'))],
+                               content='imei,imsi,msisdn\n'
+                                       '811111013136460,111018001111111,444444444444441\n'
+                                       '311111060451100,111025111111111,444444444444442\n'
+                                       '411111013659809,310035111111111,444444444444443'))],
                          indirect=True)
 def test_store_list_in_db_exception_list(operator_data_importer, mocked_config,
                                          pairing_list_importer, logger, db_conn, tmpdir):
@@ -1197,19 +1197,19 @@ def test_store_list_in_db_exception_list(operator_data_importer, mocked_config,
     import_data(pairing_list_importer, 'pairing_list', 3, db_conn, logger)
     _cli_listgen_helper(db_conn, tmpdir, 'run_1', mocked_config, date='20160203')
     with db_conn, db_conn.cursor() as cursor:
-        cursor.execute("""SELECT imei_norm, imsi
+        cursor.execute("""SELECT imei_norm, imsi, msisdn
                             FROM gen_exceptions_list('operator1')
                         ORDER BY imei_norm""")
-        exception_list_entries = {(x.imei_norm, x.imsi) for x in cursor.fetchall()}
-        assert exception_list_entries == {('41111101365980', '310035111111111'),
-                                          ('81111101313646', '111018001111111')}
+        exception_list_entries = {(x.imei_norm, x.imsi, x.msisdn) for x in cursor.fetchall()}
+        assert exception_list_entries == {('41111101365980', '310035111111111', '444444444444443'),
+                                          ('81111101313646', '111018001111111', '444444444444441')}
 
-        cursor.execute("""SELECT imei_norm, imsi
+        cursor.execute("""SELECT imei_norm, imsi, msisdn
                             FROM gen_exceptions_list('operator2')
                         ORDER BY imei_norm""")
-        exception_list_entries = {(x.imei_norm, x.imsi) for x in cursor.fetchall()}
-        assert exception_list_entries == {('31111106045110', '111025111111111'),
-                                          ('41111101365980', '310035111111111')}
+        exception_list_entries = {(x.imei_norm, x.imsi, x.msisdn) for x in cursor.fetchall()}
+        assert exception_list_entries == {('31111106045110', '111025111111111', '444444444444442'),
+                                          ('41111101365980', '310035111111111', '444444444444443')}
 
 
 @pytest.mark.parametrize('operator_data_importer, classification_data',
@@ -1306,10 +1306,10 @@ def test_basic_cli_listgen_zip_files(postgres, classification_data, db_conn, tmp
                                             {'mcc': '310', 'mnc': '03'}],
                              extract=False),
                            PairListParams(
-                               content='imei,imsi\n'
-                                       '811111013136460,111018001111111\n'
-                                       '311111060451100,111025111111111\n'
-                                       '411111013659809,310035111111111'))],
+                               content='imei,imsi,msisdn\n'
+                                       '811111013136460,111018001111111,555555555555551\n'
+                                       '311111060451100,111025111111111,555555555555552\n'
+                                       '411111013659809,310035111111111,555555555555553'))],
                          indirect=True)
 def test_exception_listgen_no_home_network(postgres, operator_data_importer, mocked_config,
                                            pairing_list_importer, logger, db_conn, tmpdir):
@@ -1325,23 +1325,23 @@ def test_exception_listgen_no_home_network(postgres, operator_data_importer, moc
     with open(fn, 'r') as file:
         rows = file.readlines()
         assert len(rows) == 3
-        assert ('81111101313646,111018001111111\n') in rows
-        assert ('41111101365980,310035111111111\n') in rows
+        assert ('81111101313646,111018001111111,555555555555551\n') in rows
+        assert ('41111101365980,310035111111111,555555555555553\n') in rows
 
     fn = find_file_in_dir('*exceptions_operator2.csv', dir_path)
     # Check IMSI matching operator2 prefix is added to correct exception list
     with open(fn, 'r') as file:
         rows = file.readlines()
         assert len(rows) == 3
-        assert ('31111106045110,111025111111111\n') in rows
-        assert ('41111101365980,310035111111111\n') in rows
+        assert ('31111106045110,111025111111111,555555555555552\n') in rows
+        assert ('41111101365980,310035111111111,555555555555553\n') in rows
 
     fn = find_file_in_dir('*exceptions_operator3.csv', dir_path)
     # Check IMSI matching operator2 prefix is added to correct exception list
     with open(fn, 'r') as file:
         rows = file.readlines()
         assert len(rows) == 2
-        assert ('41111101365980,310035111111111\n') in rows
+        assert ('41111101365980,310035111111111,555555555555553\n') in rows
 
 
 @pytest.mark.parametrize('operator_data_importer, pairing_list_importer, classification_data',
@@ -1355,10 +1355,10 @@ def test_exception_listgen_no_home_network(postgres, operator_data_importer, moc
                              operator='operator1',
                              extract=False),
                            PairListParams(
-                               content='imei,imsi\n'
-                                       '811111013136460,111018001111111\n'
-                                       '359000000000000,111015113222222\n'
-                                       '357756065985824,111015113333333'),
+                               content='imei,imsi,msisdn\n'
+                                       '811111013136460,111018001111111,666666666666661\n'
+                                       '359000000000000,111015113222222,666666666666662\n'
+                                       '357756065985824,111015113333333,666666666666663'),
                            'classification_state/imei_api_class_state_v2.csv')],
                          indirect=True)
 def test_exception_listgen_with_only_blacklisted_imeis_for_valid_conditions(postgres, operator_data_importer,
@@ -1394,10 +1394,10 @@ def test_exception_listgen_with_only_blacklisted_imeis_for_valid_conditions(post
         # Assert two rows in file; with one being the header.
         assert len(rows) == 2
         # Check non-blacklisted IMEI on the pairing list is not on the exception list
-        assert ('81111101313646,111018001111111\n') not in rows
-        assert ('35775606598582,111015113333333\n') not in rows
+        assert ('81111101313646,111018001111111,666666666666661\n') not in rows
+        assert ('35775606598582,111015113333333,666666666666663\n') not in rows
         # Check IMEI on the blacklist is on the exception list
-        assert ('35900000000000,111015113222222\n') in rows
+        assert ('35900000000000,111015113222222,666666666666662\n') in rows
 
 
 @pytest.mark.parametrize('operator_data_importer, pairing_list_importer, classification_data',
@@ -1411,10 +1411,10 @@ def test_exception_listgen_with_only_blacklisted_imeis_for_valid_conditions(post
                              operator='operator1',
                              extract=False),
                            PairListParams(
-                               content='imei,imsi\n'
-                                       '811111013136460,111018001111111\n'
-                                       '359000000000000,111015113222222\n'
-                                       '357756065985824,111015113333333'),
+                               content='imei,imsi,msisdn\n'
+                                       '811111013136460,111018001111111,777777777777771\n'
+                                       '359000000000000,111015113222222,777777777777772\n'
+                                       '357756065985824,111015113333333,777777777777773'),
                            'classification_state/imei_api_class_state_v1.csv')],
                          indirect=True)
 def test_exception_listgen_ignores_invalid_conditions(postgres, operator_data_importer, pairing_list_importer,
@@ -1446,7 +1446,7 @@ def test_exception_listgen_ignores_invalid_conditions(postgres, operator_data_im
         rows = file.readlines()
         # IMEI '35900000000000' on the blacklist should be on the exception list but is ignored
         # because the condition name is not a valid one (stolen_list)
-        assert ('35900000000000,111015113222222\n') not in rows
+        assert ('35900000000000,111015113222222,777777777777772\n') not in rows
 
 
 @pytest.mark.parametrize('operator_data_importer, classification_data',
@@ -1748,10 +1748,10 @@ def test_blacklist_listgen(postgres, classification_data, db_conn, tmpdir, mocke
                                             {'mcc': '310', 'mnc': '03'}],
                              extract=False),
                            PairListParams(
-                               content='imei,imsi\n'
-                                       '811111013136460,111018001111111\n'
-                                       '311111060451100,111025111111111\n'
-                                       '411111013659809,310035111111111'))],
+                               content='imei,imsi,msisdn\n'
+                                       '811111013136460,111018001111111,888888888888881\n'
+                                       '311111060451100,111025111111111,888888888888882\n'
+                                       '411111013659809,310035111111111,888888888888883'))],
                          indirect=True)
 def test_exception_listgen_with_luhn_check_digit(postgres, operator_data_importer, mocked_config, monkeypatch,
                                                  pairing_list_importer, logger, db_conn, tmpdir):
@@ -1776,16 +1776,16 @@ def test_exception_listgen_with_luhn_check_digit(postgres, operator_data_importe
     fn = find_file_in_dir('*exceptions_operator1.csv', dir_path)
     with open(fn, 'r') as file:
         rows = file.readlines()
-        assert (imei_luhn_one + ',111018001111111\n') in rows
+        assert (imei_luhn_one + ',111018001111111,888888888888881\n') in rows
         # Check IMSI not conforming to any operator prefix within config file,
         # but associated IMEI seen in operator data; is added to correct exception list
-        assert (imei_luhn_three + ',310035111111111\n') in rows
+        assert (imei_luhn_three + ',310035111111111,888888888888883\n') in rows
 
     # Check IMSI matching operator2 prefix is added to correct exception list
     fn = find_file_in_dir('*exceptions_operator2.csv', dir_path)
     with open(fn, 'r') as file:
         rows = file.readlines()
-        assert (imei_luhn_two + ',111025111111111\n') in rows
+        assert (imei_luhn_two + ',111025111111111,888888888888882\n') in rows
 
 
 def test_luhn_check_digit_function(db_conn):
@@ -2123,9 +2123,9 @@ def test_listgen_luhn_check_hex_character(postgres, operator_data_importer, mock
 
 @pytest.mark.parametrize('pairing_list_importer, classification_data',
                          [(PairListParams(
-                             content='imei,imsi\n'
-                                     '86222222222226,111018001111111\n'
-                                     '35000000000000,310035111111111'),
+                             content='imei,imsi,msisdn\n'
+                                     '86222222222226,111018001111111,999999999999911\n'
+                                     '35000000000000,310035111111111,999999999999912'),
                            'classification_state/imei_api_class_state.csv')],
                          indirect=True)
 def test_blacklist_with_pairing_list(postgres, pairing_list_importer, classification_data, logger, db_conn, tmpdir,
@@ -2501,6 +2501,153 @@ def test_amnesty_enabled_listgen(postgres, operator_data_importer, stolen_list_i
     assert ('35111111111110', '20170121', 'not_registered|stolen', 'changed\n') in rows
 
 
+@pytest.mark.parametrize('pairing_list_importer',
+                         [PairListParams(content='imei,imsi,msisdn\n'
+                                                 '345267865342911,111093876523467,999999999999931\n'
+                                                 '345267865342922,111093876523468,999999999999932\n'
+                                                 '345267865342933,111093876523469,999999999999933\n')],
+                         indirect=True)
+@pytest.mark.parametrize('barred_list_importer',
+                         [BarredListParams(content='imei\n'
+                                                   '345267865342922')],
+                         indirect=True)
+def test_exception_list_barred_imeis_restriction(postgres, pairing_list_importer, barred_list_importer,
+                                                 mocked_config, logger, db_conn, tmpdir, monkeypatch):
+    """Verify that the barred_imeis restriction functionality works correctly on exceptions lists."""
+    pairing_list_importer.import_data()
+    barred_list_importer.import_data()
+
+    # enable the check to allow barred imeis in exception list which are also in pairing list
+    options_list = []
+    monkeypatch.setattr(mocked_config.listgen_config, 'include_barred_imeis', True)
+    output_dir = str(tmpdir)
+    options_list.append(output_dir)
+    runner = CliRunner()
+    result = runner.invoke(dirbs_listgen_cli, options_list, obj={'APP_CONFIG': mocked_config})
+    assert result.exit_code == 0
+
+    # find the listgen directory and verify the content
+    fn = find_subdirectory_in_dir('listgen__*', output_dir)
+    dir_path = os.path.join(output_dir, fn)
+    fl = find_file_in_dir('*exceptions_operator1.zip', dir_path)
+
+    # extract the zip file found in directory and verify
+    expected_list = [['imei', 'imsi', 'msisdn'],
+                     ['34526786534291', '111093876523467', '999999999999931'],
+                     ['34526786534292', '111093876523468', '999999999999932'],
+                     ['34526786534293', '111093876523469', '999999999999933']]
+
+    with zipfile.ZipFile(fl) as zipf_ref:
+        ext_path = tmpdir.mkdir('exceptions_lists')
+        zipf_ref.extractall(ext_path)
+        excp_file = find_file_in_dir('*exceptions_operator1.csv', ext_path)
+        with open(excp_file, 'r') as exp_file:
+            reader = csv.reader(exp_file)
+            rows = list(reader)
+            assert all([x in rows for x in expected_list])
+
+    # Now turn off barred imeis in exceptions lists
+    options_list = []
+    monkeypatch.setattr(mocked_config.listgen_config, 'include_barred_imeis', False)
+    output_dir = str(tmpdir.mkdir('restricted_lists'))
+    options_list.append(output_dir)
+    runner = CliRunner()
+    result = runner.invoke(dirbs_listgen_cli, options_list, obj={'APP_CONFIG': mocked_config})
+    assert result.exit_code == 0
+
+    # find the listgen directory and verify the content
+    fn = find_subdirectory_in_dir('listgen__*', output_dir)
+    dir_path = os.path.join(output_dir, fn)
+    fl = find_file_in_dir('*exceptions_operator1.zip', dir_path)
+
+    # extract the zip file found in directory and verify
+    expected_list = [['imei', 'imsi', 'msisdn'],
+                     ['34526786534291', '111093876523467', '999999999999931'],
+                     ['34526786534293', '111093876523469', '999999999999933']]
+
+    with zipfile.ZipFile(fl) as zipf_ref:
+        ext_path = tmpdir.mkdir('exceptions_lists_restricted')
+        zipf_ref.extractall(ext_path)
+        excp_file = find_file_in_dir('*exceptions_operator1.csv', ext_path)
+        with open(excp_file, 'r') as exp_file:
+            reader = csv.reader(exp_file)
+            rows = list(reader)
+            assert all([x in rows for x in expected_list])
+
+
+@pytest.mark.parametrize('pairing_list_importer',
+                         [PairListParams(content='imei,imsi,msisdn\n'
+                                                 '345267865342941,111093876523467,999999999999921\n'
+                                                 '345267865342952,111093876523468,999999999999922\n'
+                                                 '345267865342963,111093876523469,999999999999923\n')],
+                         indirect=True)
+@pytest.mark.parametrize('barred_tac_list_importer',
+                         [BarredTacListParams(content='tac\n'
+                                                      '34526786')],
+                         indirect=True)
+def test_exception_list_barred_tac_restriction(postgres, pairing_list_importer, barred_tac_list_importer,
+                                               mocked_config, logger, db_conn, tmpdir, monkeypatch):
+    """Verify that the barred restriction on exceptions lists also appears on barred tacs."""
+    pairing_list_importer.import_data()
+    barred_tac_list_importer.import_data()
+
+    # enable the check to allow barred imeis in exception list which are also in pairing list
+    options_list = []
+    monkeypatch.setattr(mocked_config.listgen_config, 'include_barred_imeis', True)
+    output_dir = str(tmpdir)
+    options_list.append(output_dir)
+    runner = CliRunner()
+    result = runner.invoke(dirbs_listgen_cli, options_list, obj={'APP_CONFIG': mocked_config})
+    assert result.exit_code == 0
+
+    # find the listgen directory and verify the content
+    fn = find_subdirectory_in_dir('listgen__*', output_dir)
+    dir_path = os.path.join(output_dir, fn)
+    fl = find_file_in_dir('*exceptions_operator1.zip', dir_path)
+
+    # extract the zip file found in directory and verify
+    expected_list = [['imei', 'imsi', 'msisdn'],
+                     ['34526786534294', '111093876523467', '999999999999921'],
+                     ['34526786534295', '111093876523468', '999999999999922'],
+                     ['34526786534296', '111093876523469', '999999999999923']]
+
+    with zipfile.ZipFile(fl) as zipf_ref:
+        ext_path = tmpdir.mkdir('exceptions_lists_tacs')
+        zipf_ref.extractall(ext_path)
+        excp_file = find_file_in_dir('*exceptions_operator1.csv', ext_path)
+        with open(excp_file, 'r') as exp_file:
+            reader = csv.reader(exp_file)
+            rows = list(reader)
+            print(rows)
+            assert all([x in rows for x in expected_list])
+
+    # Now turn off barred imeis in exceptions lists
+    options_list = []
+    monkeypatch.setattr(mocked_config.listgen_config, 'include_barred_imeis', False)
+    output_dir = str(tmpdir.mkdir('restricted_lists_tacs'))
+    options_list.append(output_dir)
+    runner = CliRunner()
+    result = runner.invoke(dirbs_listgen_cli, options_list, obj={'APP_CONFIG': mocked_config})
+    assert result.exit_code == 0
+
+    # find the listgen directory and verify the content
+    fn = find_subdirectory_in_dir('listgen__*', output_dir)
+    dir_path = os.path.join(output_dir, fn)
+    fl = find_file_in_dir('*exceptions_operator1.zip', dir_path)
+
+    # extract the zip file found in directory and verify
+    expected_list = [['imei', 'imsi', 'msisdn']]
+
+    with zipfile.ZipFile(fl) as zipf_ref:
+        ext_path = tmpdir.mkdir('exceptions_lists_restricted')
+        zipf_ref.extractall(ext_path)
+        excp_file = find_file_in_dir('*exceptions_operator1.csv', ext_path)
+        with open(excp_file, 'r') as exp_file:
+            reader = csv.reader(exp_file)
+            rows = list(reader)
+            assert all([x in rows for x in expected_list])
+
+
 def test_sanity_checks_operators(per_test_postgres, mocked_config, tmpdir, logger, monkeypatch):
     """Verify that the sanity checks are performed on operators."""
     options_list = []
@@ -2608,88 +2755,3 @@ def test_sanity_checks_loopback_days(per_test_postgres, mocked_config, tmpdir, l
     monkeypatch.setattr(mocked_config.listgen_config, 'lookback_days', 90)
     result = runner.invoke(dirbs_listgen_cli, options_list, obj={'APP_CONFIG': mocked_config})
     assert result.exit_code == 1
-
-
-def test_non_active_pairs_default_behaviour(per_test_postgres, logger, mocked_config, monkeypatch, tmpdir, db_conn):
-    """Verify that Non Active Pairs list is not generated always until exclusively specified."""
-    # first generate list without activating non active pairs in config, default value should be 0
-    # we expect that the list is not generated
-    assert mocked_config.listgen_config.non_active_pairs == 0
-    _, output_dir = _cli_listgen_helper(db_conn, tmpdir, 'non_active_pairs_run_1', mocked_config, date='20170101')
-    assert not _read_rows_from_file('non_active_pairs.csv', tmpdir, output_dir=output_dir)
-
-    # now we activate non_active_pairs in config and assign a value 0, expecting list will still not
-    # be generated, monkey patching listgen config
-    list_gen_config = {
-        'lookback_days': 180,
-        'restrict_exceptions_list_to_blacklisted_imeis': False,
-        'generate_check_digit': False,
-        'output_invalid_imeis': True,
-        'non_active_pairs': 0
-    }
-    list_gen_config = from_listgen_dict_to_listgen_conf(list_gen_config)
-    monkeypatch.setattr(mocked_config, 'listgen_config', list_gen_config)
-    assert mocked_config.listgen_config.non_active_pairs == 0
-    _, output_dir = _cli_listgen_helper(db_conn, tmpdir, 'non_active_pairs_run_2', mocked_config, date='20170101')
-    assert not _read_rows_from_file('non_active_pairs.csv', tmpdir, output_dir=output_dir)
-
-    # increasing the non active pairs value should generate a non active pairs list
-    monkeypatch.setattr(mocked_config.listgen_config, 'non_active_pairs', 20)
-    assert mocked_config.listgen_config.non_active_pairs == 20
-    _, output_dir = _cli_listgen_helper(db_conn, tmpdir, 'non_active_pairs_run_3', mocked_config, date='20170101')
-    assert _read_rows_from_file('non_active_pairs.csv', tmpdir, output_dir=output_dir)
-
-
-@pytest.mark.parametrize('pairing_list_importer',
-                         [PairListParams(content='imei,imsi\n'
-                                                 '12345678901230,11107678901234\n'
-                                                 '12345678901231,11108678901234\n'
-                                                 '12345678901232,11109678901234\n'
-                                                 '12345678901233,11101678901234\n'
-                                                 '12345678901234,11101678901234\n'
-                                                 '12345678901235,11102678901234\n'
-                                                 '12345678901236,11102678901234\n')],
-                         indirect=True)
-@pytest.mark.parametrize('operator_data_importer',
-                         [OperatorDataParams(
-                             content='date,imei,imsi,msisdn\n'
-                                     '20190221,12345678901228,11105678901234,1\n'
-                                     '20190121,12345678901229,11106678901234,1\n'
-                                     '20190121,12345678901230,11107678901234,1\n'
-                                     '20180812,12345678901230,11107678901234,1\n'
-                                     '20180812,12345678901231,11108678901234,1\n'
-                                     '20180812,12345678901232,11109678901234,1',
-                             extract=False,
-                             perform_unclean_checks=False,
-                             perform_leading_zero_check=False,
-                             perform_region_checks=False,
-                             perform_home_network_check=False,
-                             operator='operator1'
-                         )],
-                         indirect=True)
-def test_non_active_pairs_listgen(per_test_postgres, mocked_config, logger, monkeypatch, tmpdir, db_conn,
-                                  pairing_list_importer, operator_data_importer):
-    """Verify non active pairs list generation functionality works correctly."""
-    operator_data_importer.import_data()
-    pairing_list_importer.import_data()
-
-    # monkey patch non active pairs value
-    monkeypatch.setattr(mocked_config.listgen_config, 'non_active_pairs', 10)
-    assert mocked_config.listgen_config.non_active_pairs == 10
-    _, output_dir = _cli_listgen_helper(db_conn, tmpdir, 'non_active_pairs_run_4', mocked_config, date='20190101')
-    rows = _read_rows_from_file('non_active_pairs.csv', tmpdir, output_dir=output_dir)
-    rows = rows = [tuple(map(str, i.split(',')))[:7] for i in rows]
-    assert len(rows) == 4
-    assert ('12345678901230', '11107678901234\n') in rows
-    assert ('12345678901232', '11109678901234\n') in rows
-    assert ('12345678901231', '11108678901234\n') in rows
-
-    # changing the current date with listgen
-    _, output_dir = _cli_listgen_helper(db_conn, tmpdir, 'non_active_pairs_run_5', mocked_config, date='20190221')
-    rows = _read_rows_from_file('non_active_pairs.csv', tmpdir, output_dir=output_dir)
-    rows = rows = [tuple(map(str, i.split(',')))[:7] for i in rows]
-    assert len(rows) == 5
-    assert ('12345678901230', '11107678901234\n') in rows
-    assert ('12345678901230', '11107678901234\n') in rows
-    assert ('12345678901232', '11109678901234\n') in rows
-    assert ('12345678901231', '11108678901234\n') in rows

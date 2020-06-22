@@ -79,6 +79,7 @@ class OperatorDataImporter(AbstractImporter):
                  perform_region_checks=True,
                  perform_home_network_check=True,
                  perform_historic_checks=True,
+                 perform_auto_analyze=True,
                  **kwargs):
         """Constructor."""
         assert mcc_mnc_pairs is not None and len(mcc_mnc_pairs) > 0
@@ -118,6 +119,9 @@ class OperatorDataImporter(AbstractImporter):
         self._perform_historic_checks = perform_historic_checks
         # We don't want to get any global row count for this imported as it could be horrendously slow
         self._need_previous_count_for_stats = False
+        # By default the system will automatically run Analyze on monthly_network_triplets_country,
+        # network_imeis and monthly_network_triplets_per_mno of the data
+        self._perform_auto_analyze = perform_auto_analyze
         # These will be set to non-None during import
         self._min_connection_date = None
         self._max_connection_date = None
@@ -726,10 +730,17 @@ class OperatorDataImporter(AbstractImporter):
 
             #
             # ANALYZE the parent tables -- for partitioned tables, this will also ANALYZE the children.
+            # by default the system will auto analyze the tables, if disabled the DBA should take care of the activity
             #
-            executor.submit(self._analyze_job, 'monthly_network_triplets_country')
-            executor.submit(self._analyze_job, 'monthly_network_triplets_per_mno_{0}'.format(self._operator_id))
-            executor.submit(self._analyze_job, 'network_imeis')
+            if self._perform_auto_analyze:
+                executor.submit(self._analyze_job, 'monthly_network_triplets_country')
+                executor.submit(self._analyze_job, 'monthly_network_triplets_per_mno_{0}'.format(self._operator_id))
+                executor.submit(self._analyze_job, 'network_imeis')
+            else:
+                self._logger.warning('Skipping auto analyze of associated historic tables...')
+                self._logger.debug('Skipping auto analyze of monthly_network_triplets_country...\n'
+                                   'Skipping auto analyze of monthly_network_triplets_country_per_mno_{0}...\n'
+                                   'Skipping auto analyze of network_imeis...'.format(self._operator_id))
 
         return inserted_triplet_count, updated_triplet_count, 0
 

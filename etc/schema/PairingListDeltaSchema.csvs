@@ -1,5 +1,5 @@
 version 1.2
-@totalColumns 3 @separator ',' @ignoreColumnNameCase @permitEmpty
+@totalColumns 4 @separator ',' @ignoreColumnNameCase @permitEmpty
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 This schema is for the validation of pairing list data
 
@@ -53,6 +53,8 @@ validate PairingList.csv PairingListSchema.csvs
 imei: regex("^[0-9A-Fa-f\*\#]{1,16}$")
 // imsi: Validator accepts 1 - 15 digits.
 imsi: regex("^[0-9]{1,15}$")
+// msisdn: to support pairing with msisdn, Validator accepts 1-15 digits
+msisdn: regex("^[0-9]{1,15}$")
 // change_type: Validator accepts either: add or remove
 change_type: regex("^(add|remove)$")
 

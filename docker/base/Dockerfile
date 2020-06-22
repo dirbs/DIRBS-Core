@@ -88,7 +88,7 @@ RUN set -x && \
 #
 RUN set -x && \
     echo 'test -z "$VIRTUAL_ENV" && source /home/dirbs/dirbs-venv/bin/activate' >> /home/dirbs/.bashrc && \
-    pyvenv /home/dirbs/dirbs-venv && \
+    python3 -m venv /home/dirbs/dirbs-venv && \
     pip3 install --upgrade pip setuptools && \
     pip3 install wheel && \
     chown -R dirbs.dirbs /home/dirbs/.bashrc /home/dirbs/dirbs-venv && \

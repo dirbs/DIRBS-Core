@@ -1,6 +1,3 @@
-.. image:: https://avatars0.githubusercontent.com/u/42587891?s=100&v=4
-  
-
 Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
 
 All rights reserved.
@@ -36,7 +33,11 @@ DIRBS
 
 Documentation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-DIRBS Core release wise documentation can be found `here <https://github.com/dirbs/Documentation/tree/master/Core>`_
+`DIRBS Core Release_9.0.0_Installation_Guide.pdf <https://github.com/dirbs/Documentation/blob/master/Core/DIRBS%20Core%20Release_9.0.0_Installation_Guide.pdf>`_
+
+`DIRBS Core Release_9.0.0_User_Guide.pdf <https://github.com/dirbs/Documentation/blob/master/Core/DIRBS%20Core%20Release_9.0.0_User_Guide.pdf>`_
+
+`DIRBS_Core_API_Specification.pdf <https://github.com/dirbs/Documentation/blob/master/Core/DIRBS_Core_API_Specification.pdf>`_
 
 
 Directory structure

@@ -66,18 +66,19 @@ class PairingListImporter(BaseDeltaImporter):
                                              row_id         BIGSERIAL NOT NULL,
                                              imei           TEXT,
                                              imei_norm      TEXT NOT NULL,
-                                             imsi           TEXT NOT NULL
+                                             imsi           TEXT NOT NULL,
+                                             msisdn         TEXT NOT NULL
                                             )"""
 
     @property
     def _pk_field_names(self):
         """Overrides BaseDeltaImporter._pk_field_names."""
-        return ['imei_norm', 'imsi']
+        return ['imei_norm', 'imsi', 'msisdn']
 
     @property
     def _input_csv_field_names(self):
         """Overrides BaseDeltaImporter._input_csv_field_names."""
-        return ['imei', 'imsi']
+        return ['imei', 'imsi', 'msisdn']
 
     @property
     def _supports_imei_shards(self):

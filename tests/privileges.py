@@ -37,7 +37,8 @@ from flask import url_for
 import pytest
 from click.testing import CliRunner
 
-from dirbs.config import DBConfig, CatalogConfig
+from dirbs.config.db import DBConfig
+from dirbs.config.catalog import CatalogConfig
 from dirbs.cli.importer import cli as dirbs_import_cli
 from dirbs.cli.listgen import cli as dirbs_listgen_cli
 from dirbs.cli.classify import cli as dirbs_classify_cli
@@ -138,10 +139,10 @@ def test_listgen(per_test_postgres, tmpdir, logger, mocked_statsd, db_user, mock
                           logger,
                           mocked_statsd,
                           PairListParams(
-                              content='imei,imsi\n'
-                                      '811111013136460,111018001111111\n'
-                                      '359000000000000,111015113222222\n'
-                                      '357756065985824,111015113333333')) as imp:
+                              content='imei,imsi,msisdn\n'
+                                      '811111013136460,111018001111111,234555555555550\n'
+                                      '359000000000000,111015113222222,234555555555551\n'
+                                      '357756065985824,111015113333333,234555555555552')) as imp:
             imp.import_data()
 
     # Now run listgen as requested user
@@ -574,10 +575,10 @@ def test_imei_api_pairing_list(per_test_flask_app, per_test_postgres, logger, mo
                           logger,
                           mocked_statsd,
                           PairListParams(
-                              content='imei,imsi\n'
-                                      '811111013136460,111018001111111\n'
-                                      '359000000000000,111015113222222\n'
-                                      '357756065985824,111015113333333')) as imp:
+                              content='imei,imsi,msisdn\n'
+                                      '811111013136460,111018001111111,222222222222222\n'
+                                      '359000000000000,111015113222222,222222222222223\n'
+                                      '357756065985824,111015113333333,222222222222224')) as imp:
             imp.import_data()
 
     if api_version == 'v1':

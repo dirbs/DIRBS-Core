@@ -220,6 +220,7 @@ class IMEIInfo(Schema):
     brand_name = fields.String(required=False)
     device_type = fields.String(required=False)
     radio_interface = fields.String(required=False)
+    associated_imeis = fields.List(fields.String)
 
 
 class IMEIArgs(Schema):

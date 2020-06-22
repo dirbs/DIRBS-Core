@@ -42,7 +42,8 @@ import time
 import click
 import psycopg2
 
-from dirbs.config import ConfigParser, ConfigParseException
+from dirbs.config import ConfigParser
+from dirbs.config.common import ConfigParseException
 import dirbs.metadata as metadata
 import dirbs.logging
 import dirbs.utils as utils

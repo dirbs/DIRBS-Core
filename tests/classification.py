@@ -41,18 +41,19 @@ import pytest
 from click.testing import CliRunner
 
 from dirbs.cli.prune import cli as dirbs_prune_cli
-from dirbs.config import OperatorConfig
+from dirbs.config.region import OperatorConfig
 from dirbs.cli.classify import cli as dirbs_classify_cli
 from dirbs.importer.operator_data_importer import OperatorDataImporter
 from dirbs.importer.golden_list_importer import GoldenListImporter
-from dirbs.importer.subscriber_reg_list_importer import SubscribersListImporter
+from dirbs.importer.subscriber_reg_list_importer import SubscribersListImporter  # noqa: F401
 from dirbs.cli.listgen import cli as dirbs_listgen_cli
 from _fixtures import *  # noqa: F403, F401
 from _helpers import get_importer, expect_success, matching_imeis_for_cond_name, find_subdirectory_in_dir, \
     logger_stream_contents, logger_stream_reset, invoke_cli_classify_with_conditions_helper, \
     from_cond_dict_list_to_cond_list, find_file_in_dir, from_op_dict_list_to_op_list, from_amnesty_dict_to_amnesty_conf
 from _importer_params import GSMADataParams, OperatorDataParams, StolenListParams, \
-    RegistrationListParams, GoldenListParams, BarredListParams, BarredTacListParams, SubscribersListParams
+    RegistrationListParams, GoldenListParams, BarredListParams, BarredTacListParams, SubscribersListParams, \
+    DeviceAssociationListParams, MonitoringListParams
 
 base_dummy_cond_config = {
     'label': 'dummy_test_condition',
@@ -2842,3 +2843,90 @@ def test_daily_avg_uid(db_conn, operator_data_importer, subscribers_list_importe
                                                                classify_options=['--no-safety-check'],
                                                                db_conn=db_conn, curr_date='20191025')
     assert matched_imeis == ['35236015100001', '86422502001110', '86422502012303', '86544602033101']
+
+
+@pytest.mark.parametrize('operator_data_importer',
+                         [OperatorDataParams(
+                             filename='operator1_not_on_association_list_20190925_20191025.csv',
+                             operator='1',
+                             extract=False,
+                             perform_leading_zero_check=False,
+                             mcc_mnc_pairs=[{'mcc': '111', 'mnc': '04'}],
+                             perform_unclean_checks=False,
+                             perform_file_daterange_check=False,
+                             perform_region_checks=False,
+                             perform_home_network_check=False,
+                             perform_historic_checks=False
+                         )],
+                         indirect=True)
+@pytest.mark.parametrize('device_association_list_importer',
+                         [DeviceAssociationListParams(
+                             filename='association_list_not_on_association_list.csv',
+                             extract=False
+                         )],
+                         indirect=True)
+def test_not_on_association_list(db_conn, operator_data_importer, device_association_list_importer, mocked_config,
+                                 tmpdir, logger, monkeypatch, metadata_db_conn, mocked_statsd):
+    """Verify that the not_on_association_list dimension works correctly."""
+    operator_data_importer.import_data()
+    device_association_list_importer.import_data()
+
+    # configure condition
+    condition = [{
+        'label': 'not_on_association_list',
+        'reason': 'device not associated to uid',
+        'dimensions': [{
+            'module': 'not_on_association_list'
+        }],
+        'max_allowed_matching_ratio': 1.0,
+        'blocking': True,
+        'grace_period_days': 10
+    }]
+
+    # invoke classification and get back results
+    matched_imeis = invoke_cli_classify_with_conditions_helper(condition, mocked_config, monkeypatch,
+                                                               classify_options=['--no-safety-check'],
+                                                               db_conn=db_conn, curr_date='20191025')
+    assert matched_imeis == ['35236015100006', '35236015100007', '35236015100008', '35236015100009',
+                             '35236015100010', '35236015100011', '35236015100012', '35236015100013']
+
+
+@pytest.mark.parametrize('operator_data_importer',
+                         [OperatorDataParams(
+                             content='date,imei,imsi,msisdn\n'
+                                     '20161115,10000000000000,123456789012345,123456789012345\n'
+                                     '20161115,025896314741025,123456789012345,123456789012345\n'
+                                     '20161115,645319782302149,123456789012345,123456789012345',
+                             extract=False,
+                             perform_unclean_checks=False,
+                             perform_region_checks=False,
+                             perform_home_network_check=False,
+                             operator='operator1'
+                         )],
+                         indirect=True)
+@pytest.mark.parametrize('monitoring_list_importer',
+                         [MonitoringListParams(content='imei\n'
+                                                       '645319782302149')],
+                         indirect=True)
+def test_exists_in_monitoring_list(db_conn, operator_data_importer, monitoring_list_importer, mocked_config,
+                                   tmpdir, logger, monkeypatch, metadata_db_conn, mocked_statsd):
+    """Verify that exists_in_monitoring_list classification dimension works correctly."""
+    operator_data_importer.import_data()
+    monitoring_list_importer.import_data()
+
+    # configure condition
+    condition = [{
+        'label': 'on_monitoring',
+        'reason': 'on monitoring list',
+        'dimensions': [{
+            'module': 'exists_in_monitoring_list'
+        }],
+        'max_allowed_matching_ratio': 1.0,
+        'blocking': False,
+        'grace_period_days': 10
+    }]
+
+    matched_imeis = invoke_cli_classify_with_conditions_helper(condition, mocked_config, monkeypatch,
+                                                               classify_options=['--no-safety-check'],
+                                                               db_conn=db_conn, curr_date='20161110')
+    assert matched_imeis == ['64531978230214']

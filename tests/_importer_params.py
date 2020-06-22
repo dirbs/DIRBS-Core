@@ -197,6 +197,36 @@ class BarredListParams(ImporterParams):
         return rv
 
 
+class MonitoringListParams(ImporterParams):
+    """Import params class for monitoring list importer."""
+
+    def __init__(self, perform_historic_check=True, import_size_variation_percent=0.75,
+                 import_size_variation_absolute=-1, delta=False, perform_delta_adds_check=True,
+                 perform_delta_removes_check=True, perform_delta_updates_check=True, *args, **kwargs):
+        """Constructor."""
+        super().__init__(*args, **kwargs)
+        self.perform_historic_check = perform_historic_check
+        self.importer_name = 'monitoring_list'
+        self.import_size_variation_percent = import_size_variation_percent
+        self.import_size_variation_absolute = import_size_variation_absolute
+        self.delta = delta
+        self.perform_delta_adds_check = perform_delta_adds_check
+        self.perform_delta_removes_check = perform_delta_removes_check
+        self.perform_delta_updates_check = perform_delta_updates_check
+
+    def kwparams_as_dict(self):
+        """Overrides ImporterParams.kwparams_as_dict."""
+        rv = super(MonitoringListParams, self).kwparams_as_dict()
+        rv.update({'perform_historic_check': self.perform_historic_check,
+                   'import_size_variation_percent': self.import_size_variation_percent,
+                   'import_size_variation_absolute': self.import_size_variation_absolute,
+                   'delta': self.delta,
+                   'perform_delta_adds_check': self.perform_delta_adds_check,
+                   'perform_delta_removes_check': self.perform_delta_removes_check,
+                   'perform_delta_updates_check': self.perform_delta_updates_check})
+        return rv
+
+
 class BarredTacListParams(ImporterParams):
     """Importer params class for barred tac list importer."""
 
@@ -310,6 +340,36 @@ class SubscribersListParams(ImporterParams):
     def kwparams_as_dict(self):
         """Overrides ImporterParams.kwparams_as_dict."""
         rv = super(SubscribersListParams, self).kwparams_as_dict()
+        rv.update({'perform_historic_check': self.perform_historic_check,
+                   'import_size_variation_percent': self.import_size_variation_percent,
+                   'import_size_variation_absolute': self.import_size_variation_absolute,
+                   'delta': self.delta,
+                   'perform_delta_adds_check': self.perform_delta_adds_check,
+                   'perform_delta_removes_check': self.perform_delta_removes_check,
+                   'perform_delta_updates_check': self.perform_delta_updates_check})
+        return rv
+
+
+class DeviceAssociationListParams(ImporterParams):
+    """Importer params class for Device Association List."""
+
+    def __init__(self, perform_historic_check=True, import_size_variation_percent=0.75,
+                 import_size_variation_absolute=-1, delta=False, perform_delta_adds_check=True,
+                 perform_delta_removes_check=True, perform_delta_updates_check=True, *args, **kwargs):
+        """Constructor."""
+        super().__init__(*args, **kwargs)
+        self.perform_historic_check = perform_historic_check
+        self.importer_name = 'device_association_list'
+        self.import_size_variation_percent = import_size_variation_percent
+        self.import_size_variation_absolute = import_size_variation_absolute
+        self.delta = delta
+        self.perform_delta_adds_check = perform_delta_adds_check
+        self.perform_delta_removes_check = perform_delta_removes_check
+        self.perform_delta_updates_check = perform_delta_updates_check
+
+    def kwparams_as_dict(self):
+        """Overrides ImporterParams.kwparams_as_dict."""
+        rv = super(DeviceAssociationListParams, self).kwparams_as_dict()
         rv.update({'perform_historic_check': self.perform_historic_check,
                    'import_size_variation_percent': self.import_size_variation_percent,
                    'import_size_variation_absolute': self.import_size_variation_absolute,

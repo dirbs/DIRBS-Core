@@ -48,7 +48,7 @@ import click
 from dirbs import report_schema_version
 from dirbs.reports import CountryReport, OperatorReport, generate_monthly_report_stats
 import dirbs.cli.common as common
-from dirbs.config import OperatorConfig
+from dirbs.config.region import OperatorConfig
 import dirbs.metadata as metadata
 import dirbs.utils as utils
 import dirbs.reports.exceptions as exceptions
@@ -891,4 +891,287 @@ def stolen_violations(ctx, config, statsd, logger, run_id, conn, metadata_conn, 
     statsd.gauge('{0}runtime.per_report.blacklist_violations_stolen'.format(metrics_run_root), cp.duration)
 
     # Store metadata about the report data ID and classification run ID
+    metadata.add_optional_job_metadata(metadata_conn, command, run_id, report_outputs=report_metadata)
+
+
+def _parse_positive_int(ctx, param, value):
+    """Helper function to parse a positive integer and return."""
+    try:
+        if value is not None:
+            parsed_value = int(value)
+            if parsed_value <= 0:
+                raise click.BadParameter('--period value must be greater than 0')
+            return parsed_value
+        raise click.BadParameter('--period is req')
+    except ValueError:
+        raise click.BadParameter('--period value must be positive integer')
+
+
+@cli.command(name='non_active_pairs')  # noqa: C901
+@click.pass_context
+@common.unhandled_exception_handler
+@click.argument('period', callback=_parse_positive_int)
+@_parse_output_dir
+@common.cli_wrapper(command='dirbs-report', subcommand='non_active_pairs', required_role='dirbs_core_report')
+def non_active_pairs(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root,
+                     metrics_run_root, output_dir, period):
+    """Generate list of Non-Active pairs over specified period."""
+    metadata.add_optional_job_metadata(metadata_conn, command, run_id,
+                                       report_schema_version=report_schema_version,
+                                       output_dir=os.path.abspath(str(output_dir)))
+
+    current_date = datetime.date.today()
+    last_seen_date = datetime.date(current_date.year,
+                                   current_date.month,
+                                   current_date.day) - datetime.timedelta(period)
+    logger.info('List of None-Active Pairs with last_seen less than {0} will be generated'.format(last_seen_date))
+    report_dir = _make_report_directory(ctx, output_dir, run_id, conn, config)
+
+    with utils.CodeProfiler() as cp:
+        logger.info('Generating Non-Active Pairs report...')
+        with open(os.path.join(report_dir, 'non_active_pairs_{0}.csv'.format(last_seen_date)),
+                  'w', encoding='utf-8') as pairs_file, conn.cursor() as cursor:
+            csv_writer = csv.DictWriter(pairs_file,
+                                        fieldnames=['imei_norm', 'imsi', 'last_seen'],
+                                        extrasaction='ignore')
+            csv_writer.writeheader()
+            cursor.execute(sql.SQL("""SELECT pl.imei_norm, pl.imsi, mnt.last_seen
+                                        FROM pairing_list AS pl
+                                  INNER JOIN monthly_network_triplets_country AS mnt
+                                             ON pl.imei_norm = mnt.imei_norm
+                                         AND pl.imsi = mnt.imsi
+                                       WHERE mnt.last_seen < %s"""), [last_seen_date])
+            num_written_records = 0
+            for row_data in cursor:
+                csv_writer.writerow(row_data._asdict())
+                num_written_records += 1
+
+            cursor.execute('SELECT COUNT(*) FROM pairing_list')
+            total_records = cursor.fetchone()[0]
+            logger.info('total_records: {0}, written_records: {1}'.format(total_records, num_written_records))
+
+        report_metadata = _gen_metadata_for_reports(['non_active_pairs_{0}.csv'.format(last_seen_date)], report_dir)
+
+    statsd.gauge('{0}runtime.per_report.non_active_pairs'.format(metrics_run_root), cp.duration)
+    metadata.add_optional_job_metadata(metadata_conn, command, run_id, report_outputs=report_metadata)
+
+
+@cli.command(name='unregistered_subscribers')
+@common.parse_multiprocessing_options
+@click.pass_context
+@common.unhandled_exception_handler
+@_parse_output_dir
+@common.cli_wrapper(command='dirbs-report', subcommand='unregistered_subscribers', required_role='dirbs_core_report')
+@click.option('--newer-than',
+              default=None,
+              callback=common.validate_date,
+              help='Include imsis only when observed date on network is newer than this date (YYYYMMDD).')
+def unregistered_subscribers(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root,
+                             metrics_run_root, output_dir, newer_than):
+    """Generate per-MNO list of IMSIs that are not registered in subscribers list."""
+    _operators_configured_check(config, logger)
+    metadata.add_optional_job_metadata(metadata_conn, command, run_id,
+                                       report_schema_version=report_schema_version,
+                                       output_dir=os.path.abspath(str(output_dir)))
+    report_dir = _make_report_directory(ctx, output_dir, run_id, conn, config)
+
+    with utils.CodeProfiler() as cp:
+        logger.info('Generating per-MNO unregistered subscribers list...')
+        with contextlib.ExitStack() as stack:
+            # push files to the exit stack so that they will all be closed properly.
+            operator_ids = [o.id for o in config.region_config.operators]
+            filename_op_map = {'unregistered_subscribers_{0}.csv'.format(o): o for o in operator_ids}
+            opname_file_map = {o: stack.enter_context(open(os.path.join(report_dir, fn), 'w', encoding='utf-8'))
+                               for fn, o in filename_op_map.items()}
+
+            # create a map from operator name to csv writer
+            opname_csvwriter_map = {o: csv.writer(opname_file_map[o]) for o in operator_ids}
+
+            # write the header to each file
+            for _, writer in opname_csvwriter_map.items():
+                writer.writerow(['imsi', 'first_seen', 'last_seen'])
+
+            # query to find all the unregistered imsis across the operators
+            with conn.cursor() as cursor:
+                query = sql.SQL("""SELECT imsi, first_seen, last_seen, operator_id
+                                     FROM monthly_network_triplets_per_mno_no_null_imeis AS mno
+                                    WHERE NOT EXISTS (SELECT 1
+                                                        FROM subscribers_registration_list
+                                                       WHERE imsi = mno.imsi) {0}""")
+
+                if newer_than:
+                    newer_than_query = 'AND last_seen > %s'
+                    sql_bytes = cursor.mogrify(newer_than_query, [newer_than])
+                    date_filter_sql = sql.SQL(str(sql_bytes, conn.encoding))
+                else:
+                    date_filter_sql = sql.SQL('')
+
+                cursor.execute(query.format(date_filter_sql))
+                for res in cursor:
+                    opname_csvwriter_map[res.operator_id].writerow([res.imsi,
+                                                                    res.first_seen.strftime('%Y%m%d'),
+                                                                    res.last_seen.strftime('%Y%m%d')])
+
+        logger.info('per-MNO unregistered subscribers list generated successfully')
+        report_metadata = _gen_metadata_for_reports(list(filename_op_map.keys()), report_dir)
+
+    statsd.gauge('{0}runtime.per_report.unregistered_subscribers'.format(metrics_run_root), cp.duration)
+
+    # store metadata
+    metadata.add_optional_job_metadata(metadata_conn, command, run_id, report_outputs=report_metadata)
+
+
+@cli.command(name='classified_triplets')
+@click.pass_context
+@common.unhandled_exception_handler
+@click.argument('conditions', callback=common.validate_conditions)
+@_parse_output_dir
+@common.cli_wrapper(command='dirbs-report', subcommand='classified_triplets', required_role='dirbs_core_report')
+def classified_triplets(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root,
+                        metrics_run_root, output_dir, conditions):
+    """Generate per-condition classified triplets list."""
+    metadata.add_optional_job_metadata(metadata_conn, command, run_id,
+                                       report_schema_version=report_schema_version,
+                                       output_dir=os.path.abspath(str(output_dir)))
+    report_dir = _make_report_directory(ctx, output_dir, run_id, conn, config)
+
+    with utils.CodeProfiler() as cp:
+        logger.info('Generating per-condition classified triplets list...')
+        with contextlib.ExitStack() as stack:
+            # push files to the exit stack, to close them properly
+            condition_labels = [c.label for c in conditions]
+            filename_cond_map = {'classified_triplets_{0}.csv'.format(c): c for c in condition_labels}
+            cond_label_file_map = {c: stack.enter_context(open(os.path.join(report_dir, fn), 'w', encoding='utf-8'))
+                                   for fn, c in filename_cond_map.items()}
+
+            # create mapping between condition label and csv writer
+            cond_label_csvwriter_map = {c: csv.writer(cond_label_file_map[c]) for c in condition_labels}
+
+            # write headers to the files
+            for _, writer in cond_label_csvwriter_map.items():
+                writer.writerow(['imei', 'imsi', 'msisdn', 'operator'])
+
+            # run query to find all classified triplets for the given conditions
+            with conn.cursor() as cursor:
+                query = """SELECT cs.imei_norm AS imei, cs.cond_name, mno.imsi,
+                                  mno.msisdn, mno.operator_id AS operator
+                             FROM classification_state AS cs
+                       INNER JOIN monthly_network_triplets_per_mno_no_null_imeis AS mno
+                                  ON mno.imei_norm = cs.imei_norm
+                            WHERE cs.cond_name IN %s
+                              AND cs.virt_imei_shard = calc_virt_imei_shard(cs.imei_norm)
+                              AND cs.end_date IS NULL
+                              AND mno.virt_imei_shard = calc_virt_imei_shard(mno.imei_norm)"""  # noqa: Q440
+                sql_bytes = cursor.mogrify(query, [tuple([c for c in condition_labels])])
+                query = sql.SQL(str(sql_bytes, conn.encoding))
+                cursor.execute(query)
+
+                for res in cursor:
+                    cond_label_csvwriter_map[res.cond_name].writerow([res.imei, res.imsi, res.msisdn, res.operator])
+            logger.info('Per-condition classified triplets list generated successfully.')
+
+        report_metadata = _gen_metadata_for_reports(list(filename_cond_map.keys()), report_dir)
+    statsd.gauge('{0}runtime.per_report.classified_triplets'.format(metrics_run_root), cp.duration)
+    metadata.add_optional_job_metadata(metadata_conn, command, run_id, report_outputs=report_metadata)
+
+
+@cli.command(name='blacklist_violations')
+@click.pass_context
+@common.unhandled_exception_handler
+@_parse_month
+@_parse_year
+@_parse_output_dir
+@common.cli_wrapper(command='dirbs-report', subcommand='blacklist_violations', required_role='dirbs_core_report')
+def blacklist_violations(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root,
+                         metrics_run_root, output_dir, month, year):
+    """Generate per-operator blacklist violations."""
+    metadata.add_optional_job_metadata(metadata_conn, command, run_id,
+                                       report_schema_version=report_schema_version,
+                                       output_dir=os.path.abspath(str(output_dir)))
+    report_dir = _make_report_directory(ctx, output_dir, run_id, conn, config)
+
+    with utils.CodeProfiler() as cp:
+        logger.info('Generating per-MNO blacklist violations...')
+        with contextlib.ExitStack() as stack:
+            # push files to the stack to handle
+            operator_ids = [o.id for o in config.region_config.operators]
+            filename_op_map = {'blacklist_violations_{0}.csv'.format(o): o for o in operator_ids}
+            opname_file_map = {o: stack.enter_context(open(os.path.join(report_dir, fn), 'w', encoding='utf-8'))
+                               for fn, o in filename_op_map.items()}
+            opname_csvwriter_map = {o: csv.writer(opname_file_map[o]) for o in operator_ids}
+
+            # write the headers
+            for _, writer in opname_csvwriter_map.items():
+                writer.writerow(['imei', 'last_seen'])
+
+            # query to find blacklist violations
+            with conn.cursor() as cursor:
+                cursor.execute("""SELECT imei_norm AS imei, last_seen, operator_id
+                                    FROM classification_state
+                                    JOIN monthly_network_triplets_per_mno_no_null_imeis
+                                   USING (imei_norm)
+                                   WHERE triplet_month = %s
+                                     AND triplet_year = %s
+                                     AND end_date IS NULL
+                                     AND block_date IS NOT NULL
+                                     AND last_seen > block_date""",
+                               [month, year])
+                for res in cursor:
+                    opname_csvwriter_map[res.operator_id].writerow([res.imei, res.last_seen])
+            logger.info('Per-MNO blacklist violation generated successfully.')
+        report_metadata = _gen_metadata_for_reports(list(filename_op_map.keys()), report_dir)
+    statsd.gauge('{0}runtime.per_report.blacklist_violation'.format(metrics_run_root), cp.duration)
+    metadata.add_optional_job_metadata(metadata_conn, command, run_id, report_outputs=report_metadata)
+
+
+@cli.command(name='association_list_violations')
+@click.pass_context
+@common.unhandled_exception_handler
+@_parse_month
+@_parse_year
+@_parse_output_dir
+@common.cli_wrapper(command='dirbs-report',
+                    subcommand='association_list_violations',
+                    required_role='dirbs_core_report')
+def association_list_violations(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root,
+                                metrics_run_root, output_dir, month, year):
+    """Generate per-operator association list violations (UID-IMEI-IMSI)."""
+    metadata.add_optional_job_metadata(metadata_conn, command, run_id,
+                                       report_schema_version=report_schema_version,
+                                       output_dir=os.path.abspath(str(output_dir)))
+    report_dir = _make_report_directory(ctx, output_dir, run_id, conn, config)
+
+    with utils.CodeProfiler() as cp:
+        logger.info('Generating per-MNO association list violations...')
+        with contextlib.ExitStack() as stack:
+            operator_ids = [o.id for o in config.region_config.operators]
+            filename_op_map = {'association_violations_{0}.csv'.format(o): o for o in operator_ids}
+            opname_file_map = {o: stack.enter_context(open(os.path.join(report_dir, fn), 'w', encoding='utf-8'))
+                               for fn, o in filename_op_map.items()}
+            opname_csvwriter_map = {o: csv.writer(opname_file_map[o]) for o in operator_ids}
+
+            for _, writer in opname_csvwriter_map.items():
+                writer.writerow(['imei', 'imsi', 'msisdn', 'first_seen', 'last_seen'])
+
+            with conn.cursor() as cursor:
+                cursor.execute("""SELECT imei_norm imei, imsi, msisdn, first_seen, last_seen, operator_id
+                                    FROM monthly_network_triplets_per_mno_no_null_imeis mno
+                                   WHERE NOT EXISTS(SELECT 1
+                                                      FROM (SELECT imei_norm, imsi
+                                                              FROM device_association_list dal
+                                                        INNER JOIN subscribers_registration_list srl
+                                                                   ON dal.uid = srl.uid) association
+                                                     WHERE mno.imei_norm = association.imei_norm
+                                                       AND mno.imsi = association.imsi)
+                                     AND mno.triplet_month = %s
+                                     AND mno.triplet_year = %s""", [month, year])
+                for res in cursor:
+                    opname_csvwriter_map[res.operator_id].writerow([res.imei,
+                                                                    res.imsi,
+                                                                    res.msisdn,
+                                                                    res.first_seen,
+                                                                    res.last_seen])
+            logger.info('Per-MNO association list violations list generated successfully.')
+        report_metadata = _gen_metadata_for_reports(list(filename_op_map.keys()), report_dir)
+    statsd.gauge('{0}runtime.per_report.association_list_violations'.format(metrics_run_root), cp.duration)
     metadata.add_optional_job_metadata(metadata_conn, command, run_id, report_outputs=report_metadata)

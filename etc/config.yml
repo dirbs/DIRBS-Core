@@ -147,9 +147,12 @@ list_generation:
   # If true, output only "valid" IMEIs.
   # Valid IMEIs start with 14 digits as they will have 15 digits if the check digit append has been enabled
   output_invalid_imeis: true
-  # The number of days an IMEI-IMSI pair is not seen on the network, if enable, it will generate a list of non active
-  # pairs for this period, the default value for this parameter is 0 days which means it will not generate the list.
-  # non_active_pairs: <enable me>
+  # If true, the IMEIs on barred list will also be included
+  # in exceptions list if they are already in pairing list
+  include_barred_imeis_in_exceptions_list: false
+  # If true, the notification list will also contain those IMEIs for which IMSI is changed (i.e MSISDN same)
+  # by default IMEIs will not be notified
+  notify_imsi_change: false
 
 # Definitions of configuration variables used by DIRBS Core in the report generation process.
 report_generation:
@@ -254,6 +257,10 @@ subscribers_list_threshold:
   import_size_variation_absolute: 1000
   import_size_variation_percent: 0.95
 
+association_list_threshold:
+  import_size_variation_absolute: -1
+  import_size_variation_percent: 0.75
+
 # Definition of conditions used by the DIRBS system. There are zero or more
 # conditions used to drive the classification. A system with zero conditions
 # does no classification at all
@@ -285,26 +292,26 @@ conditions:
   # DIRBS Core and just an example of simple/compound conditions. They are not
   # supposed to represent suggestions for real business rules. Please consult
   # the release documentation for available dimensions and their parameters.
-#  - label: simple_dimension
-#    dimensions:
-#      - module: gsma_not_found
-#    grace_period_days: 30
-#    blocking: true
-#    reason: Violated simple dimension
-#    max_allowed_matching_ratio: 1.0
-#  - label: compound_dimension
-#    dimensions:
-#      - module: stolen_list
-#      - module: duplicate_daily_avg
-#        parameters:
-#          threshold: 3.1
-#          period_days: 30
-#          min_seen_days: 5
-#        invert: True
-#    grace_period_days: 0
-#    blocking: true
-#    reason: Violated compound dimension
-#    max_allowed_matching_ratio: 1.0
+  - label: simple_dimension
+    dimensions:
+      - module: gsma_not_found
+    grace_period_days: 30
+    blocking: true
+    reason: Violated simple dimension
+    max_allowed_matching_ratio: 1.0
+  - label: compound_dimension
+    dimensions:
+      - module: stolen_list
+      - module: duplicate_daily_avg
+        parameters:
+          threshold: 3.1
+          period_days: 30
+          min_seen_days: 5
+        invert: True
+    grace_period_days: 0
+    blocking: true
+    reason: Violated compound dimension
+    max_allowed_matching_ratio: 1.0
   - label: daily_avg_uid
     dimensions:
       - module: daily_avg_uid
@@ -321,7 +328,7 @@ conditions:
 # Definition of settings to be used for logging output of DIRBS system.
 logging:
   # Logging level determines the verbosity of logs. This is also set to 'debug' by the -v CLI option
-  level: debug
+  level: info
   # Format string can be configured here
   format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
   # Set this to true if you want to see logging message for StatsD
