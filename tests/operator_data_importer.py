@@ -38,7 +38,7 @@ import pytest
 from click.testing import CliRunner
 
 from dirbs.cli.importer import cli as dirbs_import_cli
-from dirbs.config import OperatorConfig
+from dirbs.config.region import OperatorConfig
 from dirbs.importer.operator_data_importer import OperatorDataImporter
 from _helpers import get_importer, expect_success, expect_failure, logger_stream_contents
 from _fixtures import *  # noqa: F403, F401
@@ -1548,3 +1548,49 @@ def test_disable_msisdn_import(operator_data_importer, logger, db_conn):
         cursor.execute('SELECT COUNT(*) FROM operator_data WHERE msisdn IS NULL')
         result = cursor.fetchone()
         assert result[0] == 19
+
+
+def test_disable_auto_analyze_check(mocked_config, logger, mocked_statsd, db_conn,
+                                    metadata_db_conn, tmpdir, postgres, monkeypatch):
+    """Verify that the disable-auto-analyze check disables the analyze command on associated tables."""
+    # default case where auto analyze is enabled and no warning message appears
+    with get_importer(OperatorDataImporter,
+                      db_conn,
+                      metadata_db_conn,
+                      mocked_config.db_config,
+                      tmpdir,
+                      logger,
+                      mocked_statsd,
+                      OperatorDataParams(
+                          filename='operator1_clean_20160701_20160731.csv',
+                          operator='operator1',
+                          perform_region_checks=False,
+                          perform_home_network_check=False,
+                          perform_unclean_checks=False,
+                          extract=False)) as new_imp:
+        expect_success(new_imp, 20, db_conn, logger)
+    assert 'Skipping auto analyze of associated historic tables...' not in logger_stream_contents(logger)
+
+    # disable-auto-analyze case where warning is streamed out
+    runner = CliRunner()
+    here = path.abspath(path.dirname(__file__))
+    data_dir = path.join(here, 'unittest_data/operator')
+    valid_csv_operator_data_file_name = 'operator1_20160701_20160731.csv'
+    valid_csv_operator_data_file = path.join(data_dir, valid_csv_operator_data_file_name)
+
+    # create a zip file inside a temp dir
+    valid_zip_operator_data_file_path = \
+        str(tmpdir.join('operator1_20160701_20160731.zip'))
+    with zipfile.ZipFile(valid_zip_operator_data_file_path, 'w') as valid_csv_operator_data_file_zfile:
+        # zipfile write() method supports an extra argument (arcname) which is the
+        # archive name to be stored in the zip file.
+        valid_csv_operator_data_file_zfile.write(valid_csv_operator_data_file, valid_csv_operator_data_file_name)
+
+    db_conn.commit()
+    result = runner.invoke(dirbs_import_cli, ['operator', 'operator1', '--disable-rat-import',
+                                              '--disable-region-check', '--disable-home-check',
+                                              '--disable-auto-analyze',
+                                              valid_zip_operator_data_file_path],
+                           obj={'APP_CONFIG': mocked_config})
+    assert result.exit_code == 0
+    assert 'Skipping auto analyze of associated historic tables...' in logger_stream_contents(logger)

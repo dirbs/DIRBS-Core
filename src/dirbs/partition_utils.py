@@ -321,6 +321,24 @@ def _grant_perms_barred_list(conn, *, part_name):
                        .format(part_id))
 
 
+def _grant_perms_monitoring_list(conn, *, part_name):
+    """Method to DRY out granting of permissions to monitoring_list partitions."""
+    with conn.cursor() as cursor:
+        part_id = sql.Identifier(part_name)
+        cursor.execute(sql.SQL('GRANT SELECT ON {0} TO dirbs_core_classify, dirbs_core_api').format(part_id))
+        cursor.execute(sql.SQL('GRANT SELECT, INSERT, UPDATE ON {0} TO dirbs_core_import_monitoring_list')
+                       .format(part_id))
+
+
+def _grant_perms_association_list(conn, *, part_name):
+    """Method to DRY out granting of permissions to device association list partitions."""
+    with conn.cursor() as cursor:
+        part_id = sql.Identifier(part_name)
+        cursor.execute(sql.SQL('GRANT SELECT ON {0} TO dirbs_core_classify, dirbs_core_api').format(part_id))
+        cursor.execute(sql.SQL('GRANT SELECT, INSERT, UPDATE ON {0} TO dirbs_core_import_device_association_list')
+                       .format(part_id))
+
+
 def repartition_registration_list(conn, *, num_physical_shards):
     """Function to repartition the registration_list table."""
     with conn.cursor() as cursor, utils.db_role_setter(conn, role_name='dirbs_core_power_user'):
@@ -632,7 +650,7 @@ def exceptions_lists_indices():
     return [
         IndexMetadatum(idx_cols=cols, is_unique=is_uniq, partial_sql=partial)
         for cols, is_uniq, partial in [
-            (['imei_norm', 'imsi'], True, 'WHERE end_run_id IS NULL'),
+            (['imei_norm', 'imsi', 'msisdn'], True, 'WHERE end_run_id IS NULL'),
             (['end_run_id'], False, None),
             (['start_run_id'], False, None)
         ]

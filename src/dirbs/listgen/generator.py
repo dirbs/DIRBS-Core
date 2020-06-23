@@ -88,9 +88,10 @@ class ListsGenerator:
         self._disable_sanity_checks = disable_sanity_checks
         self._lookback_days = self._config.listgen_config.lookback_days
         self._restrict_exceptions_list = self._config.listgen_config.restrict_exceptions_list
+        self._include_barred_imeis = self._config.listgen_config.include_barred_imeis
         self._generate_check_digit = self._config.listgen_config.generate_check_digit
         self._output_invalid_imeis = self._config.listgen_config.output_invalid_imeis
-        self._non_active_pairs_period = self._config.listgen_config.non_active_pairs
+        self._notify_imsi_change = self._config.listgen_config.notify_imsi_change
         self._operators = self._config.region_config.operators
         self._amnesty = self._config.amnesty_config
         self._intermediate_table_names = []
@@ -124,15 +125,6 @@ class ListsGenerator:
         if self._base_run_id != -1:
             self._logger.info('Using previous successful dirbs-listgen run id {0:d} as base for delta lists...'
                               .format(self._base_run_id))
-
-        if self._non_active_pairs_period > 0:
-            current_date = datetime.date.today() if self._curr_date is None else self._curr_date
-            self._non_active_pairs_last_seen = datetime.date(current_date.year,
-                                                             current_date.month,
-                                                             current_date.day) - datetime.timedelta(
-                self._non_active_pairs_period)
-            self._logger.info('List of non-active pairs with last_seen less than {0} will be generated'.format(
-                self._non_active_pairs_last_seen))
 
         # We need at least 4 workers for list generation, as top-level list generation futures will themselves create
         # futures and so on.
@@ -172,8 +164,10 @@ class ListsGenerator:
                                            no_cleanup=self._no_cleanup,
                                            lookback_days=self._lookback_days,
                                            restrict_exceptions_list=self._restrict_exceptions_list,
+                                           include_barred_imeis=self._include_barred_imeis,
                                            generate_check_digit=self._generate_check_digit,
                                            output_invalid_imeis=self._output_invalid_imeis,
+                                           notify_imsi_change=self._notify_imsi_change,
                                            base_run_id=self._base_run_id,
                                            blocking_conditions=[c.as_dict() for c in self._blocking_conditions],
                                            classification_run_id=self._class_run_id,
@@ -561,7 +555,10 @@ class ListsGenerator:
                                         imsi                        TEXT NOT NULL,
                                         is_valid                    BOOLEAN,
                                         imei_norm_with_check_digit  TEXT,
-                                        is_blacklisted              BOOLEAN
+                                        is_blacklisted              BOOLEAN,
+                                        is_barred                   BOOLEAN,
+                                        have_barred_tac             BOOLEAN,
+                                        msisdn                      TEXT NOT NULL
                                       ) PARTITION BY LIST (operator_id)
                                    """).format(sql.Identifier(tblname)))
             table_names.append(tblname)
@@ -626,7 +623,10 @@ class ListsGenerator:
                                           is_valid                      BOOLEAN,
                                           imei_norm_with_check_digit    TEXT,
                                           home_operator                 TEXT,
-                                          is_blacklisted                BOOLEAN
+                                          is_blacklisted                BOOLEAN,
+                                          is_barred                     BOOLEAN,
+                                          have_barred_tac               BOOLEAN,
+                                          msisdn                        TEXT NOT NULL
                                       ) PARTITION BY RANGE (virt_imei_shard) """)
                            .format(sql.Identifier(tblname)))
             partition_utils.create_imei_shard_partitions(conn, tbl_name=tblname, unlogged=True, fillfactor=45)
@@ -701,6 +701,15 @@ class ListsGenerator:
         else:
             blacklisted_filter_sql = sql.SQL('TRUE')
         return blacklisted_filter_sql
+
+    @property
+    def _barred_pairings_filter_query(self):
+        """Property generates a SQL fragment which restricts barred IMEIs from exceptions list."""
+        if not self._include_barred_imeis:
+            barred_filter_sql = sql.SQL('is_barred IS FALSE AND have_barred_tac IS FALSE')
+        else:
+            barred_filter_sql = sql.SQL('TRUE')
+        return barred_filter_sql
 
     def _populate_new_blacklist_or_notifications_imei_table(self, conn, tblname, *, is_blacklist):
         """Helper function to DRY out populating either an IMEI table for blacklist or notifications."""
@@ -861,6 +870,13 @@ class ListsGenerator:
             #           happen for the same subscriber. Therefore they will be notified anyway based on the non-NULL
             #           IMSI/MSISDN that is expected to be seen either on the same day or at some point during the
             #           configured lookback window.
+
+            # check weather to notify the IMSI change or not, default behavior is to not however can be altered
+            if self._notify_imsi_change:
+                imsi_change_filter = sql.SQL('AND imsi = network_triplets.imsi')
+            else:
+                imsi_change_filter = sql.SQL('AND imsi = network_triplets.imsi OR msisdn = network_triplets.msisdn')
+
             query = sql.SQL(
                 """INSERT INTO {notifications_triplets_shard}(imei_norm,
                                                               virt_imei_shard,
@@ -894,7 +910,7 @@ class ListsGenerator:
                                              FROM {pairing_list_shard}
                                             WHERE end_date IS NULL
                                               AND imei_norm = network_triplets.imei_norm
-                                              AND imsi = network_triplets.imsi)
+                                                  {notify_filter})
                            AND imei_norm IS NOT NULL
                            AND imsi IS NOT NULL
                            AND msisdn IS NOT NULL
@@ -908,7 +924,8 @@ class ListsGenerator:
                 """).format(notifications_triplets_shard=sql.Identifier(notifications_triplets_shard),  # noqa: Q447
                             notifications_imeis_shard=sql.Identifier(notifications_imeis_shard),
                             pairing_list_shard=sql.Identifier(pairing_list_shard),
-                            home_network_query=self._home_network_query)
+                            home_network_query=self._home_network_query,
+                            notify_filter=imsi_change_filter)
 
             lookback_end_date = compute_analysis_end_date(conn, self._curr_date)
             lookback_start_date = lookback_end_date - datetime.timedelta(days=self._lookback_days)
@@ -1004,35 +1021,61 @@ class ListsGenerator:
             else:
                 is_blacklisted_query = sql.SQL('SELECT NULL::BOOLEAN AS is_blacklisted')
 
+            if not self._include_barred_imeis:
+                is_barred_query = \
+                    sql.SQL("""SELECT EXISTS (SELECT 1
+                                                FROM barred_list
+                                               WHERE imei_norm = pl.imei_norm
+                                                 AND virt_imei_shard
+                                                        = calc_virt_imei_shard(pl.imei_norm)) AS is_barred""")
+
+                have_barred_tac_query = \
+                    sql.SQL("""SELECT EXISTS (SELECT 1
+                                                FROM barred_tac_list
+                                               WHERE tac = LEFT(pl.imei_norm, 8)) AS have_barred_tac""")
+            else:
+                is_barred_query = sql.SQL('SELECT NULL::BOOLEAN AS is_barred')
+                have_barred_tac_query = sql.SQL('SELECT NULL::BOOLEAN AS have_barred_tac')
+
             query = sql.SQL("""INSERT INTO {tblname}(imei_norm,
                                                      virt_imei_shard,
                                                      imsi,
                                                      is_valid,
                                                      imei_norm_with_check_digit,
                                                      home_operator,
-                                                     is_blacklisted)
+                                                     is_blacklisted,
+                                                     is_barred,
+                                                     have_barred_tac,
+                                                     msisdn)
                                     SELECT imei_norm,
                                            virt_imei_shard,
                                            imsi,
                                            is_valid,
                                            imei_norm_with_check_digit,
                                            operator_id,
-                                           is_blacklisted
+                                           is_blacklisted,
+                                           is_barred,
+                                           have_barred_tac,
+                                           msisdn
                                       FROM pairing_list pl,
                                            LATERAL ({is_valid_query}) is_valid_tbl,
                                            LATERAL ({imei_norm_with_check_digit_query}) check_digit_tbl,
-                                           LATERAL ({is_blacklisted_query}) is_blacklisted_tbl
+                                           LATERAL ({is_blacklisted_query}) is_blacklisted_tbl,
+                                           LATERAL ({is_barred_query}) is_barred_tbl,
+                                           LATERAL ({have_barred_tac_query}) have_barred_tac_tbl
                                  LEFT JOIN LATERAL ({home_network_query}) home_network_tbl
                                            ON TRUE
                             """).format(tblname=sql.Identifier(tblname),
                                         is_valid_query=is_valid_query,
                                         imei_norm_with_check_digit_query=imei_norm_with_check_digit_query,
                                         is_blacklisted_query=is_blacklisted_query,
+                                        is_barred_query=is_barred_query,
+                                        have_barred_tac_query=have_barred_tac_query,
                                         home_network_query=self._home_network_query)
 
             cursor.execute(query)
             num_records = cursor.rowcount
-            self._add_pk(conn, tblname=tblname, pk_columns=['imei_norm', 'imsi'])
+            self._add_pk(conn, tblname=tblname, pk_columns=['imei_norm', 'imsi', 'msisdn'])
             self._analyze_helper(cursor, tblname)
 
         return num_records, cp.duration
@@ -1049,14 +1092,20 @@ class ListsGenerator:
                                                                             operator_id,
                                                                             is_valid,
                                                                             imei_norm_with_check_digit,
-                                                                            is_blacklisted)
+                                                                            is_blacklisted,
+                                                                            is_barred,
+                                                                            have_barred_tac,
+                                                                            msisdn)
                                            SELECT imei_norm,
                                                   virt_imei_shard,
                                                   imsi,
                                                   %s,
                                                   is_valid,
                                                   imei_norm_with_check_digit,
-                                                  is_blacklisted
+                                                  is_blacklisted,
+                                                  is_barred,
+                                                  have_barred_tac,
+                                                  msisdn
                                              FROM {imei_imsi_pairings_tblname}
                                             WHERE home_operator = %s
                                                OR home_operator IS NULL
@@ -1064,7 +1113,7 @@ class ListsGenerator:
                                                imei_imsi_pairings_tblname=sql.Identifier(imei_imsi_pairings_tblname)),
                            [operator_id, operator_id])
             num_records = cursor.rowcount
-            self._add_pk(conn, tblname=operator_partition_name, pk_columns=['imei_norm', 'imsi'])
+            self._add_pk(conn, tblname=operator_partition_name, pk_columns=['imei_norm', 'imsi', 'msisdn'])
 
         return num_records, cp.duration
 
@@ -1135,7 +1184,8 @@ class ListsGenerator:
                                         operator_id     TEXT NOT NULL,
                                         imei_norm       TEXT NOT NULL,
                                         virt_imei_shard SMALLINT NOT NULL,
-                                        imsi            TEXT NOT NULL
+                                        imsi            TEXT NOT NULL,
+                                        msisdn          TEXT NOT NULL
                                       ) PARTITION BY LIST (operator_id)
                                    """).format(sql.Identifier(tblname)))
             table_names.append(tblname)
@@ -1165,13 +1215,13 @@ class ListsGenerator:
         """Function to populate the old exceptions list for a given operator id."""
         with create_db_connection(self._config.db_config) as conn, conn.cursor() as cursor, CodeProfiler() as cp:
             tblname = self._exceptions_lists_old_part_tblname(operator_id)
-            cursor.execute(sql.SQL("""INSERT INTO {0}(operator_id, imei_norm, virt_imei_shard, imsi)
-                                           SELECT %s, imei_norm, virt_imei_shard, imsi
+            cursor.execute(sql.SQL("""INSERT INTO {0}(operator_id, imei_norm, virt_imei_shard, imsi, msisdn)
+                                           SELECT %s, imei_norm, virt_imei_shard, imsi, msisdn
                                              FROM gen_exceptions_list(%s)
                                    """).format(sql.Identifier(tblname)),
                            [operator_id, operator_id])
             num_records = cursor.rowcount
-            self._add_pk(conn, tblname=tblname, pk_columns=['imei_norm', 'imsi'])
+            self._add_pk(conn, tblname=tblname, pk_columns=['imei_norm', 'imsi', 'msisdn'])
 
         return num_records, cp.duration
 
@@ -1355,14 +1405,16 @@ class ListsGenerator:
                                                               imsi,
                                                               start_run_id,
                                                               end_run_id,
-                                                              delta_reason)
-                                           SELECT %s, imei_norm, virt_imei_shard, imsi, %s, NULL, 'added'
+                                                              delta_reason,
+                                                              msisdn)
+                                           SELECT %s, imei_norm, virt_imei_shard, imsi, %s, NULL, 'added', msisdn
                                              FROM {new_tbl} nt
                                             WHERE NOT EXISTS(SELECT 1
                                                                FROM {old_tbl}
                                                               WHERE imei_norm = nt.imei_norm
                                                                 AND virt_imei_shard = nt.virt_imei_shard
-                                                                AND imsi = nt.imsi)
+                                                                AND imsi = nt.imsi
+                                                                AND msisdn = nt.msisdn)
                                    """).format(delta_tbl=delta_tbl, old_tbl=old_tbl, new_tbl=new_tbl),
                            [operator_id, self._run_id])
             num_records = cursor.rowcount
@@ -1373,14 +1425,16 @@ class ListsGenerator:
                                                               imsi,
                                                               start_run_id,
                                                               end_run_id,
-                                                              delta_reason)
-                                           SELECT %s, imei_norm, virt_imei_shard, imsi, %s, NULL, 'removed'
+                                                              delta_reason,
+                                                              msisdn)
+                                           SELECT %s, imei_norm, virt_imei_shard, imsi, %s, NULL, 'removed', msisdn
                                              FROM {old_tbl} ot
                                             WHERE NOT EXISTS(SELECT 1
                                                                FROM {new_tbl}
                                                               WHERE imei_norm = ot.imei_norm
                                                                 AND virt_imei_shard = ot.virt_imei_shard
-                                                                AND imsi = ot.imsi)
+                                                                AND imsi = ot.imsi
+                                                                AND msisdn = ot.msisdn)
                                    """).format(delta_tbl=delta_tbl, old_tbl=old_tbl, new_tbl=new_tbl),
                            [operator_id, self._run_id])
             num_records += cursor.rowcount
@@ -1418,6 +1472,14 @@ class ListsGenerator:
                                    """).format(delta_tbl=delta_tbl, old_tbl=old_tbl, new_tbl=new_tbl),
                            [operator_id, self._run_id])
             num_records = cursor.rowcount
+
+            # weather to notify the IMSI change or not, default behaviour is to not however it can be
+            # altered in the config file variable notify_imsi_change
+            if self._notify_imsi_change:
+                imsi_change_filter = sql.SQL('AND imsi = ot.imsi')
+            else:
+                imsi_change_filter = sql.SQL('AND imsi = ot.imsi OR msisdn = ot.msisdn')
+
             # Next, generate a delta for any 'resolved' and 'blacklisted' triplets (new removals)
             blacklist_tbl = sql.Identifier(self._blacklist_new_tblname)
             notifications_imei_tbl = sql.Identifier(self._notifications_imei_new_tblname)
@@ -1464,7 +1526,7 @@ class ListsGenerator:
                                                          FROM {pairings_tbl}
                                                         WHERE imei_norm = ot.imei_norm
                                                           AND virt_imei_shard = ot.virt_imei_shard
-                                                          AND imsi = ot.imsi) AS is_paired) pairing_tbl
+                                                              {notify_filter}) AS is_paired) pairing_tbl
                          WHERE NOT EXISTS(SELECT 1
                                             FROM {new_tbl}
                                            WHERE imei_norm = ot.imei_norm
@@ -1474,7 +1536,8 @@ class ListsGenerator:
                                    """).format(delta_tbl=delta_tbl, old_tbl=old_tbl, new_tbl=new_tbl,  # noqa: Q447
                                                blacklist_tbl=blacklist_tbl,
                                                notifications_imei_tbl=notifications_imei_tbl,
-                                               pairings_tbl=pairings_tbl),
+                                               pairings_tbl=pairings_tbl,
+                                               notify_filter=imsi_change_filter),
                            [operator_id, self._run_id])
             num_records += cursor.rowcount
             # Finally, generate a delta for any triplets where the reasons/date have changed
@@ -1575,7 +1638,7 @@ class ListsGenerator:
             tbl_name = self._exceptions_lists_part_tblname(operator_id)
             idx_metadata = [partition_utils.IndexMetadatum(idx_cols=['start_run_id']),
                             partition_utils.IndexMetadatum(idx_cols=['end_run_id']),
-                            partition_utils.IndexMetadatum(idx_cols=['imei_norm', 'imsi'],
+                            partition_utils.IndexMetadatum(idx_cols=['imei_norm', 'imsi', 'msisdn'],
                                                            is_unique=True,
                                                            partial_sql='WHERE end_run_id IS NULL')]
             partition_utils.add_indices(conn, tbl_name=tbl_name, idx_metadata=idx_metadata, if_not_exists=True)
@@ -1685,7 +1748,8 @@ class ListsGenerator:
                                                        FROM {delta_tbl}
                                                       WHERE imei_norm = el.imei_norm
                                                         AND virt_imei_shard = el.virt_imei_shard
-                                                        AND imsi = el.imsi)
+                                                        AND imsi = el.imsi
+                                                        AND msisdn = el.msisdn)
                                    """).format(tbl=tbl, delta_tbl=delta_tbl),
                            [self._run_id])
             per_type_counts['invalidated'] = cursor.rowcount
@@ -1696,9 +1760,10 @@ class ListsGenerator:
                                                         imsi,
                                                         start_run_id,
                                                         end_run_id,
-                                                        delta_reason)
+                                                        delta_reason,
+                                                        msisdn)
                                            SELECT operator_id, imei_norm, virt_imei_shard, imsi,
-                                                  start_run_id, end_run_id, delta_reason
+                                                  start_run_id, end_run_id, delta_reason, msisdn
                                              FROM {delta_tbl}
                                    """).format(tbl=tbl, delta_tbl=delta_tbl),
                            [self._run_id])
@@ -1732,10 +1797,6 @@ class ListsGenerator:
                              (self._write_full_csv_exceptions_list, 'full exceptions list for operator {0}')]:
                         self._queue_csv_writer_job(executor, futures_to_cb, partial(fn, op.id), desc.format(op.id), md)
 
-            if self._non_active_pairs_period > 0:
-                self._queue_csv_writer_job(executor, futures_to_cb, self._write_non_active_pairs_csv_list,
-                                           'non active pairs list', md)
-
             self._wait_for_futures(futures_to_cb)
 
         metadata.add_optional_job_metadata(self._metadata_conn, 'dirbs-listgen', self._run_id, **md)
@@ -1745,14 +1806,6 @@ class ListsGenerator:
             for csv_path in glob.glob(os.path.join(self._output_dir, '{0}_blacklist*.csv'.format(self._date_str))):
                 zf.write(csv_path, arcname=os.path.basename(csv_path))
                 os.remove(csv_path)
-
-        if self._non_active_pairs_period > 0:
-            with zipfile.ZipFile(os.path.join(self._output_dir, '{0}_non_active_pairs.zip'.format(self._date_str)),
-                                 'w') as zf:
-                for csv_path in glob.glob(os.path.join(self._output_dir, '{0}_non_active_pairs*.csv'.format(
-                        self._date_str))):
-                    zf.write(csv_path, arcname=os.path.basename(csv_path))
-                    os.remove(csv_path)
 
         for op in self._operators:
             with zipfile.ZipFile(os.path.join(self._output_dir,
@@ -1813,7 +1866,7 @@ class ListsGenerator:
             csv_writer = csv.DictWriter(csvfile, fieldnames=['imei', 'block_date', 'reasons'], extrasaction='ignore')
             csv_writer.writeheader()
             cursor.execute(sql.SQL("""SELECT {imei_col} AS imei,
-                                             to_char(block_date, 'YYYYMMDD') AS block_date,
+                                             TO_CHAR(block_date, 'YYYYMMDD') AS block_date,
                                              array_to_string(reasons, '|') AS reasons
                                         FROM {tblname}
                                        WHERE {valid_filter}
@@ -1829,33 +1882,6 @@ class ListsGenerator:
         return self._gen_metadata_for_list(filename,
                                            num_records=num_records,
                                            num_written_records=num_written_records), 'blacklist', cp.duration
-
-    def _write_non_active_pairs_csv_list(self):
-        """Write non active pairs from the pairing list."""
-        if self._non_active_pairs_period > 0:
-            tblname = 'pairing_list'
-            filename = os.path.join(self._output_dir, '{0}_non_active_pairs.csv'.format(self._date_str))
-            cursor_name = 'listgen_write_non_active_pairs_csv'
-            with create_db_connection(self._config.db_config) as conn, \
-                    conn.cursor(name=cursor_name) as cursor, open(filename, 'w') as csvfile, CodeProfiler() as cp:
-                csv_writer = csv.DictWriter(csvfile, fieldnames=['imei', 'imsi'], extrasaction='ignore')
-                csv_writer.writeheader()
-                cursor.execute(sql.SQL("""SELECT t1.imei_norm AS imei, t1.imsi
-                                            FROM pairing_list AS t1
-                                      INNER JOIN monthly_network_triplets_country AS t2
-                                                 ON t1.imei_norm = t2.imei_norm
-                                             AND t1.imsi = t2.imsi
-                                           WHERE t2.last_seen < %s"""), [self._non_active_pairs_last_seen])
-                num_written_records = 0
-                for row_data in cursor:
-                    csv_writer.writerow(row_data._asdict())
-                    num_written_records += 1
-                num_records = self._get_total_record_count(conn, tblname)
-
-            return self._gen_metadata_for_list(filename,
-                                               num_records=num_records,
-                                               num_written_records=num_written_records
-                                               ), 'non_active_pairs', cp.duration
 
     def _write_delta_csv_blacklist(self):
         """Write delta CSV blacklist from the blacklist table."""
@@ -1879,7 +1905,7 @@ class ListsGenerator:
                 csv_writer.writeheader()
 
             cursor.execute(sql.SQL("""SELECT {imei_col} AS imei,
-                                             to_char(block_date, 'YYYYMMDD') AS block_date,
+                                             TO_CHAR(block_date, 'YYYYMMDD') AS block_date,
                                              array_to_string(reasons, '|') AS reasons,
                                              delta_reason
                                         FROM (SELECT *
@@ -1919,7 +1945,7 @@ class ListsGenerator:
             cursor.execute(sql.SQL("""SELECT {imei_col} AS imei,
                                              imsi,
                                              msisdn,
-                                             to_char(block_date, 'YYYYMMDD') AS block_date,
+                                             TO_CHAR(block_date, 'YYYYMMDD') AS block_date,
                                              array_to_string(reasons, '|') AS reasons
                                              {include_amnesty_column}
                                         FROM {tblname}
@@ -1964,7 +1990,7 @@ class ListsGenerator:
             cursor.execute(sql.SQL("""SELECT {imei_col} AS imei,
                                              imsi,
                                              msisdn,
-                                             to_char(block_date, 'YYYYMMDD') AS block_date,
+                                             TO_CHAR(block_date, 'YYYYMMDD') AS block_date,
                                              array_to_string(reasons, '|') AS reasons,
                                              delta_reason
                                              {include_amnesty_column}
@@ -1998,16 +2024,18 @@ class ListsGenerator:
         cursor_name = 'listgen_write_full_csv_exceptions_{0}'.format(operator_id)
         with create_db_connection(self._config.db_config) as conn, \
                 conn.cursor(name=cursor_name) as cursor, open(filename, 'w') as csvfile, CodeProfiler() as cp:
-            csv_writer = csv.DictWriter(csvfile, fieldnames=['imei', 'imsi'], extrasaction='ignore')
+            csv_writer = csv.DictWriter(csvfile, fieldnames=['imei', 'imsi', 'msisdn'], extrasaction='ignore')
             csv_writer.writeheader()
-            cursor.execute(sql.SQL("""SELECT {imei_col} AS imei, imsi
+            cursor.execute(sql.SQL("""SELECT {imei_col} AS imei, imsi, msisdn
                                         FROM {tblname}
                                        WHERE {valid_filter}
                                          AND {restrict_pairings_filter}
+                                         AND {barred_pairing_filter}
                                    """).format(imei_col=self._output_imei_column,
                                                tblname=sql.Identifier(tblname),
                                                valid_filter=self._valid_filter_query,
-                                               restrict_pairings_filter=self._blacklisted_pairings_filter_query))
+                                               restrict_pairings_filter=self._blacklisted_pairings_filter_query,
+                                               barred_pairing_filter=self._barred_pairings_filter_query))
             num_written_records = 0
             for row_data in cursor:
                 csv_writer.writerow(row_data._asdict())
@@ -2035,12 +2063,12 @@ class ListsGenerator:
             files = {r: stack.enter_context(open(fn, 'w', encoding='utf8'))
                      for r, fn in fnames.items()}
             csv_writers = {r: csv.DictWriter(f,
-                                             fieldnames=['imei', 'imsi'],
+                                             fieldnames=['imei', 'imsi', 'msisdn'],
                                              extrasaction='ignore') for r, f in files.items()}
             for csv_writer in csv_writers.values():
                 csv_writer.writeheader()
 
-            cursor.execute(sql.SQL("""SELECT {imei_col} AS imei, imsi, delta_reason
+            cursor.execute(sql.SQL("""SELECT {imei_col} AS imei, imsi, msisdn, delta_reason
                                         FROM (SELECT *
                                                 FROM gen_delta_exceptions_list(%s, %s),
                                                      LATERAL ({is_valid_query}) iv,

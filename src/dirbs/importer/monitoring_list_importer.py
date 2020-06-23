@@ -1,5 +1,5 @@
 """
-DIRBS REST-ful Pagination module.
+Module for importing monitoring list data into DIRBS Core.
 
 Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
 
@@ -17,7 +17,8 @@ limitations in the disclaimer below) provided that the following conditions are 
 - The origin of this software must not be misrepresented; you must not claim that you wrote the original software.
   If you use this software in a product, an acknowledgment is required by displaying the trademark/log as per the
   details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
-- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+- Altered source versions must be plainly marked as such, and must not be misrepresented as being the original
+  software.
 - This notice may not be removed or altered from any source distribution.
 
 NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY
@@ -29,54 +30,54 @@ BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 """
+from dirbs.importer.base_delta_importer import BaseDeltaImporter
 
 
-class Pagination:
-    """DIBRS Pagination module class implementation."""
+class MonitoringListImporter(BaseDeltaImporter):
+    """Monitoring list data importer class."""
 
-    @staticmethod
-    def paginate(data, offset=1, limit=10):
-        """
-        Method to paginate data-set based on offset and limit.
+    @property
+    def _import_type(self):
+        """Overrides AbstractImporter._import_type."""
+        return 'monitoring_list'
 
-        :param data: input data to paginate
-        :param offset: to start with
-        :param limit: limit of data
-        :return: paginated data
-        """
-        if offset is None:
-            offset = 1
+    @property
+    def _import_relation_name(self):
+        """Overrides AbstractImporter._importer_relation_name."""
+        return 'monitoring_list'
 
-        if limit is None:
-            limit = 10
-        result_size = len(data)
+    @property
+    def _schema_file(self):
+        """Overrides AbstractImporter._schema_file."""
+        if self._delta:
+            return 'MonitoringListDeltaSchema.csvs'
+        return 'MonitoringListSchema.csvs'
 
-        keys = {
-            'offset': offset,
-            'limit': limit,
-            'previous_key': offset,
-            'next_key': '',
-            'result_size': result_size
-        }
+    @property
+    def _owner_role_name(self):
+        """Overrides AbstractImporter._owner_role_name."""
+        return 'dirbs_core_import_monitoring_list'
 
-        if result_size is not 0:
-            if offset < 1 or offset > result_size:
-                return {'keys': keys, 'data': []}
-            else:
-                if result_size < offset:
-                    return {'keys': keys, 'data': data}
-                if offset == 1:
-                    keys['previous_key'] = ''
-                else:
-                    offset_copy = max(1, offset - limit)
-                    limit_copy = offset - 1
-                    keys['previous_key'] = '?offset={offset}&limit={limit}'.format(
-                        offset=offset_copy, limit=limit_copy)
-                if offset + limit > result_size:
-                    keys['next_key'] = ''
-                else:
-                    offset_copy = offset + limit
-                    keys['next_key'] = '?offset={offset}&limit={limit}'.format(offset=offset_copy, limit=limit)
-                paginated_data = data[(offset - 1):(offset - 1 + limit)]
-            return {'keys': keys, 'data': paginated_data}
-        return {'keys': keys, 'data': []}
+    @property
+    def _staging_tbl_ddl(self):
+        """Overrides AbstractImporter._staging_tbl_ddl."""
+        return """CREATE UNLOGGED TABLE {0} (
+                                                 row_id         BIGSERIAL NOT NULL,
+                                                 imei           TEXT,
+                                                 imei_norm      TEXT NOT NULL
+                                                )"""
+
+    @property
+    def _pk_field_names(self):
+        """Overrides BaseImporter._pk_field_names."""
+        return ['imei_norm']
+
+    @property
+    def _input_csv_field_names(self):
+        """Overrides BaseImporter._input_csv_field_names."""
+        return ['imei']
+
+    @property
+    def _supports_imei_shards(self):
+        """Overrides BaseImporter._supports_imei_shards."""
+        return True

@@ -72,6 +72,7 @@ def historic_table_insert_params_from_dict(db_conn, importer_name, imei_norm_to_
                              'model': '',
                              'status': '',
                              'imsi': '11111111111111',
+                             'msisdn': '',
                              'reporting_date': '20160420',
                              'model_number': '',
                              'brand_name': '',
@@ -124,6 +125,7 @@ def write_import_csv(tmpdir, importer_name, csv_imei_change_type_tuples, delta_i
                                      'model': '',
                                      'status': '',
                                      'imsi': '11111111111111',
+                                     'msisdn': '2322211122112',
                                      'reporting_date': '20160420',
                                      'model_number': '',
                                      'brand_name': '',
@@ -138,6 +140,7 @@ def write_import_csv(tmpdir, importer_name, csv_imei_change_type_tuples, delta_i
                 assert delta_import
                 row_dict.update({'change_type': change_type})
             rows_to_write_list.append(row_dict)
+            print(rows_to_write_list)
         # write into csv
         writer = csv.DictWriter(csvfile, fieldnames=csv_field_name_list)
         writer.writeheader()
@@ -161,7 +164,7 @@ importer_to_fields_dict = {
 
     'pairing_list': {'csv_imei_field_name': 'imei',
                      'normalized_imei_field_name': 'imei_norm',
-                     'extra_field_names': ['imsi'],
+                     'extra_field_names': ['imsi', 'msisdn'],
                      'supports_imei_sharding': True},
 
     'stolen_list': {'csv_imei_field_name': 'imei',

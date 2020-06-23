@@ -31,7 +31,7 @@ BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 POSSIBILITY OF SUCH DAMAGE.
 """
 
-from dirbs.config import OperatorConfig
+from dirbs.config.region import OperatorConfig
 from .base_operator_country import BaseOperatorCountryReport
 
 

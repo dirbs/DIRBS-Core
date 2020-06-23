@@ -353,7 +353,7 @@ def _update_catalog(uncataloged_files, config):
                                                                compressed_size_bytes, is_valid_zip, is_valid_format,
                                                                md5, extra_attributes, first_seen, last_seen,
                                                                uncompressed_size_bytes, num_records)
-                                           VALUES (%s, %s, %s, %s, %s, %s, %s, %s, now(), now(), %s, %s)
+                                           VALUES (%s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW(), %s, %s)
                                       ON CONFLICT (filename, file_type)
                                         DO UPDATE
                                               SET modified_time = %s,
@@ -362,7 +362,7 @@ def _update_catalog(uncataloged_files, config):
                                                   is_valid_format = %s,
                                                   md5 = %s,
                                                   extra_attributes = %s,
-                                                  last_seen = now(),
+                                                  last_seen = NOW(),
                                                   uncompressed_size_bytes = %s,
                                                   num_records = %s"""),  # noqa: Q441, Q449
                            [f.filename, f.file_type, f.modified_time, f.compressed_size_bytes,

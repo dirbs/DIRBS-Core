@@ -42,6 +42,8 @@ from dirbs.importer.golden_list_importer import GoldenListImporter
 from dirbs.importer.barred_list_importer import BarredListImporter
 from dirbs.importer.barred_tac_list_importer import BarredTacListImporter
 from dirbs.importer.subscriber_reg_list_importer import SubscribersListImporter
+from dirbs.importer.device_association_list_importer import DeviceAssociationListImporter
+from dirbs.importer.monitoring_list_importer import MonitoringListImporter
 
 
 def make_data_importer(import_type, input_file, config, statsd, conn, metadata_conn,
@@ -74,6 +76,12 @@ def make_data_importer(import_type, input_file, config, statsd, conn, metadata_c
     elif import_type == 'subscribers_registration_list':
         return make_subscribers_registration_list_importer(input_file, config, statsd, conn, metadata_conn,
                                                            run_id, metrics_root, metrics_run_root, **kwargs)
+    elif import_type == 'device_association_list':
+        return make_device_association_list_importer(input_file, config, statsd, conn, metadata_conn,
+                                                     run_id, metrics_root, metrics_run_root, **kwargs)
+    elif import_type == 'monitoring_list':
+        return make_monitoring_list_importer(input_file, config, statsd, conn, metadata_conn,
+                                             run_id, metrics_root, metrics_run_root, **kwargs)
     else:
         raise NameError('No importer found for file type: {0}'.format(import_type))
 
@@ -124,10 +132,19 @@ def make_pairing_list_importer(input_file, config, statsd, conn, metadata_conn,
 
 def make_subscribers_registration_list_importer(input_file, config, statsd, conn, metadata_conn,
                                                 run_id, metrics_root, metrics_run_root, **kwargs):
-    """Create an instance of PairingListImporter."""
+    """Create an instance of SubscribersListImporter."""
     common_params = _common_config_params(config)
     return SubscribersListImporter(conn, metadata_conn, run_id, metrics_root, metrics_run_root, config.db_config,
                                    input_file, logging.getLogger('dirbs.import'), statsd, **common_params, **kwargs)
+
+
+def make_device_association_list_importer(input_file, config, statsd, conn, metadata_conn,
+                                          run_id, metrics_root, metrics_run_root, **kwargs):
+    """Create an instance of DeviceAssociationListImporter."""
+    common_params = _common_config_params(config)
+    return DeviceAssociationListImporter(conn, metadata_conn, run_id, metrics_root, metrics_run_root,
+                                         config.db_config, input_file, logging.getLogger('dirbs.import'),
+                                         statsd, **common_params, **kwargs)
 
 
 def make_registration_list_importer(input_file, config, statsd, conn, metadata_conn,
@@ -152,6 +169,14 @@ def make_barred_list_importer(input_file, config, statsd, conn, metadata_conn,
     common_params = _common_config_params(config)
     return BarredListImporter(conn, metadata_conn, run_id, metrics_root, metrics_run_root, config.db_config,
                               input_file, logging.getLogger('dirbs.import'), statsd, **common_params, **kwargs)
+
+
+def make_monitoring_list_importer(input_file, config, statsd, conn, metadata_conn,
+                                  run_id, metrics_root, metrics_run_root, **kwargs):
+    """Create an instance of MonitoringListImporter."""
+    common_params = _common_config_params(config)
+    return MonitoringListImporter(conn, metadata_conn, run_id, metrics_root, metrics_run_root, config.db_config,
+                                  input_file, logging.getLogger('dirbs.import'), statsd, **common_params, **kwargs)
 
 
 def make_barred_tac_list_importer(input_file, config, statsd, conn, metadata_conn,

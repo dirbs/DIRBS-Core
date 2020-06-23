@@ -45,7 +45,7 @@ from psycopg2.extras import execute_values
 from dateutil import relativedelta
 
 from dirbs import report_schema_version
-from dirbs.config import OperatorConfig
+from dirbs.config.region import OperatorConfig
 import dirbs.utils as utils
 import dirbs.partition_utils as part_utils
 
@@ -1018,7 +1018,7 @@ def _calc_daily_imei_imsi_overloading(db_config, month, year, operator=None, bin
                               (bin_id * %(bin_width)s)::REAL AS bin_start,
                               ((bin_id + 1) * %(bin_width)s)::REAL AS bin_end
                          FROM (SELECT imei_norm,
-                                      floor(SUM(bitcount(combined_date_bitmask))::NUMERIC/
+                                      FLOOR(SUM(bitcount(combined_date_bitmask))::NUMERIC/
                                       bitcount(bit_or(combined_date_bitmask))/%(bin_width)s)::INT AS bin_id
                                  FROM (SELECT imei_norm,
                                               imsi,

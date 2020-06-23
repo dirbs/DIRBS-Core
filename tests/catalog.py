@@ -108,7 +108,7 @@ def test_all_files_are_harvested(postgres, db_conn, tmpdir, logger, monkeypatch,
         assert ('sample_gsma_import_list_anonymized.zip', 'gsma_tac', 1083, True, True, {}) in res
         assert ('sample_stolen_list.zip', 'stolen_list', 529, True, True, {}) in res
         assert ('sample_registration_list.zip', 'registration_list', 919, True, True, {}) in res
-        assert ('sample_pairinglist.zip', 'pairing_list', 312, True, True, {}) in res
+        assert ('sample_pairinglist.zip', 'pairing_list', 399, True, True, {}) in res
         assert ('sample_golden_list.zip', 'golden_list', 474, True, True, {}) in res
 
     # Run dirbs-catalog again to verify that no new files are discovered

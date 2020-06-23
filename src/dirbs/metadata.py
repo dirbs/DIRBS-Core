@@ -62,7 +62,7 @@ def log_job_success(conn, job_command, run_id):
     assert conn.autocommit
     with conn.cursor() as cursor:
         cursor.execute("""UPDATE job_metadata
-                             SET end_time = now(),
+                             SET end_time = NOW(),
                                  status = 'success'
                            WHERE command = %s
                              AND run_id = %s""",
@@ -81,7 +81,7 @@ def log_job_failure(conn, job_command, run_id, logger):
     try:
         with conn.cursor() as cursor:
             cursor.execute("""UPDATE job_metadata
-                                 SET end_time = now(),
+                                 SET end_time = NOW(),
                                      status = 'error',
                                      exception_info = %s
                                WHERE command = %s
@@ -109,7 +109,7 @@ def add_time_metadata(conn, job_command, run_id, path):
     assert conn.autocommit
     with conn.cursor() as cursor:
         cursor.execute("""UPDATE job_metadata
-                             SET extra_metadata = jsonb_set(extra_metadata, %s, to_jsonb(now()))
+                             SET extra_metadata = jsonb_set(extra_metadata, %s, to_jsonb(NOW()))
                            WHERE command = %s
                              AND run_id = %s""",
                        [path, job_command, run_id])

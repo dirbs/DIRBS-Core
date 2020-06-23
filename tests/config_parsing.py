@@ -60,7 +60,7 @@ def _expect_app_config_failure(*, config, expected_message):
 def historic_threshold_check_function_success(first_file_size, second_file_size,
                                               db_conn, metadata_db_conn, mocked_config, tmpdir, logger, mocked_statsd,
                                               importer_class, importer_params,
-                                              threshold_config, imei_imsi=False,
+                                              threshold_config, imei_imsi=False, imei_imsi_msisdn=False,
                                               imei_custom_header='imei,reporting_date,status',
                                               import_data_file_by_path=False,
                                               import_first_data_file_path=None,
@@ -73,7 +73,7 @@ def historic_threshold_check_function_success(first_file_size, second_file_size,
     # To import file from path set import_data_file_by_path to True and set both import_first_data_file_path
     # and import_second_data_file_path with the file paths.
     first_file_to_import = import_first_data_file_path if import_data_file_by_path \
-        else data_file_to_test(first_file_size, imei_imsi, imei_custom_header)
+        else data_file_to_test(first_file_size, imei_imsi, imei_custom_header, imei_imsi_msisdn=imei_imsi_msisdn)
 
     with get_importer(importer_class,
                       db_conn,
@@ -89,7 +89,7 @@ def historic_threshold_check_function_success(first_file_size, second_file_size,
         expect_success(large_importer, first_file_size, db_conn, logger)
 
     second_file_to_import = import_second_data_file_path if import_data_file_by_path \
-        else data_file_to_test(second_file_size, imei_imsi, imei_custom_header)
+        else data_file_to_test(second_file_size, imei_imsi, imei_custom_header, imei_imsi_msisdn=imei_imsi_msisdn)
 
     with get_importer(importer_class,
                       db_conn,
@@ -108,7 +108,8 @@ def historic_threshold_check_function_success(first_file_size, second_file_size,
 def historic_threshold_check_function_fails(first_file_size, second_file_size, db_conn, metadata_db_conn,
                                             mocked_config, tmpdir, logger,
                                             mocked_statsd, importer_class, importer_params, threshold_config,
-                                            imei_imsi=False, imei_custom_header='imei,reporting_date,status',
+                                            imei_imsi=False, imei_imsi_msisdn=False,
+                                            imei_custom_header='imei,reporting_date,status',
                                             exc_message='', import_data_file_by_path=False,
                                             import_first_data_file_path=None, import_second_data_file_path=None):
     """Helper function to test if historic thresholds are configurable.
@@ -119,7 +120,7 @@ def historic_threshold_check_function_fails(first_file_size, second_file_size, d
     # To import file from path set import_data_file_by_path to True and set both import_first_data_file_path
     # and import_second_data_file_path with the file paths.
     first_file_to_import = import_first_data_file_path if import_data_file_by_path \
-        else data_file_to_test(first_file_size, imei_imsi, imei_custom_header)
+        else data_file_to_test(first_file_size, imei_imsi, imei_custom_header, imei_imsi_msisdn=imei_imsi_msisdn)
 
     with get_importer(importer_class,
                       db_conn,
@@ -135,7 +136,7 @@ def historic_threshold_check_function_fails(first_file_size, second_file_size, d
         expect_success(large_importer, first_file_size, db_conn, logger)
 
     second_file_to_import = import_second_data_file_path if import_data_file_by_path \
-        else data_file_to_test(second_file_size, imei_imsi, imei_custom_header)
+        else data_file_to_test(second_file_size, imei_imsi, imei_custom_header, imei_imsi_msisdn=imei_imsi_msisdn)
 
     with get_importer(importer_class,
                       db_conn,
@@ -168,7 +169,7 @@ def test_pairing_list_historical_thresholds_failure(logger, mocked_statsd, db_co
     historic_threshold_check_function_fails(100, 49, db_conn, metadata_db_conn, mocked_config, tmpdir,
                                             logger, mocked_statsd,
                                             PairingListImporter, PairListParams,
-                                            pairing_list_instance, imei_imsi=True,
+                                            pairing_list_instance, imei_imsi_msisdn=True,
                                             exc_message='Failed import size historic check, historic '
                                                         'value is: 100.00, imported data has: 49.00 and '
                                                         'minimum required is 50.00')
@@ -193,7 +194,7 @@ def test_pairing_list_historical_thresholds_success(logger, mocked_statsd, db_co
     historic_threshold_check_function_success(100, 51, db_conn, metadata_db_conn, mocked_config, tmpdir,
                                               logger, mocked_statsd,
                                               PairingListImporter, PairListParams, pairing_list_instance,
-                                              imei_imsi=True)
+                                              imei_imsi_msisdn=True)
 
 
 def test_pairing_list_historical_thresholds_success_with_abs_threshold(logger, mocked_statsd, db_conn,
@@ -215,7 +216,7 @@ def test_pairing_list_historical_thresholds_success_with_abs_threshold(logger, m
 
     historic_threshold_check_function_fails(100, 51, db_conn, metadata_db_conn, mocked_config, tmpdir, logger,
                                             mocked_statsd, PairingListImporter, PairListParams,
-                                            pairing_list_instance, imei_imsi=True,
+                                            pairing_list_instance, imei_imsi_msisdn=True,
                                             exc_message='Failed import size historic check, '
                                                         'historic value is: 100.00, imported data has: '
                                                         '51.00 and minimum required is 52.00')

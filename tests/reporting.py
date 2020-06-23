@@ -38,6 +38,7 @@ import csv
 import shutil
 import time
 from html.parser import HTMLParser
+from glob import glob
 import fnmatch
 
 import pytest
@@ -49,8 +50,9 @@ from dirbs.cli.classify import cli as dirbs_classify_cli
 from dirbs.importer.operator_data_importer import OperatorDataImporter
 from _helpers import get_importer, expect_success, find_subdirectory_in_dir, \
     invoke_cli_classify_with_conditions_helper, from_cond_dict_list_to_cond_list, import_data
-from _fixtures import *    # noqa: F403, F401
-from _importer_params import OperatorDataParams, GSMADataParams, StolenListParams, PairListParams
+from _fixtures import *  # noqa: F403, F401
+from _importer_params import OperatorDataParams, GSMADataParams, StolenListParams, PairListParams, \
+    SubscribersListParams, DeviceAssociationListParams
 from dirbs.metadata import job_start_time_by_run_id, query_for_command_runs
 from dirbs.utils import most_recently_run_condition_info, format_datetime_for_report
 
@@ -299,85 +301,85 @@ def test_report_contains_conditions(postgres, db_conn, operator_data_importer, t
                 # last_successful_run to be tested in test_condition_last_run_time
                 assert all(['last_successful_run' in c for c in conditions])
                 conditions = [{k: v for k, v in c.items() if k != 'last_successful_run'} for c in conditions]
-                assert conditions == \
-                    [{'blocking': True,
-                      'config': {'blocking': True,
-                                 'amnesty_eligible': False,
-                                 'dimensions': [{'invert': False,
-                                                 'module': 'duplicate_threshold',
-                                                 'parameters': {'period_days': 120,
-                                                                'threshold': 10}},
-                                                {'invert': False,
-                                                 'module': 'duplicate_daily_avg',
-                                                 'parameters': {'min_seen_days': 5,
-                                                                'period_days': 30,
-                                                                'threshold': 4.0}}],
-                                 'grace_period_days': 60,
-                                 'label': 'duplicate_mk1',
-                                 'max_allowed_matching_ratio': 0.1,
-                                 'reason': 'Duplicate IMEI detected',
-                                 'sticky': True},
-                      'label': 'duplicate_mk1'},
-                     {'blocking': True,
-                      'config': {'blocking': True,
-                                 'amnesty_eligible': False,
-                                 'dimensions': [{'invert': False,
-                                                 'module': 'gsma_not_found',
-                                                 'parameters': {'ignore_rbi_delays': True}}],
-                                 'grace_period_days': 30,
-                                 'label': 'gsma_not_found',
-                                 'max_allowed_matching_ratio': 0.1,
-                                 'reason': 'TAC not found in GSMA TAC database',
-                                 'sticky': False},
-                      'label': 'gsma_not_found'},
-                     {'blocking': True,
-                      'config': {'blocking': True,
-                                 'amnesty_eligible': False,
-                                 'dimensions': [{'invert': False,
-                                                 'module': 'stolen_list',
-                                                 'parameters': {}}],
-                                 'grace_period_days': 0,
-                                 'label': 'local_stolen',
-                                 'max_allowed_matching_ratio': 1.0,
-                                 'reason': 'IMEI found on local stolen list',
-                                 'sticky': False},
-                      'label': 'local_stolen'},
-                     {'blocking': True,
-                      'config': {'blocking': True,
-                                 'amnesty_eligible': False,
-                                 'dimensions': [{'invert': False,
-                                                 'module': 'not_on_registration_list',
-                                                 'parameters': {}}],
-                                 'grace_period_days': 0,
-                                 'label': 'not_on_registration_list',
-                                 'max_allowed_matching_ratio': 1.0,
-                                 'reason': 'IMEI not found on local registration list',
-                                 'sticky': False},
-                      'label': 'not_on_registration_list'},
-                     {'blocking': False,
-                      'config': {'blocking': False,
-                                 'amnesty_eligible': False,
-                                 'dimensions': [{'invert': False,
-                                                 'module': 'inconsistent_rat',
-                                                 'parameters': {}}],
-                                 'grace_period_days': 30,
-                                 'label': 'inconsistent_rat',
-                                 'max_allowed_matching_ratio': 1.0,
-                                 'reason': 'IMEI RAT inconsistent with device capability',
-                                 'sticky': False},
-                      'label': 'inconsistent_rat'},
-                     {'blocking': False,
-                      'config': {'blocking': False,
-                                 'amnesty_eligible': False,
-                                 'dimensions': [{'invert': False,
-                                                 'module': 'malformed_imei',
-                                                 'parameters': {}}],
-                                 'grace_period_days': 0,
-                                 'label': 'malformed_imei',
-                                 'max_allowed_matching_ratio': 0.1,
-                                 'reason': 'Invalid characters detected in IMEI',
-                                 'sticky': False},
-                      'label': 'malformed_imei'}]
+                assert conditions == [
+                    {'blocking': True,
+                     'config': {'blocking': True,
+                                'amnesty_eligible': False,
+                                'dimensions': [{'invert': False,
+                                                'module': 'duplicate_threshold',
+                                                'parameters': {'period_days': 120,
+                                                               'threshold': 10}},
+                                               {'invert': False,
+                                                'module': 'duplicate_daily_avg',
+                                                'parameters': {'min_seen_days': 5,
+                                                               'period_days': 30,
+                                                               'threshold': 4.0}}],
+                                'grace_period_days': 60,
+                                'label': 'duplicate_mk1',
+                                'max_allowed_matching_ratio': 0.1,
+                                'reason': 'Duplicate IMEI detected',
+                                'sticky': True},
+                     'label': 'duplicate_mk1'},
+                    {'blocking': True,
+                     'config': {'blocking': True,
+                                'amnesty_eligible': False,
+                                'dimensions': [{'invert': False,
+                                                'module': 'gsma_not_found',
+                                                'parameters': {'ignore_rbi_delays': True}}],
+                                'grace_period_days': 30,
+                                'label': 'gsma_not_found',
+                                'max_allowed_matching_ratio': 0.1,
+                                'reason': 'TAC not found in GSMA TAC database',
+                                'sticky': False},
+                     'label': 'gsma_not_found'},
+                    {'blocking': True,
+                     'config': {'blocking': True,
+                                'amnesty_eligible': False,
+                                'dimensions': [{'invert': False,
+                                                'module': 'stolen_list',
+                                                'parameters': {}}],
+                                'grace_period_days': 0,
+                                'label': 'local_stolen',
+                                'max_allowed_matching_ratio': 1.0,
+                                'reason': 'IMEI found on local stolen list',
+                                'sticky': False},
+                     'label': 'local_stolen'},
+                    {'blocking': True,
+                     'config': {'blocking': True,
+                                'amnesty_eligible': False,
+                                'dimensions': [{'invert': False,
+                                                'module': 'not_on_registration_list',
+                                                'parameters': {}}],
+                                'grace_period_days': 0,
+                                'label': 'not_on_registration_list',
+                                'max_allowed_matching_ratio': 1.0,
+                                'reason': 'IMEI not found on local registration list',
+                                'sticky': False},
+                     'label': 'not_on_registration_list'},
+                    {'blocking': False,
+                     'config': {'blocking': False,
+                                'amnesty_eligible': False,
+                                'dimensions': [{'invert': False,
+                                                'module': 'inconsistent_rat',
+                                                'parameters': {}}],
+                                'grace_period_days': 30,
+                                'label': 'inconsistent_rat',
+                                'max_allowed_matching_ratio': 1.0,
+                                'reason': 'IMEI RAT inconsistent with device capability',
+                                'sticky': False},
+                     'label': 'inconsistent_rat'},
+                    {'blocking': False,
+                     'config': {'blocking': False,
+                                'amnesty_eligible': False,
+                                'dimensions': [{'invert': False,
+                                                'module': 'malformed_imei',
+                                                'parameters': {}}],
+                                'grace_period_days': 0,
+                                'label': 'malformed_imei',
+                                'max_allowed_matching_ratio': 0.1,
+                                'reason': 'Invalid characters detected in IMEI',
+                                'sticky': False},
+                     'label': 'malformed_imei'}]
             else:
                 # Placeholder reports do not contain conditions
                 assert not parsed_json['has_data']
@@ -864,7 +866,7 @@ def test_report_contains_per_day_records(postgres, db_conn, metadata_db_conn, op
                              perform_unclean_checks=False,
                              extract=False),
                            GSMADataParams(
-                             filename='testData1-gsmatac_operator4_operator1_anonymized.txt'))],
+                               filename='testData1-gsmatac_operator4_operator1_anonymized.txt'))],
                          indirect=True)
 def test_report_contains_total_counts(postgres, db_conn, metadata_db_conn, gsma_tac_db_importer,
                                       operator_data_importer, tmpdir, mocked_config, logger, mocked_statsd):
@@ -1031,7 +1033,7 @@ def test_report_contains_mcc_mnc_pairs(postgres, tmpdir, mocked_config):
                              perform_unclean_checks=False,
                              extract=False),
                            GSMADataParams(
-                             filename='testData1-gsmatac_operator4_operator1_anonymized.txt'))],
+                               filename='testData1-gsmatac_operator4_operator1_anonymized.txt'))],
                          indirect=True)
 def test_report_contains_top10_model_counts(postgres, db_conn, gsma_tac_db_importer, operator_data_importer,
                                             metadata_db_conn, tmpdir, mocked_config, logger, mocked_statsd):
@@ -1178,7 +1180,7 @@ def test_report_contains_top10_model_counts(postgres, db_conn, gsma_tac_db_impor
                              perform_unclean_checks=False,
                              extract=False),
                            GSMADataParams(
-                             filename='testData1-gsmatac_operator4_operator1_anonymized.txt'))],
+                               filename='testData1-gsmatac_operator4_operator1_anonymized.txt'))],
                          indirect=True)
 def test_report_contains_historical_trend_counts(postgres, db_conn, gsma_tac_db_importer, operator_data_importer,
                                                  metadata_db_conn, tmpdir, mocked_config, logger, mocked_statsd):
@@ -1237,11 +1239,11 @@ def test_report_contains_historical_trend_counts(postgres, db_conn, gsma_tac_db_
                              perform_unclean_checks=False,
                              extract=False),
                            StolenListParams(
-                             filename='testData1-sample_stolen_list-anonymized.csv'),
+                               filename='testData1-sample_stolen_list-anonymized.csv'),
                            PairListParams(
-                             filename='testData1-sample_pairinglist-anonymized.csv'),
+                               filename='testData1-sample_pairinglist-anonymized.csv'),
                            GSMADataParams(
-                             filename='testData1-gsmatac_operator4_operator1_anonymized.txt'))],
+                               filename='testData1-gsmatac_operator4_operator1_anonymized.txt'))],
                          indirect=True)
 def test_report_contains_per_tac_compliance_data(postgres, db_conn, gsma_tac_db_importer, operator_data_importer,
                                                  stolen_list_importer, pairing_list_importer, tmpdir, mocked_config,
@@ -1344,11 +1346,11 @@ def test_report_contains_per_tac_compliance_data(postgres, db_conn, gsma_tac_db_
                              perform_unclean_checks=False,
                              extract=False),
                            StolenListParams(
-                             filename='testData1-sample_stolen_list-anonymized.csv'),
+                               filename='testData1-sample_stolen_list-anonymized.csv'),
                            PairListParams(
-                             filename='testData1-sample_pairinglist-anonymized.csv'),
+                               filename='testData1-sample_pairinglist-anonymized.csv'),
                            GSMADataParams(
-                             filename='testData1-gsmatac_operator4_operator1_anonymized.txt'))],
+                               filename='testData1-gsmatac_operator4_operator1_anonymized.txt'))],
                          indirect=True)
 def test_report_contains_compliance_condition_counts(postgres, db_conn, gsma_tac_db_importer, operator_data_importer,
                                                      stolen_list_importer, pairing_list_importer, tmpdir,
@@ -1607,7 +1609,7 @@ def test_report_contains_compliance_condition_counts(postgres, db_conn, gsma_tac
                              perform_rat_import=True,
                              extract=False),
                            GSMADataParams(
-                             filename='gsma_dump_rat_computation_check.txt'))],
+                               filename='gsma_dump_rat_computation_check.txt'))],
                          indirect=True)
 def test_top_10_models_null_model_manufacturer(postgres, db_conn, gsma_tac_db_importer, operator_data_importer,
                                                logger, tmpdir, mocked_config):
@@ -1837,11 +1839,11 @@ def test_imei_overlap_reports(postgres, db_conn, operator_data_importer, tmpdir,
                              perform_unclean_checks=False,
                              extract=False),
                            StolenListParams(
-                             filename='testData1-sample_stolen_list-anonymized.csv'),
+                               filename='testData1-sample_stolen_list-anonymized.csv'),
                            PairListParams(
-                             filename='testData1-sample_pairinglist-anonymized.csv'),
+                               filename='testData1-sample_pairinglist-anonymized.csv'),
                            GSMADataParams(
-                             filename='testData1-gsmatac_operator4_operator1_anonymized.txt'))],
+                               filename='testData1-gsmatac_operator4_operator1_anonymized.txt'))],
                          indirect=True)
 def test_report_contains_condition_count_table(postgres, db_conn, gsma_tac_db_importer, operator_data_importer,
                                                stolen_list_importer, pairing_list_importer, tmpdir,
@@ -2690,3 +2692,358 @@ def test_per_tac_gross_adds(postgres, db_conn, operator_data_importer,
               'num_imeis': 4}]
 
         assert expected_rows == tbl
+
+
+@pytest.mark.parametrize('pairing_list_importer',
+                         [PairListParams(content='imei,imsi,msisdn\n'
+                                                 '12345678901230,11107678901234,555555555555555\n'
+                                                 '12345678901231,11108678901234,555555555555556\n'
+                                                 '12345678901232,11109678901234,555555555555557\n'
+                                                 '12345678901233,11101678901234,555555555555558\n'
+                                                 '12345678901234,11101678901234,555555555555559\n'
+                                                 '12345678901235,11102678901234,555555555555550\n'
+                                                 '12345678901236,11102678901234,555555555555545\n')],
+                         indirect=True)
+@pytest.mark.parametrize('operator_data_importer',
+                         [OperatorDataParams(
+                             content='date,imei,imsi,msisdn\n'
+                                     '20190221,12345678901228,11105678901234,1\n'
+                                     '20190121,12345678901229,11106678901234,1\n'
+                                     '20190121,12345678901230,11107678901234,1\n'
+                                     '20180812,12345678901230,11107678901234,1\n'
+                                     '20180812,12345678901231,11108678901234,1\n'
+                                     '20180812,12345678901232,11109678901234,1',
+                             extract=False,
+                             perform_unclean_checks=False,
+                             perform_leading_zero_check=False,
+                             perform_region_checks=False,
+                             perform_home_network_check=False,
+                             operator='operator1'
+                         )],
+                         indirect=True)
+def test_non_active_pairs_generation(per_test_postgres, mocked_config, logger, monkeypatch,
+                                     tmpdir, db_conn, pairing_list_importer, operator_data_importer):
+    """Verify that the non-active pair list generation functionality works correctly."""
+    operator_data_importer.import_data()
+    pairing_list_importer.import_data()
+
+    # Run dirbs-report using cli
+    runner = CliRunner()
+    output_dir = str(tmpdir)
+    result = runner.invoke(dirbs_report_cli, ['non_active_pairs', '10', output_dir], obj={'APP_CONFIG': mocked_config})
+    assert result.exit_code == 0
+
+    fn = find_subdirectory_in_dir('report__non_active_pairs*', output_dir)
+    dir_path = os.path.join(output_dir, fn)
+    files = glob('{0}/*.csv'.format(dir_path))
+    with open(files[0], 'r') as pairs_file:
+        reader = csv.reader(pairs_file)
+        rows = list(reader)
+
+    assert len(rows) == 5
+    expected_list = [['imei_norm', 'imsi', 'last_seen'],
+                     ['12345678901230', '11107678901234', '2018-08-12'],
+                     ['12345678901232', '11109678901234', '2018-08-12'],
+                     ['12345678901231', '11108678901234', '2018-08-12'],
+                     ['12345678901230', '11107678901234', '2019-01-21']]
+    assert all([x in rows for x in expected_list])
+
+
+@pytest.mark.parametrize('subscribers_list_importer',
+                         [SubscribersListParams(content='uid,imsi\n'
+                                                        'uid-01-sub,11118978901234\n'
+                                                        'uid-02-sub,11119978901234\n'
+                                                        'uid-03-sub,11128978901234\n')],
+                         indirect=True)
+@pytest.mark.parametrize('operator_data_importer',
+                         [OperatorDataParams(
+                             content='date,imei,imsi,msisdn\n'
+                                     '20190221,12345678901228,11105678901234,1\n'
+                                     '20190121,12345678901229,11106678901234,1\n'
+                                     '20190121,12345678901230,11107678901234,1\n'
+                                     '20180812,12345678901230,11107678901234,1\n'
+                                     '20180812,12345678901231,11108678901234,1\n'
+                                     '20180812,12345678901232,11109678901234,1',
+                             extract=False,
+                             perform_unclean_checks=False,
+                             perform_leading_zero_check=False,
+                             perform_region_checks=False,
+                             perform_home_network_check=False,
+                             operator='operator1'
+                         )],
+                         indirect=True)
+def test_unregistered_subscribers_generation(per_test_postgres, mocked_config, logger, monkeypatch,
+                                             tmpdir, db_conn, subscribers_list_importer, operator_data_importer):
+    """Verify that the unregistered_subscribers report works correctly."""
+    # import data
+    operator_data_importer.import_data()
+    subscribers_list_importer.import_data()
+
+    # run dirbs cli
+    runner = CliRunner()
+    output_dir = str(tmpdir)
+    result = runner.invoke(dirbs_report_cli,
+                           ['unregistered_subscribers', output_dir],
+                           obj={'APP_CONFIG': mocked_config})
+    assert result.exit_code == 0
+
+    fn = find_subdirectory_in_dir('report__unregistered_subscribers*', output_dir)
+    dir_path = os.path.join(output_dir, fn)
+    with open('{0}/unregistered_subscribers_operator1.csv'.format(dir_path), 'r') as fn:
+        reader = csv.reader(fn)
+        rows = list(reader)
+
+    assert len(rows) == 7
+    expected_list = [['imsi', 'first_seen', 'last_seen'],
+                     ['11107678901234', '20180812', '20180812'],
+                     ['11109678901234', '20180812', '20180812'],
+                     ['11108678901234', '20180812', '20180812'],
+                     ['11107678901234', '20190121', '20190121'],
+                     ['11106678901234', '20190121', '20190121'],
+                     ['11105678901234', '20190221', '20190221']]
+    assert all([x in rows for x in expected_list])
+
+
+@pytest.mark.parametrize('subscribers_list_importer',
+                         [SubscribersListParams(content='uid,imsi\n'
+                                                        'uid-01-sub,11105678901234\n'
+                                                        'uid-02-sub,11108678901234\n'
+                                                        'uid-03-sub,11109678901234\n')],
+                         indirect=True)
+@pytest.mark.parametrize('operator_data_importer',
+                         [OperatorDataParams(
+                             content='date,imei,imsi,msisdn\n'
+                                     '20190221,12345678901228,11105678901234,1\n'
+                                     '20190121,12345678901229,11106678901234,1\n'
+                                     '20190121,12345678901230,11107678901234,1\n'
+                                     '20180812,12345678901230,11107678901234,1\n'
+                                     '20180812,12345678901231,11108678901234,1\n'
+                                     '20180812,12345678901232,11109678901234,1',
+                             extract=False,
+                             perform_unclean_checks=False,
+                             perform_leading_zero_check=False,
+                             perform_region_checks=False,
+                             perform_home_network_check=False,
+                             operator='operator1'
+                         )],
+                         indirect=True)
+def test_unregistered_subscribers_with_newer_than_option(per_test_postgres, mocked_config, logger, monkeypatch,
+                                                         tmpdir, db_conn, subscribers_list_importer,
+                                                         operator_data_importer):
+    """Verify unregsitered_subscribers_list generation with newer-than parameter."""
+    operator_data_importer.import_data()
+    subscribers_list_importer.import_data()
+
+    runner = CliRunner()
+    output_dir = str(tmpdir)
+    result = runner.invoke(dirbs_report_cli,
+                           ['unregistered_subscribers', '--newer-than', '20190120', output_dir],
+                           obj={'APP_CONFIG': mocked_config})
+    assert result.exit_code == 0
+
+    fn = find_subdirectory_in_dir('report__unregistered_subscribers*', output_dir)
+    dir_path = os.path.join(output_dir, fn)
+    with open('{0}/unregistered_subscribers_operator1.csv'.format(dir_path), 'r') as fn:
+        reader = csv.reader(fn)
+        rows = list(reader)
+
+    assert len(rows) == 3
+    expected_list = [['imsi', 'first_seen', 'last_seen'],
+                     ['11107678901234', '20190121', '20190121'],
+                     ['11106678901234', '20190121', '20190121']]
+    assert all([x in rows for x in expected_list])
+    assert ['11107678901234', '20180812', '20180812'] not in rows
+
+
+@pytest.mark.parametrize('operator_data_importer',
+                         [OperatorDataParams(
+                             content='date,imei,imsi,msisdn\n'
+                                     '20190221,12345678901228,11105678901234,1\n'
+                                     '20190121,12345678901229,11106678901234,1\n'
+                                     '20190121,12345678901230,11107678901234,1\n'
+                                     '20180812,12345678901230,11107678901234,1\n'
+                                     '20180812,12345678901231,11108678901234,1\n'
+                                     '20180812,12345678901232,11109678901234,1',
+                             extract=False,
+                             perform_unclean_checks=False,
+                             perform_leading_zero_check=False,
+                             perform_region_checks=False,
+                             perform_home_network_check=False,
+                             operator='operator1'
+                         )],
+                         indirect=True)
+def test_classified_triplets_single_condition(per_test_postgres, mocked_config, logger, monkeypatch,
+                                              tmpdir, db_conn, operator_data_importer):
+    """Verify classified_triplets report list generation with single condition as argument."""
+    operator_data_importer.import_data()
+
+    cli_runner = CliRunner()
+    output_dir = str(tmpdir)
+    cond_list = [{
+        'label': 'gsma_not_found',
+        'grace_period_days': 30,
+        'blocking': True,
+        'sticky': False,
+        'reason': 'Not found in gsma',
+        'dimensions': [{'module': 'gsma_not_found'}]
+    }]
+
+    classified_imeis_list = invoke_cli_classify_with_conditions_helper(cond_list, mocked_config, monkeypatch,
+                                                                       curr_date='20190201', db_conn=db_conn,
+                                                                       classify_options=['--no-safety-check'])
+    assert classified_imeis_list == ['12345678901229', '12345678901230', '12345678901231', '12345678901232']
+
+    # invoke report runner
+    result = cli_runner.invoke(dirbs_report_cli,
+                               ['classified_triplets', 'gsma_not_found', output_dir],
+                               obj={'APP_CONFIG': mocked_config})
+    assert result.exit_code == 0
+
+    fn = find_subdirectory_in_dir('report__classified_triplets*', output_dir)
+    dir_path = os.path.join(output_dir, fn)
+    with open('{0}/classified_triplets_gsma_not_found.csv'.format(dir_path), 'r') as fn:
+        reader = csv.reader(fn)
+        rows = list(reader)
+
+    assert len(rows) == 6
+    expected_list = [['imei', 'imsi', 'msisdn', 'operator'],
+                     ['12345678901229', '11106678901234', '1', 'operator1'],
+                     ['12345678901230', '11107678901234', '1', 'operator1'],
+                     ['12345678901230', '11107678901234', '1', 'operator1'],
+                     ['12345678901231', '11108678901234', '1', 'operator1'],
+                     ['12345678901232', '11109678901234', '1', 'operator1']]
+    assert all([x in rows for x in expected_list])
+
+
+@pytest.mark.parametrize('operator_data_importer',
+                         [OperatorDataParams(
+                             content='date,imei,imsi,msisdn\n'
+                                     '20190221,12345678901228,11105678901234,1\n'
+                                     '20190121,12345678901229,11106678901234,1\n'
+                                     '20190121,12345678901230,11107678901234,1\n'
+                                     '20180812,12345678901230,11107678901234,1\n'
+                                     '20180812,12345678901231,11108678901234,1\n'
+                                     '20180812,12345678901232,11109678901234,1',
+                             extract=False,
+                             perform_unclean_checks=False,
+                             perform_leading_zero_check=False,
+                             perform_region_checks=False,
+                             perform_home_network_check=False,
+                             operator='operator1'
+                         )],
+                         indirect=True)
+def test_classified_triplets_multiple_conditions(per_test_postgres, mocked_config, logger, monkeypatch,
+                                                 tmpdir, db_conn, operator_data_importer):
+    """Verify classified_triplets report list generation with multiple conditions as argument."""
+    operator_data_importer.import_data()
+
+    cli_runner = CliRunner()
+    output_dir = str(tmpdir)
+    cond_list = [{
+        'label': 'gsma_not_found',
+        'grace_period_days': 30,
+        'blocking': True,
+        'sticky': False,
+        'reason': 'Not found in gsma',
+        'dimensions': [{'module': 'gsma_not_found'}
+                       ]
+    },
+        {'label': 'not_on_registration_list',
+         'grace_period_days': 30,
+         'blocking': True,
+         'sticky': False,
+         'reason': 'Not found in reg list',
+         'dimensions': [{'module': 'not_on_registration_list'}]
+         }
+    ]
+
+    classified_imeis_list = invoke_cli_classify_with_conditions_helper(cond_list, mocked_config, monkeypatch,
+                                                                       curr_date='20190201', db_conn=db_conn,
+                                                                       classify_options=['--no-safety-check'])
+    assert classified_imeis_list == ['12345678901228', '12345678901229', '12345678901229',
+                                     '12345678901230', '12345678901230', '12345678901231',
+                                     '12345678901231', '12345678901232', '12345678901232']
+
+    # invoke report runner
+    result = cli_runner.invoke(dirbs_report_cli,
+                               ['classified_triplets', 'gsma_not_found,not_on_registration_list', output_dir],
+                               obj={'APP_CONFIG': mocked_config})
+    assert result.exit_code == 0
+
+    fn = find_subdirectory_in_dir('report__classified_triplets*', output_dir)
+    dir_path = os.path.join(output_dir, fn)
+    path, dirs, files = next(os.walk(dir_path))
+
+    assert len(files) == 2  # verify that two seperate files are generated
+    assert 'classified_triplets_not_on_registration_list.csv' in files
+    assert 'classified_triplets_gsma_not_found.csv' in files
+
+    for fn in files:
+        with open('{0}/{1}'.format(dir_path, fn), 'r') as fn:
+            reader = csv.reader(fn)
+            rows = list(reader)
+
+        expected_list = [['imei', 'imsi', 'msisdn', 'operator'],
+                         ['12345678901229', '11106678901234', '1', 'operator1'],
+                         ['12345678901230', '11107678901234', '1', 'operator1'],
+                         ['12345678901230', '11107678901234', '1', 'operator1'],
+                         ['12345678901231', '11108678901234', '1', 'operator1'],
+                         ['12345678901232', '11109678901234', '1', 'operator1']]
+        assert all([x in rows for x in expected_list])
+
+
+@pytest.mark.parametrize('subscribers_list_importer',
+                         [SubscribersListParams(content='uid,imsi\n'
+                                                        'uid-01-sub,11105678901234\n'
+                                                        'uid-02-sub,11106678901235')],
+                         indirect=True)
+@pytest.mark.parametrize('device_association_list_importer',
+                         [DeviceAssociationListParams(content='uid,imei\n'
+                                                              'uid-01-sub,12345678901228\n'
+                                                              'uid-02-sub,12345678901229')],
+                         indirect=True)
+@pytest.mark.parametrize('operator_data_importer',
+                         [OperatorDataParams(
+                             content='date,imei,imsi,msisdn\n'
+                                     '20190221,12345678901228,11105678901234,1\n'
+                                     '20190121,12345678901229,11106678901235,1\n'
+                                     '20190222,12345678901230,11107678901236,1\n'
+                                     '20190212,12345678901231,11107678901237,1\n'
+                                     '20190212,12345678901232,11108678901238,1\n'
+                                     '20190212,12345678901233,11109678901239,1',
+                             extract=False,
+                             perform_unclean_checks=False,
+                             perform_leading_zero_check=False,
+                             perform_region_checks=False,
+                             perform_home_network_check=False,
+                             operator='operator1'
+                         )],
+                         indirect=True)
+def test_association_list_violations(per_test_postgres, mocked_config, logger, monkeypatch,
+                                     tmpdir, db_conn, subscribers_list_importer,
+                                     operator_data_importer, device_association_list_importer):
+    """Verify that the association list violation reporting works correctly."""
+    operator_data_importer.import_data()
+    subscribers_list_importer.import_data()
+    device_association_list_importer.import_data()
+
+    runner = CliRunner()
+    output_dir = str(tmpdir)
+    result = runner.invoke(dirbs_report_cli,
+                           ['association_list_violations', '02', '2019', output_dir],
+                           obj={'APP_CONFIG': mocked_config})
+    assert result.exit_code == 0
+
+    fn = find_subdirectory_in_dir('report__association_list_violations*', output_dir)
+    dir_path = os.path.join(output_dir, fn)
+    with open('{0}/association_violations_operator1.csv'.format(dir_path), 'r') as fn:
+        reader = csv.reader(fn)
+        rows = list(reader)
+
+    assert len(rows) == 5
+    expected_list = [['imei', 'imsi', 'msisdn', 'first_seen', 'last_seen'],
+                     ['12345678901232', '11108678901238', '1', '2019-02-12', '2019-02-12'],
+                     ['12345678901230', '11107678901236', '1', '2019-02-22', '2019-02-22'],
+                     ['12345678901233', '11109678901239', '1', '2019-02-12', '2019-02-12'],
+                     ['12345678901231', '11107678901237', '1', '2019-02-12', '2019-02-12']]
+    assert all([x in rows for x in expected_list])

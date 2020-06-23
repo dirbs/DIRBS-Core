@@ -39,7 +39,8 @@ from flask import Flask, request, g
 from werkzeug.exceptions import HTTPException, InternalServerError, BadRequest, ServiceUnavailable
 
 import dirbs.utils as utils
-from dirbs.config import ConfigParser, ConfigParseException
+from dirbs.config import ConfigParser
+from dirbs.config.common import ConfigParseException
 from dirbs.logging import StatsClient, setup_initial_logging, configure_logging, setup_file_logging
 from dirbs.api.v1 import api, register_docs
 from dirbs.api.v2 import api as api_v2, register_docs as register_docs_v2

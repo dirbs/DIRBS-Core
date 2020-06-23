@@ -37,7 +37,8 @@ DECLARE
                          'dirbs_core_import_pairing_list', 'dirbs_core_import_golden_list', 'dirbs_core_classify',
                          'dirbs_core_listgen', 'dirbs_core_report', 'dirbs_core_catalog', 'dirbs_core_api',
                          'dirbs_core_import_barred_list', 'dirbs_core_import_barred_tac_list',
-                         'dirbs_core_import_subscribers_registration_list'];
+                         'dirbs_core_import_subscribers_registration_list',
+                         'dirbs_core_import_device_association_list', 'dirbs_core_import_monitoring_list'];
     role TEXT;
 BEGIN
     -- Create base role
@@ -72,7 +73,8 @@ DECLARE
                         'dirbs_core_import_stolen_list', 'dirbs_core_import_pairing_list',
                         'dirbs_core_import_golden_list', 'dirbs_core_classify', 'dirbs_core_listgen',
                         'dirbs_core_report', 'dirbs_core_catalog', 'dirbs_core_import_barred_list',
-                        'dirbs_core_import_barred_tac_list', 'dirbs_core_import_subscribers_registration_list'];
+                        'dirbs_core_import_barred_tac_list', 'dirbs_core_import_subscribers_registration_list',
+                        'dirbs_core_import_device_association_list', 'dirbs_core_import_monitoring_list'];
     job TEXT;
 BEGIN
     FOREACH job IN ARRAY jobs

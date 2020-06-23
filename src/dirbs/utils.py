@@ -46,7 +46,7 @@ from psycopg2.extras import NamedTupleCursor
 
 from dirbs import db_schema_version as code_db_schema_version
 import dirbs.metadata as metadata
-from dirbs.config import ConfigParseException
+from dirbs.config.common import ConfigParseException
 
 
 class DatabaseSchemaException(Exception):

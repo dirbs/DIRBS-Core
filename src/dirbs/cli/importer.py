@@ -315,6 +315,10 @@ def _common_import_params(ctx):
               help='Skip importing RAT field if it does not exist in input data.',
               callback=_process_disable_rat_import,
               expose_value=False)
+@click.option('--disable-auto-analyze',
+              default=False,
+              is_flag=True,
+              help='Skip auto analyzing of historic tables associated with operator data import')
 @disable_historic_check_option
 @click.pass_context
 @common.unhandled_exception_handler
@@ -324,7 +328,7 @@ def _common_import_params(ctx):
                         'dirbs.import.operator.{0}'.format(ctx.params['operator_id'].lower() + '.'))
 def operator(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root, metrics_run_root,
              operator_id, input_file, disable_leading_zero_check, disable_null_check, disable_clean_check,
-             disable_region_check, disable_home_check, disable_historic_check):
+             disable_region_check, disable_home_check, disable_historic_check, disable_auto_analyze):
     """
     Import the CSV operator data found in INPUT into the PostgreSQL database.
 
@@ -355,7 +359,8 @@ def operator(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, 
                    'perform_unclean_checks': not disable_clean_check,
                    'perform_region_checks': not disable_region_check,
                    'perform_home_network_check': not disable_home_check,
-                   'perform_historic_checks': not disable_historic_check})
+                   'perform_historic_checks': not disable_historic_check,
+                   'perform_auto_analyze': not disable_auto_analyze})
     with importer_factory.make_data_importer('operator', input_file, config, statsd, conn, metadata_conn,
                                              run_id, metrics_root, metrics_run_root, **params) as importer:
         importer.import_data()
@@ -576,4 +581,63 @@ def subscribers_registration_list(ctx, config, statsd, logger, run_id, conn, met
     with importer_factory.make_data_importer('subscribers_registration_list', input_file, config, statsd, conn,
                                              metadata_conn, run_id, metrics_root,
                                              metrics_run_root, **params) as importer:
+        importer.import_data()
+
+
+@cli.command(name='device_association_list')
+@click.argument('input_file', type=click.Path(exists=True, dir_okay=False), callback=_validate_input_file_extension)
+@disable_historic_check_option
+@click.pass_context
+@common.unhandled_exception_handler
+@add_delta_options
+@handle_import_check_exception
+@common.cli_wrapper(command='dirbs-import',
+                    subcommand='device_association_list',
+                    required_role='dirbs_core_import_device_association_list')
+def device_association_list(ctx, config, statsd, logger, run_id, conn, metadata_conn, command,
+                            metrics_root, metrics_run_root, input_file, disable_historic_check,
+                            delta, disable_delta_adds_check, disable_delta_removes_check,
+                            disable_delta_updates_check):
+    """Import the Device Association List data found in INPUT file."""
+    params = _common_import_params(ctx)
+    associations_tc = config.associations_threshold_config
+    params.update({'perform_historic_check': not disable_historic_check,
+                   'delta': delta,
+                   'perform_delta_adds_check': not disable_delta_adds_check,
+                   'perform_delta_removes_check': not disable_delta_removes_check,
+                   'import_size_variation_percent': associations_tc.import_size_variation_percent,
+                   'import_size_variation_absolute': associations_tc.import_size_variation_absolute,
+                   'perform_delta_updates_check': not disable_delta_updates_check})
+
+    with importer_factory.make_data_importer('device_association_list', input_file, config, statsd, conn,
+                                             metadata_conn, run_id, metrics_root, metrics_run_root,
+                                             **params) as importer:
+        importer.import_data()
+
+
+@cli.command(name='monitoring_list')
+@click.argument('input_file', type=click.Path(exists=True, dir_okay=False), callback=_validate_input_file_extension)
+@disable_historic_check_option
+@click.pass_context
+@common.unhandled_exception_handler
+@add_delta_options
+@handle_import_check_exception
+@common.cli_wrapper(command='dirbs-import',
+                    subcommand='monitoring_list',
+                    required_role='dirbs_core_import_monitoring_list')
+def monitoring_list(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root, metrics_run_root,
+                    input_file, disable_historic_check, delta, disable_delta_adds_check, disable_delta_removes_check,
+                    disable_delta_updates_check):
+    """Import the monitoring list data found in INPUT file."""
+    params = _common_import_params(ctx)
+    ml_tc = config.monitoring_threshold_config
+    params.update({'perform_historic_check': not disable_historic_check,
+                   'delta': delta,
+                   'perform_delta_adds_check': not disable_delta_adds_check,
+                   'perform_delta_removes_check': not disable_delta_removes_check,
+                   'import_size_variation_percent': ml_tc.import_size_variation_percent,
+                   'import_size_variation_absolute': ml_tc.import_size_variation_absolute,
+                   'perform_delta_updates_check': not disable_delta_updates_check})
+    with importer_factory.make_data_importer('monitoring_list', input_file, config, statsd, conn, metadata_conn,
+                                             run_id, metrics_root, metrics_run_root, **params) as importer:
         importer.import_data()

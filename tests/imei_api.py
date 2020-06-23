@@ -524,10 +524,10 @@ def test_seen_with(flask_app, operator_data_importer,
 
 
 @pytest.mark.parametrize('pairing_list_importer',
-                         [PairListParams(content='imei,imsi\n'
-                                                 '38847733370026,111018001111111\n'
-                                                 '38847733370026,111015113222222\n'
-                                                 '38847733370020,111015113333333')],
+                         [PairListParams(content='imei,imsi,msisdn\n'
+                                                 '38847733370026,111018001111111,333222111555555\n'
+                                                 '38847733370026,111015113222222,333222111555556\n'
+                                                 '38847733370020,111015113333333,333222111555557')],
                          indirect=True)
 @pytest.mark.parametrize('operator_data_importer',
                          [OperatorDataParams(filename='testData1-operator-operator4-anonymized_20161101_20161130.csv',
@@ -806,13 +806,13 @@ def test_imei_normalisation_on_pairings_api(flask_app):
 
 
 @pytest.mark.parametrize('pairing_list_importer',
-                         [PairListParams(content='imei,imsi\n'
-                                                 '38847733370026,111018001111111\n'
-                                                 '38847733370026,111015113222222\n'
-                                                 '38847733370020,111015113333333\n'
-                                                 '38847733370026,111016111111111\n'
-                                                 '38847733370026,111016222222222\n'
-                                                 '38847733370026,111016333333333')],
+                         [PairListParams(content='imei,imsi,msisdn\n'
+                                                 '38847733370026,111018001111111,111112222233334\n'
+                                                 '38847733370026,111015113222222,111112222233335\n'
+                                                 '38847733370020,111015113333333,111112222233336\n'
+                                                 '38847733370026,111016111111111,111112222233337\n'
+                                                 '38847733370026,111016222222222,111112222233338\n'
+                                                 '38847733370026,111016333333333,111112222233339')],
                          indirect=True)
 @pytest.mark.parametrize('registration_list_importer',
                          [RegistrationListParams(content='approved_imei,make,model,status,'
@@ -1355,7 +1355,7 @@ def test_imei_info_api_response(flask_app, registration_list_importer):
     Verify correct response structure for IMEI-Info api.
     """
     response_struct_keys = ['imei_norm', 'status', 'make', 'model', 'model_number', 'brand_name',
-                            'device_type', 'radio_interface']
+                            'device_type', 'radio_interface', 'associated_imeis']
     registration_list_importer.import_data()
     rv = flask_app.get(url_for('v2.imei_info_api', imei='10000000000000'))
     assert rv.status_code == 200

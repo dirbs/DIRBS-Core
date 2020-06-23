@@ -55,8 +55,13 @@ from dirbs.importer.golden_list_importer import GoldenListImporter
 from dirbs.importer.barred_list_importer import BarredListImporter
 from dirbs.importer.barred_tac_list_importer import BarredTacListImporter
 from dirbs.importer.subscriber_reg_list_importer import SubscribersListImporter
+from dirbs.importer.device_association_list_importer import DeviceAssociationListImporter
+from dirbs.importer.monitoring_list_importer import MonitoringListImporter
 from dirbs.cli.classify import cli as dirbs_classify_cli
-from dirbs.config import ConditionConfig, OperatorConfig, AmnestyConfig, ListGenerationConfig
+from dirbs.config.conditions import ConditionConfig
+from dirbs.config.region import OperatorConfig
+from dirbs.config.amnesty import AmnestyConfig
+from dirbs.config.list_generation import ListGenerationConfig
 
 
 def job_metadata_importer(*, db_conn, command, run_id, subcommand=None, status,
@@ -91,7 +96,9 @@ def get_importer(importer_type,
         OperatorDataImporter: 'operator',
         BarredListImporter: 'barred_list',
         BarredTacListImporter: 'barred_tac_list',
-        SubscribersListImporter: 'subscribers_registration_list'
+        SubscribersListImporter: 'subscribers_registration_list',
+        DeviceAssociationListImporter: 'device_association_list',
+        MonitoringListImporter: 'monitoring_list'
     }
     subcommand = subcommand_lookup[importer_type]
 
@@ -115,7 +122,7 @@ def get_importer(importer_type,
     return imp
 
 
-def data_file_to_test(length, imei_imsi=False, imei_custom_header='imei'):
+def data_file_to_test(length, imei_imsi=False, imei_custom_header='imei', imei_imsi_msisdn=False):
     """Helper function for constructor an importer data file with customized lenght.
 
     If the param imei-imsi is set to True, this function will create a datafile containing
@@ -124,6 +131,7 @@ def data_file_to_test(length, imei_imsi=False, imei_custom_header='imei'):
     Use imei_custom_header param to customize the header for IMEIs.
     """
     imei_start = 10000000000000
+    msisdn_start = 500000000000000
     test_dir = tempfile.mkdtemp()
     data_file_to_test = path.join(test_dir, str(length) + 'test_file.csv')
 
@@ -134,6 +142,15 @@ def data_file_to_test(length, imei_imsi=False, imei_custom_header='imei'):
 
             for i in range(0, length):
                 f.write('{0:d},{1:d}\n'.format(imei_start + i, imsi_start + i))
+
+            f.flush()
+    elif imei_imsi_msisdn:
+        imsi_start = 20000000000000
+        with open(data_file_to_test, 'w') as f:
+            f.write('imei,imsi,msisdn\n')
+
+            for i in range(0, length):
+                f.write('{0:d},{1:d},{2:d}\n'.format(imei_start + i, imsi_start + i, msisdn_start + i))
 
             f.flush()
     else:

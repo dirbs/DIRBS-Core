@@ -171,9 +171,22 @@ def imei_info_api(imei):
                            WHERE imei_norm = %(imei_norm)s
                              AND virt_imei_shard = calc_virt_imei_shard(%(imei_norm)s)""",
                        {'imei_norm': imei_norm})
-        rec = cursor.fetchone()
-        if rec is not None:
-            return jsonify(IMEIInfo().dump(rec._asdict()).data)
+        info_rec = cursor.fetchone()
+
+        cursor.execute("""SELECT imei_norm
+                            FROM registration_list
+                           WHERE device_id = (SELECT device_id
+                                                FROM registration_list
+                                               WHERE imei_norm = %(imei_norm)s
+                                                 AND virt_imei_shard = calc_virt_imei_shard(%(imei_norm)s))
+                             AND imei_norm NOT IN (%(imei_norm)s)""",
+                       {'imei_norm': imei_norm})
+
+        if info_rec is not None:
+            response = info_rec._asdict()
+            response['associated_imeis'] = [rec.imei_norm for rec in cursor] \
+                if cursor is not None else []
+            return jsonify(IMEIInfo().dump(response).data)
         return {}
 
 

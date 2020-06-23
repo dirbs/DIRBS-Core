@@ -1,6 +1,3 @@
-.. image:: https://avatars0.githubusercontent.com/u/42587891?s=100&v=4
-  
-
 Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
 
 All rights reserved.
