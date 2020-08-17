@@ -910,7 +910,7 @@ def test_basic_cli_classification_set_current_date(postgres, operator_data_impor
     with db_conn.cursor() as cur:
         cur.execute('SELECT imei_norm FROM classification_state')
         res_list = cur.fetchall()
-        assert len(res_list) is 0
+        assert len(res_list) == 0
 
     runner = CliRunner()  # noqa
     # only IMEI 64220496727231 from operator data input file is also in registration_list.
@@ -964,7 +964,7 @@ def test_basic_cli_classification_set_condition(postgres, operator_data_importer
     with db_conn.cursor() as cur:
         cur.execute('SELECT imei_norm FROM classification_state')
         res_list = cur.fetchall()
-        assert len(res_list) is 0
+        assert len(res_list) == 0
 
     runner = CliRunner()  # noqa
     result = runner.invoke(dirbs_classify_cli, ['--no-safety-check', '--curr-date',
@@ -1897,7 +1897,7 @@ def test_registration_list(db_conn, operator_data_importer, registration_list_im
     with db_conn.cursor() as cur:
         cur.execute('SELECT imei_norm FROM classification_state')
         res_list = cur.fetchall()
-        assert len(res_list) is 0
+        assert len(res_list) == 0
 
     cond_list = [{
         'label': 'not_on_registration_list',
@@ -1942,7 +1942,7 @@ def test_exists_in_barred_list_dim(db_conn, operator_data_importer, barred_list_
     with db_conn.cursor() as cursor:
         cursor.execute('SELECT imei_norm FROM classification_state')
         res_list = cursor.fetchall()
-        assert len(res_list) is 0
+        assert len(res_list) == 0
 
     cond_list = [{
         'label': 'exists_in_barred_list',
@@ -1989,7 +1989,7 @@ def test_is_barred_tac_dim(db_conn, operator_data_importer, barred_tac_list_impo
     with db_conn.cursor() as cursor:
         cursor.execute('SELECT imei_norm FROM classification_state')
         res_list = cursor.fetchall()
-        assert len(res_list) is 0
+        assert len(res_list) == 0
 
     cond_list = [{
         'label': 'tac_in_barred_list',
@@ -2039,7 +2039,7 @@ def test_registration_list_with_exempted_device_types(db_conn, operator_data_imp
     with db_conn.cursor() as cur:
         cur.execute('SELECT imei_norm FROM classification_state')
         res_list = cur.fetchall()
-        assert len(res_list) is 0
+        assert len(res_list) == 0
 
     monkeypatch.setattr(mocked_config.region_config, 'exempted_device_types', ['Vehicle', 'Dongle'])
     # Verify IMEIs belonging to exempted device types are excluded.
@@ -2073,7 +2073,7 @@ def test_local_stolen(db_conn, stolen_list_importer, mocked_config, monkeypatch)
     with db_conn.cursor() as cur:
         cur.execute('SELECT imei_norm FROM classification_state')
         res_list = cur.fetchall()
-        assert len(res_list) is 0
+        assert len(res_list) == 0
 
     cond_list = [{
         'label': 'stolen_list',
@@ -2358,7 +2358,7 @@ def test_inconsistent_rat_dimension(db_conn, tmpdir, logger, mocked_config,
     with db_conn.cursor() as cur:
         cur.execute('SELECT imei_norm FROM classification_state')
         res_list = cur.fetchall()
-        assert len(res_list) is 0
+        assert len(res_list) == 0
 
     runner = CliRunner()  # noqa
     result = runner.invoke(dirbs_classify_cli, ['--no-safety-check', '--curr-date', '20160801',
