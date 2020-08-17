@@ -1,7 +1,7 @@
 """
-Top-level DIRBS package.
+DIRBS Core Kafka high-level producer module.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -31,14 +31,55 @@ BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 POSSIBILITY OF SUCH DAMAGE.
 """
 
-# Bump the version number as per semantic versioning guidelines
-__version__ = '13.0.0'
+import json
 
-# Bump this version everytime the schema is modified
-db_schema_version = 86
+from kafka import KafkaProducer
+from kafka.errors import KafkaError, NoBrokersAvailable
 
-# Bump this version everytime the reports change in an incompatible way
-report_schema_version = 8
 
-# Bump this version everytime the whitelist schema is modified
-wl_db_schema_version = 1
+class KProducer:
+    """Class responsible for producing data to an assigned topic."""
+
+    # TODO: add support for multiple topics
+
+    def __init__(self, config, kafka_host, kafka_port, logger):
+        """Constructor."""
+        self._config = config
+        self._host = kafka_host
+        self._port = kafka_port
+        self._logger = logger
+
+    @property
+    def kafka_host(self):
+        """Property to return the current kafka host address."""
+        return self._host
+
+    @property
+    def kafka_port(self):
+        """Property to return the current kafka port."""
+        return self._port
+
+    @property
+    def bootstrap_server_addr(self):
+        """Property to formulate and return bootstrap server address."""
+        return '{0}:{1}'.format(self.kafka_host, self.kafka_port)
+
+    def create_producer(self):
+        """Method to create a new producer to a kafka topic."""
+        try:
+            self._logger.info('Creating new KAFKA producer on host {0}'.format(
+                self.bootstrap_server_addr))
+            return KafkaProducer(bootstrap_servers=self.bootstrap_server_addr,
+                                 value_serializer=lambda m: json.dumps(m).encode('utf-8'))
+        except NoBrokersAvailable as e:
+            self._logger.info('No Broker {0} available, check if hostname and port is right...'
+                              .format(self.bootstrap_server_addr))
+            raise e
+        except KafkaError as e:
+            self._logger.info('Exception encountered during creation to new KAFKA consumer instance, '
+                              'see the log trace below...')
+            self._logger.info(str(e))
+            raise e
+        except Exception as e:
+            self._logger.info('Exception encountered during creation to new KAFKA consumer instance')
+            raise e

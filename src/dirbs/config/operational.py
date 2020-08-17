@@ -1,7 +1,7 @@
 """
-Top-level DIRBS package.
+DIRBS Core operational mode configuration section parser.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -31,14 +31,27 @@ BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 POSSIBILITY OF SUCH DAMAGE.
 """
 
-# Bump the version number as per semantic versioning guidelines
-__version__ = '13.0.0'
+from dirbs.config.common import ConfigSection
 
-# Bump this version everytime the schema is modified
-db_schema_version = 86
 
-# Bump this version everytime the reports change in an incompatible way
-report_schema_version = 8
+class OperationalConfig(ConfigSection):
+    """Class representing the 'operational' section of the config."""
 
-# Bump this version everytime the whitelist schema is modified
-wl_db_schema_version = 1
+    def __init__(self, **operational_config):
+        """Constructor which parses the operational config."""
+        super(OperationalConfig, self).__init__(**operational_config)
+        self.activate_whitelist = self._parse_bool('activate_whitelist')
+        self.restrict_whitelist = self._parse_bool('restrict_whitelist')
+
+    @property
+    def section_name(self):
+        """Property for the section name."""
+        return 'OperationalConfig'
+
+    @property
+    def defaults(self):
+        """Property describing defaults for the config values."""
+        return {
+            'activate_whitelist': False,
+            'restrict_whitelist': True
+        }

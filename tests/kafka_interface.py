@@ -1,7 +1,7 @@
 """
-Top-level DIRBS package.
+KAFKA unit tests.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -31,14 +31,44 @@ BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 POSSIBILITY OF SUCH DAMAGE.
 """
 
-# Bump the version number as per semantic versioning guidelines
-__version__ = '13.0.0'
+import pytest
+from kafka.errors import NoBrokersAvailable
 
-# Bump this version everytime the schema is modified
-db_schema_version = 86
+from dirbs.kafka.producer import KProducer
+from dirbs.kafka.consumer import KConsumer
+from _fixtures import mocked_config, logger  # noqa: F401
 
-# Bump this version everytime the reports change in an incompatible way
-report_schema_version = 8
 
-# Bump this version everytime the whitelist schema is modified
-wl_db_schema_version = 1
+def test_props(mocked_config, logger):  # noqa: F811
+    """Verify that a consumer instance have its own several properties and returns."""
+    host = 'abc_host'
+    port = 23345
+    topic = 'abc_topic'
+
+    # verifies consumer properties
+    consumer = KConsumer(config=mocked_config, kafka_host=host, kafka_port=port,
+                         kafka_topic=topic, logger=logger)
+    assert consumer.kafka_host == host
+    assert consumer.kafka_port == port
+    assert consumer.kafka_topic == topic
+    assert consumer.bootstrap_server_addr == '{0}:{1}'.format(host, port)
+
+    # verifies producer properties
+    producer = KProducer(config=mocked_config, kafka_host=host, kafka_port=port, logger=logger)
+    assert producer.kafka_host == host
+    assert producer.kafka_port == port
+    assert producer.bootstrap_server_addr == '{0}:{1}'.format(host, port)
+
+
+def test_no_broker_available(mocked_config, logger):  # noqa: F811
+    """Verifies that object throws proper exception when broker is not available."""
+    # verify consumer
+    with pytest.raises(NoBrokersAvailable):
+        consumer = KConsumer(config=mocked_config, kafka_host='localhost', kafka_port=9092,
+                             kafka_topic='dirbs', logger=logger)
+        assert consumer.create_consumer()
+
+    # verify producer
+    with pytest.raises(NoBrokersAvailable):
+        producer = KProducer(config=mocked_config, kafka_host='localhost', kafka_port=9092, logger=logger)
+        assert producer.create_producer()

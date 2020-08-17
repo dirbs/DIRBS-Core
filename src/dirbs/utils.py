@@ -192,6 +192,12 @@ def warn_if_db_superuser(conn):
                        'DIRBS tasks as a normal user')
 
 
+def notify_if_whitelist_activation():
+    """Notify if whitelist mode is active."""
+    logger = logging.getLogger('dirbs.db')
+    logger.info('Whitelist mode is active, Core will operate related migrations.')
+
+
 def verify_db_roles_installed(conn):
     """Function used to verify whether roles have been installed in the DB."""
     # The below is not a guaranteed check, but a heuristic
@@ -302,6 +308,18 @@ def query_db_schema_version(conn):
             return None
 
 
+def query_wl_db_schema_version(conn):
+    """Function to fetch the WHITELIST DB version number from the database."""
+    logger = logging.getLogger('dirbs.db')
+    with conn.cursor() as cur:
+        try:
+            cur.execute('SELECT MAX(version) FROM wl_schema_version')  # noqa: Q440
+            return cur.fetchone()[0]
+        except psycopg2.ProgrammingError as ex:
+            logger.error(str(ex).strip())
+            return 0
+
+
 def set_db_schema_version(conn, new_version):
     """Function to set the DB version number in the database."""
     with conn.cursor() as cur:
@@ -312,6 +330,12 @@ def set_db_schema_version(conn, new_version):
             cur.execute('UPDATE schema_version SET version = %s', [new_version])  # noqa: Q440
         else:
             cur.execute('INSERT INTO schema_version(version) VALUES(%s)', [new_version])
+
+
+def set_wl_db_schema_version(conn, new_version):
+    """Function to set the Whitelist DB version number in the database."""
+    with conn.cursor() as cur:
+        cur.execute('UPDATE schema_metadata SET wl_version = %s', [new_version])
 
 
 def is_db_user_superuser(conn):
