@@ -1,7 +1,7 @@
 """
 DIRBS module for utility classes and functions.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -309,7 +309,11 @@ def query_db_schema_version(conn):
 
 
 def query_wl_db_schema_version(conn):
-    """Function to fetch the WHITELIST DB version number from the database."""
+    """Function to fetch the WHITELIST DB version number from the database.
+
+    Arguments:
+        conn -- dirbs postgresql connection
+    """
     logger = logging.getLogger('dirbs.db')
     with conn.cursor() as cur:
         try:
@@ -333,7 +337,12 @@ def set_db_schema_version(conn, new_version):
 
 
 def set_wl_db_schema_version(conn, new_version):
-    """Function to set the Whitelist DB version number in the database."""
+    """Function to set the Whitelist DB version number in the database.
+
+    Arguments:
+        conn -- dirbs postgresql connection
+        new_version -- new version number to be updated on old
+    """
     with conn.cursor() as cur:
         cur.execute('UPDATE schema_metadata SET wl_version = %s', [new_version])
 

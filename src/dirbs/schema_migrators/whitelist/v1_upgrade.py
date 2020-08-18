@@ -43,7 +43,11 @@ class WhitelistSchemaMigrator(dirbs.schema_migrators.AbstractMigrator):
     """Class used to migrate whitelist schemas into the database."""
 
     def upgrade(self, conn):
-        """Overrides AbstractMigrator upgrade method."""
+        """Overrides AbstractMigrator upgrade method.
+
+        Arguments:
+            conn -- dirbs postgresql connection
+        """
         logger = logging.getLogger('dirbs.db')
         logger.info('Creating historic_whitelist table...')
         with conn.cursor() as cur:

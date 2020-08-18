@@ -46,7 +46,12 @@ from dirbs.kafka import consumer, producer
 
 
 def create_kafka_consumer(logger, config):
-    """Method to create a single high level KAFKA Consumer."""
+    """Method to create a single high level KAFKA Consumer.
+
+    Arguments:
+        logger -- dirbs logger instance
+        config -- dirbs config parser instance
+    """
     kafka_config = config.broker_config.kafka
     logger.info('Creating a single high level consumer on topic \'{0}\''.format(kafka_config.topic))
     c_obj = consumer.KConsumer(config, kafka_config.hostname, kafka_config.port, kafka_config.topic, logger)
@@ -54,7 +59,12 @@ def create_kafka_consumer(logger, config):
 
 
 def create_kafka_producer(logger, config):
-    """Method to create a high level producer."""
+    """Method to create a high level producer.
+
+    Arguments:
+        logger -- dirbs logger instance
+        config -- dirbs config instance
+    """
     kafka_config = config.broker_config.kafka
     logger.info('Creating a high level producer on KAFKA host \'{0}\''.format(kafka_config.hostname))
     p_obj = producer.KProducer(config, kafka_config.hostname, kafka_config.port, logger)
@@ -62,7 +72,16 @@ def create_kafka_producer(logger, config):
 
 
 def broadcast_notification(imei_norm, operator_id, producer, broadcast_type, operator_config, logger):
-    """Broadcast IMEI association message to operators other than the operator_id."""
+    """Broadcast IMEI association message to operators other than the operator_id.
+
+    Arguments:
+        imei_norm -- normalized IMEI (associated/de-associated)
+        operator_id -- ID of the operator to which IMEI is associated/de-associated
+        producer -- KAFKA high level producer instance
+        broadcast_type -- type of the message broadcast (association/de-association)
+        operator_config -- operator configurations instance
+        logger -- dirbs logger instance
+    """
     if broadcast_type == 'association':
         message = {
             'type': 'imei_association_notification',
@@ -85,7 +104,11 @@ def broadcast_notification(imei_norm, operator_id, producer, broadcast_type, ope
 
 
 def calc_imei_norm(imei):
-    """Method to validate and calculate normalized IMEI."""
+    """Method to validate and calculate normalized IMEI.
+
+    Arguments:
+        imei -- IMEI to be normalized (15/16 digits)
+    """
     if imei is not None and len(imei) <= 16:
         if re.match(r'^\d{14}', imei):
             imei_norm = imei[:14]
@@ -96,7 +119,12 @@ def calc_imei_norm(imei):
 
 
 def validate_operator(operator_id, operator_config):
-    """Method to validate operator_id recevd against defined operators in config."""
+    """Method to validate operator_id recevd against defined operators in config.
+
+    Arguments:
+        operator_id -- Id to be validated as operator
+        operator_config -- operator configs (Id will be validated against)
+    """
     operator_ids = [op.id for op in operator_config]
     return True if operator_id in operator_ids else False
 
@@ -104,8 +132,12 @@ def validate_operator(operator_id, operator_config):
 def whitelist_processing_job(consumer, producer, operator_config, conn, logger):
     """Method to perform processing on historic_whitelist table.
 
-    :param consumer consumes messages from the main topic, process them according to their type
-    and send back notifications using broadcast_notifications method and :param producer.
+    Arguments:
+        consumer -- KAFKA high level consumer instance to consume messages
+        producer -- KAFKA high level producer instance to produce messages
+        operator_config -- operator configuration instance
+        conn -- postgresql connection instance
+        logger -- dirbs logger instance
     """
     # consuming messages one by one, currently we are only supporting one consumer
     # but we can support multiple consumers as well to overcome the potential delay created
@@ -181,6 +213,12 @@ def whitelist_processing_job(consumer, producer, operator_config, conn, logger):
 def whitelist_sharing_job(h_producer, operator_config, conn, logger):
     """Whitelist distribution job method.
 
+    Arguments:
+        h_producer -- KAFKA high level producer instance
+        operator_config -- operator configuration instance
+        conn -- postgresql database connection instance
+        logger -- dirbs logger instance
+
     This method listens to a specific database notifications events which are generated when the
     historic_whitelist table is update or inserted with records. It than transmit those changes to operators.
     """
@@ -236,7 +274,11 @@ def whitelist_sharing_job(h_producer, operator_config, conn, logger):
 @click.pass_context
 @common.configure_logging
 def cli(ctx):
-    """DIRBS Script to run whitelist jobs."""
+    """DIRBS Script to run whitelist jobs.
+
+    Arguments:
+        ctx -- inherited click command context instance
+    """
     logger = logging.getLogger('dirbs.whitelist')
     config = common.ensure_config(ctx)
 
@@ -251,7 +293,20 @@ def cli(ctx):
 @common.unhandled_exception_handler
 @common.cli_wrapper(command='dirbs-whitelist', subcommand='process', required_role='dirbs_core_white_list')
 def process(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root, metrics_run_root):
-    """Start whitelist processing job."""
+    """Command to start whitelist processing job.
+
+    Arguments:
+         ctx -- inherited click command context
+         config -- dirbs configuration instance
+         statsd -- dirbs statsd connection instance
+         logger -- dirbs logger instance
+         run_id -- current run id of the job
+         conn -- postgresql database connection
+         metadata_conn -- dedicated postgresql connection for job metadata
+         command -- current command name
+         metrics_root -- statsd metrics root
+         metrics_run_root -- statsd metrics run root
+    """
     logger.info('Initiating Whitelist processing job...')
 
     operator_config = config.broker_config.operators
@@ -274,7 +329,20 @@ def process(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, m
 @common.unhandled_exception_handler
 @common.cli_wrapper(command='dirbs-whitelist', subcommand='distribute', required_role='dirbs_core_white_list')
 def distribute(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root, metrics_run_root):
-    """Start whitelist distribution job."""
+    """Command to start whitelist distribution job.
+
+    Arguments:
+        ctx -- inherited click context
+        config -- dirbs configurations
+        statsd -- dirbs statsd connection
+        logger -- dirbs logger
+        run_id -- run id of the job
+        conn -- postgresql database connection
+        metadata_conn -- dedicated postgresql connection for job metadata
+        command -- current command name
+        metrics_root -- statsd metrics root
+        metrics_run_root -- statsd metrics run root
+    """
     logger.info('Initialising Whitelist distributor job...')
     operator_config = config.broker_config.operators
     h_producer = create_kafka_producer(logger, config)

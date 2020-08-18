@@ -38,7 +38,11 @@ class OperationalConfig(ConfigSection):
     """Class representing the 'operational' section of the config."""
 
     def __init__(self, **operational_config):
-        """Constructor which parses the operational config."""
+        """Constructor which parses the operational config.
+
+        Keyword Arguments:
+            operational_config -- configuration for the current section
+        """
         super(OperationalConfig, self).__init__(**operational_config)
         self.activate_whitelist = self._parse_bool('activate_whitelist')
         self.restrict_whitelist = self._parse_bool('restrict_whitelist')
