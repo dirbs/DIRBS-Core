@@ -250,3 +250,36 @@ conditions:
     blocking: false
     reason: IMEI RAT inconsistent with device capability
     max_allowed_matching_ratio: 1.0
+
+# Definitions of settings to be used for broker integration in the DIRBS System. Currently broker is only supported
+# for whitelist mode.
+broker:
+  # Definitions of settings to be used for Apache KAFKA integration and used as message broker. It will be used for
+  # sending and receiving messages and data between EIR(s) and the DIRBS System.
+  kafka:
+    # The host name for the KAFKA server, overridden by environment variable
+    # DIRBS_KAFKA_HOST if set.
+    hostname: kafka
+    # The available port for the KAFKA server, overridden by environment variable
+    # DIRBS_KAFKA_PORT
+    port: 9092
+    # The topic DIRBS will use to receive notifications and requests from operators, overridden
+    # by environment variable DIRBS_KAFKA_TOPIC if set.
+    topic: test
+  # Definitions of EIR(s) with their respective operators and topic names to subscribe to
+  operators:
+    - id: operator1
+      name: Operator 1
+      topic: operator1_topic
+    - id: operator2
+      name: Operator 2
+      topic: operator2_topic
+
+# Definitions of operational modes used by DIRBS core to support dynamic whitelist mode
+operational:
+  # Boolean variable used to activate whitelist mode, default False
+  # By setting it true will result in activation of extra migrations and functions related to
+  # DIRBS Core Whitelisting mode
+  activate_whitelist: True
+  # The boolean variable to toggle the settings weather to share the whitelist with the operators or not.
+  restrict_whitelist: True

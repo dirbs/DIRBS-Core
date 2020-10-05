@@ -1,8 +1,9 @@
+#! /bin/bash
 #
-# DIRBS Makefile for prd Docker images
+# Production entrypoint script
 #
 #
-# Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+# Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 #
 # All rights reserved.
 #
@@ -31,15 +32,9 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-.PHONY: build-docker
+set -e
 
-BASE_DIR=$(dir $(realpath $(firstword $(MAKEFILE_LIST))))
+# Store run-time environment
+echo ${DIRBS_ENV:-Unknown} > /etc/dirbs_environment
 
-build-docker:
-	docker build -t dirbs-base:latest -f $(BASE_DIR)../base/Dockerfile $(BASE_DIR)../../
-	docker build -t dirbs-api:latest -f $(BASE_DIR)api/Dockerfile $(BASE_DIR)../../
-	docker build -t dirbs-processing:latest -f $(BASE_DIR)processing/Dockerfile $(BASE_DIR)../../
-	docker build -t dirbs-postgresql11:latest -f $(BASE_DIR)postgresql11/Dockerfile $(BASE_DIR)../../
-	docker build -t dirbs-upload:latest -f $(BASE_DIR)upload/Dockerfile $(BASE_DIR)../../
-	docker build -t dirbs-wl-processor:latest -f $(BASE_DIR)whitelist/processor/Dockerfile $(BASE_DIR)../../
-	docker build -t dirbs-wl-distributor:latest -f $(BASE_DIR)whitelist/distributor/Dockerfile $(BASE_DIR)../../
+exec "$@"

@@ -1115,11 +1115,12 @@ def test_parse_date():
 
     Verify config parser function for parsing date values.
     """
+    broker_config = {'kafka': {'hostname': 'kafka', 'port': 9092, 'topic': 'dirbs'}}
     amnesty_config = {'amnesty_enabled': True,
                       'evaluation_period_end_date': 20180101,
                       'amnesty_period_end_date': 20180202}
 
-    cfg = {'amnesty': amnesty_config, 'region': {'name': 'Country1', 'country_codes': '22'}}
+    cfg = {'amnesty': amnesty_config, 'region': {'name': 'Country1', 'country_codes': '22'}, 'broker': broker_config}
     app_cfg = AppConfig(**cfg, ignore_env=True)
     assert app_cfg.amnesty_config.amnesty_enabled
     assert app_cfg.amnesty_config.evaluation_period_end_date == datetime.date(2018, 1, 1)

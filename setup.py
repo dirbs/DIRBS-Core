@@ -161,7 +161,8 @@ setup(
             'dirbs-db=dirbs.cli.db:cli',
             'dirbs-listgen=dirbs.cli.listgen:cli',
             'dirbs-prune=dirbs.cli.prune:cli',
-            'dirbs-catalog=dirbs.cli.catalog:cli'
+            'dirbs-catalog=dirbs.cli.catalog:cli',
+            'dirbs-whitelist=dirbs.cli.whitelist:cli'
         ],
     },
 )

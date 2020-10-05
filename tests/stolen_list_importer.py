@@ -53,7 +53,7 @@ from _delta_helpers import full_list_import_common, multiple_changes_check_commo
 def test_cli_stolen_list_importer(postgres, db_conn, tmpdir, mocked_config, logger):
     """Test Depot not available yet.
 
-    Verify that the CLI import command for GSMA is working properly.
+    Verify that the CLI import command for Stolen List is working properly.
     """
     here = path.abspath(path.dirname(__file__))
     data_dir = path.join(here, 'unittest_data/stolen_list')

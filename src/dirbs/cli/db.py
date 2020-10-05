@@ -44,7 +44,7 @@ from psycopg2 import ProgrammingError
 import dirbs.utils as utils
 import dirbs.partition_utils as partition_utils
 import dirbs.cli.common as common
-from dirbs import db_schema_version as code_db_schema_version
+from dirbs import db_schema_version as code_db_schema_version, wl_db_schema_version
 import dirbs.metadata as metadata
 import dirbs.logging
 
@@ -100,6 +100,8 @@ def cli(ctx):
                     # install subcommand creates the schema, so can't check it here
                     utils.verify_core_schema(conn)
                     utils.verify_db_search_path(conn)
+                if config.operational_config.activate_whitelist:
+                    utils.notify_if_whitelist_activation()
             except (utils.DatabaseRoleCheckException, utils.DatabaseSchemaException) as ex:
                 logger.error(str(ex))
                 sys.exit(1)
@@ -110,7 +112,8 @@ def cli(ctx):
 @common.unhandled_exception_handler
 def check(ctx):
     """Checks whether DB schema matches software DB version."""
-    db_config = common.ensure_config(ctx).db_config
+    config = common.ensure_config(ctx)
+    db_config = config.db_config
 
     logger = logging.getLogger('dirbs.db')
     logger.info('Querying DB schema version for DB %s on host %s',
@@ -119,6 +122,7 @@ def check(ctx):
 
     with utils.create_db_connection(db_config) as conn:
         version = utils.query_db_schema_version(conn)
+        wl_version = utils.query_wl_db_schema_version(conn)
 
     logger.info('Code schema version: %d', code_db_schema_version)
     if version is None:
@@ -129,6 +133,8 @@ def check(ctx):
         sys.exit(1)
     else:
         logger.info('DB schema version: %s', str(version))
+        logger.info('Whitelist schema version: %s', str(wl_version))
+
         if version < code_db_schema_version:
             logger.error('DB schema older than code.')
         elif version > code_db_schema_version:
@@ -136,8 +142,15 @@ def check(ctx):
         else:
             logger.info('Schema versions match between code and DB.')
 
+        if wl_version < wl_db_schema_version:
+            logger.error('Whitelist schema older then code.')
+        elif wl_version > wl_db_schema_version:
+            logger.error('Whitelist schema newer then code.')
+        else:
+            logger.info('Whitelist Schema versions match between code and DB.')
 
-@cli.command()
+
+@cli.command()  # noqa: C901
 @click.pass_context
 @common.unhandled_exception_handler
 def upgrade(ctx):
@@ -202,6 +215,46 @@ def upgrade(ctx):
             else:
                 logger.info('DB schema is already latest version')
 
+            # battle for the whitelist database migrations begins here
+            if config.operational_config.activate_whitelist:
+                try:
+                    wl_version = utils.query_wl_db_schema_version(conn)
+                except ProgrammingError:
+                    logger.warning('Could not determine current whitelist schema version. Assuming no version')
+                    wl_version = None
+
+                if wl_version is None:
+                    logger.error('Whitelist DB currently not installed or version number could not be determined. '
+                                 'Can\'t upgrade')
+                    sys.exit(1)
+                if wl_version > wl_db_schema_version:
+                    logger.error('Whitelist DB schema newer than code. Can\'t upgrade')
+                    sys.exit(1)
+                if wl_version != wl_db_schema_version:
+                    logger.info('Upgrading Whitelist DB schema version %d to %d', wl_version, wl_db_schema_version)
+                    with utils.db_role_setter(conn, role_name='dirbs_core_power_user'):
+                        for old_version in range(wl_version, wl_db_schema_version):
+                            new_version = old_version + 1
+                            try:
+                                module_name = 'dirbs.schema_migrators.whitelist.v{0}_upgrade'.format(new_version)
+                                module = importlib.import_module(module_name)
+                                logger.info('Running Python migration script: %s', module_name)
+                                migrator = module.migrator()
+                                migrator.upgrade(conn)
+                            except ImportError as ex:
+                                script_name = 'sql/migration_scripts/whitelist/v{0:d}_upgrade.sql'.format(new_version)
+                                logger.info('Running SQL migration script: %s', script_name)
+                                sql = pkgutil.get_data('dirbs', script_name)
+                                cur.execute(sql)
+
+                            utils.set_wl_db_schema_version(conn, new_version)
+                            conn.commit()
+                    logger.info('Successfully updated whitelist schema - Whitelist DB schema version is now %d',
+                                wl_db_schema_version)
+                    # Can't do anything until we know the schema is the right version
+                    _store_job_metadata(config, 'wl_upgrade')
+                else:
+                    logger.info('Whitelist DB schema is already latest version')
             # Schedule a full ANALYZE at the end of an upgrade
             if needs_analyze:
                 logger.info('Running ANALYZE of entire database after upgrade...')

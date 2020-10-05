@@ -1,7 +1,7 @@
 """
-Top-level DIRBS package.
+DIRBS Core Kafka Integration package.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -31,14 +31,5 @@ BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 POSSIBILITY OF SUCH DAMAGE.
 """
 
-# Bump the version number as per semantic versioning guidelines
-__version__ = '13.0.0'
-
-# Bump this version everytime the schema is modified
-db_schema_version = 86
-
-# Bump this version everytime the reports change in an incompatible way
-report_schema_version = 8
-
-# Bump this version everytime the whitelist schema is modified
-wl_db_schema_version = 1
+from dirbs.kafka.producer import KProducer as Producer  # noqa: F401
+from dirbs.kafka.consumer import KConsumer as Consumer  # noqa: F401

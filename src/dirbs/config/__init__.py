@@ -49,6 +49,8 @@ from dirbs.config.multiprocessing import MultiprocessingConfig
 from dirbs.config.statsd import StatsdConfig
 from dirbs.config.catalog import CatalogConfig
 from dirbs.config.amnesty import AmnestyConfig
+from dirbs.config.broker import BrokerConfig
+from dirbs.config.operational import OperationalConfig
 from dirbs.config.thresholds import OperatorThresholdConfig, GSMAThresholdConfig, PairingListThresholdConfig, \
     SubscribersListThresholdConfig, StolenListThresholdConfig, RegistrationListThresholdConfig, \
     GoldenListThresholdConfig, BarredListThresholdConfig, BarredTacListThresholdConfig, \
@@ -154,3 +156,6 @@ class AppConfig:
         self.statsd_config = StatsdConfig(ignore_env=ignore_env, **(yaml_config.get('statsd', {}) or {}))
         self.catalog_config = CatalogConfig(ignore_env=ignore_env, **(yaml_config.get('catalog', {}) or {}))
         self.amnesty_config = AmnestyConfig(ignore_env=ignore_env, **(yaml_config.get('amnesty', {}) or {}))
+        self.broker_config = BrokerConfig(ignore_env=ignore_env, **(yaml_config.get('broker', {}) or {}))
+        self.operational_config = OperationalConfig(ignore_env=ignore_env,
+                                                    **(yaml_config.get('operational', {}) or {}))

@@ -1,8 +1,8 @@
 #
-# DIRBS Makefile for prd Docker images
+# Dockerfile to build Docker whitelist image for DIRBS
 #
 #
-# Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+# Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 #
 # All rights reserved.
 #
@@ -31,15 +31,51 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-.PHONY: build-docker
+FROM dirbs-base
 
-BASE_DIR=$(dir $(realpath $(firstword $(MAKEFILE_LIST))))
+# Install some needed packages for user activity
+RUN set -x && \
+    apt-get -q update --fix-missing && \
+    apt-get -q install --no-install-recommends wget zip unzip build-essential && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-build-docker:
-	docker build -t dirbs-base:latest -f $(BASE_DIR)../base/Dockerfile $(BASE_DIR)../../
-	docker build -t dirbs-api:latest -f $(BASE_DIR)api/Dockerfile $(BASE_DIR)../../
-	docker build -t dirbs-processing:latest -f $(BASE_DIR)processing/Dockerfile $(BASE_DIR)../../
-	docker build -t dirbs-postgresql11:latest -f $(BASE_DIR)postgresql11/Dockerfile $(BASE_DIR)../../
-	docker build -t dirbs-upload:latest -f $(BASE_DIR)upload/Dockerfile $(BASE_DIR)../../
-	docker build -t dirbs-wl-processor:latest -f $(BASE_DIR)whitelist/processor/Dockerfile $(BASE_DIR)../../
-	docker build -t dirbs-wl-distributor:latest -f $(BASE_DIR)whitelist/distributor/Dockerfile $(BASE_DIR)../../
+# Copy wheel, opensource requirements into build
+COPY opensource_requirements.txt test_requirements.txt *.whl /home/dirbs/
+
+# Install dependencies, wheel
+RUN set -x && \
+    pip3 install -r /home/dirbs/opensource_requirements.txt && \
+    pip3 install -r /home/dirbs/test_requirements.txt && \
+    pip3 install /home/dirbs/*.whl && \
+    chown -R dirbs.dirbs /home/dirbs/dirbs-venv
+
+# Copy other files into build
+COPY etc/ /opt/dirbs/etc
+COPY tests/ /home/dirbs/tests
+COPY docker/prd/whitelist/entrypoint.sh /entrypoint.sh
+
+# Install config and change permissions
+RUN set -x && \
+    cp /opt/dirbs/etc/config.yml /home/dirbs/.dirbs.yml && \
+    chown dirbs.dirbs /home/dirbs/.dirbs.yml && \
+    chown -R dirbs.dirbs /home/dirbs/tests
+
+# Make sure permissions are set properly on entrypoint
+RUN set -x && chmod a+x /entrypoint.sh
+
+# Jenkins build arg
+ARG BUILD_TAG
+ENV BUILD_TAG ${BUILD_TAG:-No build tag supplied}
+RUN echo $BUILD_TAG > /etc/dirbs_build_tag
+
+# Remove default Ubuntu MOTD content
+RUN rm /etc/update-motd.d/*
+
+# Add environment and build info to MOTD
+COPY docker/base/dirbs-motd.sh /etc/update-motd.d/00-dirbs-text
+
+# Set entry point
+ENTRYPOINT ["/entrypoint.sh"]
+
+# Set command
+CMD ["gosu", "dirbs", "dirbs-whitelist", "process"]
