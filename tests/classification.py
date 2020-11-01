@@ -1,7 +1,7 @@
 """
 Classification unit tests.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -2419,7 +2419,7 @@ def test_safety_check(db_conn, tmpdir, logger, mocked_config, monkeypatch,
     assert result.exit_code != 0
 
     # There should be a message output about the safety check triggering
-    assert 'Refusing to classify using condition \'gsma_not_found\'' in logger_stream_contents(logger)
+    assert "Refusing to classify using condition \'gsma_not_found\'" in logger_stream_contents(logger)
 
     # Check that there are no records classified
     imeis = matching_imeis_for_cond_name(db_conn, cond_name='gsma_not_found')
@@ -2453,7 +2453,7 @@ def test_safety_check(db_conn, tmpdir, logger, mocked_config, monkeypatch,
     assert result.exit_code != 0
 
     # There should be a message output about the safety check triggering
-    assert 'Refusing to classify using condition \'gsma_not_found\'' in logger_stream_contents(logger)
+    assert "Refusing to classify using condition \'gsma_not_found\'" in logger_stream_contents(logger)
 
     # Set new config with higher safety check threshild
     cond_dict_list = [{'label': 'gsma_not_found',
@@ -2930,3 +2930,66 @@ def test_exists_in_monitoring_list(db_conn, operator_data_importer, monitoring_l
                                                                classify_options=['--no-safety-check'],
                                                                db_conn=db_conn, curr_date='20161110')
     assert matched_imeis == ['64531978230214']
+
+
+@pytest.mark.parametrize('operator_data_importer',
+                         [OperatorDataParams(
+                             content='date,imei,imsi,msisdn\n'
+                                     '20161115,10000000000000,123456789012345,123456789012345\n'
+                                     '20161115,025896314741025,123456789012345,123456789012345\n'
+                                     '20161115,645319782302149,123456789012345,123456789012345',
+                             extract=False,
+                             perform_unclean_checks=False,
+                             perform_region_checks=False,
+                             perform_home_network_check=False,
+                             operator='operator1'
+                         )],
+                         indirect=True)
+@pytest.mark.parametrize('monitoring_list_importer',
+                         [MonitoringListParams(content='imei\n'
+                                                       '645319782302149\n'
+                                                       '025896314741025')],
+                         indirect=True)
+def test_exists_in_monitoring_list_dim_with_param(per_test_postgres, db_conn, operator_data_importer,
+                                                  monitoring_list_importer, mocked_config, tmpdir, logger, monkeypatch,
+                                                  metadata_db_conn, mocked_statsd):
+    """Verifies monitored_days param of exists_in_monitoring_list dimension."""
+    operator_data_importer.import_data()
+    monitoring_list_importer.import_data()
+
+    # configure without monitored_days param, imeis should classify
+    condition = [{
+        'label': 'on_monitoring',
+        'reason': 'on monitoring list',
+        'dimensions': [{
+            'module': 'exists_in_monitoring_list'
+        }],
+        'max_allowed_matching_ratio': 1.0,
+        'blocking': False,
+        'grace_period_days': 10
+    }]
+
+    matched_imeis = invoke_cli_classify_with_conditions_helper(condition, mocked_config, monkeypatch,
+                                                               classify_options=['--no-safety-check'],
+                                                               db_conn=db_conn, curr_date='20161110')
+    assert matched_imeis == ['02589631474102', '64531978230214']
+
+    # configure with monitored_days, should not classify
+    condition = [{
+        'label': 'on_monitoring',
+        'reason': 'on monitoring list',
+        'dimensions': [{
+            'module': 'exists_in_monitoring_list',
+            'parameters': {
+                'monitored_days': 20
+            }
+        }],
+        'max_allowed_matching_ratio': 1.0,
+        'blocking': False,
+        'grace_period_days': 10
+    }]
+
+    matched_imeis = invoke_cli_classify_with_conditions_helper(condition, mocked_config, monkeypatch,
+                                                               classify_options=['--no-safety-check'],
+                                                               db_conn=db_conn, curr_date='20161110')
+    assert matched_imeis == []

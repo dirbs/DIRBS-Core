@@ -1,7 +1,7 @@
 """
-DIRBS dimension function for a IMEIs on the local barred list.
+DIRBS dimension function for a IMEIs on the local monitoring list.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -40,6 +40,27 @@ from .base import Dimension
 class ExistsInMonitoringList(Dimension):
     """Implementation of exists_in_monitoring_list classification dimension."""
 
+    def __init__(self, *, monitored_days=0, **kwargs):
+        """
+        Extended Constructor of base.Dimension.
+
+        Arguments:
+            monitored_days: for how many number of days an IMEI is in monitoring list
+            kwargs: kwargs
+        """
+        super().__init__(**kwargs)
+
+        try:
+            self._monitored_days = int(monitored_days)
+        except (TypeError, ValueError):
+            raise ValueError("\'monitored_days\' parameter must be an integer, "
+                             "got \'{0}\' instead...".format(monitored_days))
+
+    @property
+    def algorithm_name(self):
+        """Overrides Dimension.algorithm_name."""
+        return 'Exists in monitoring list'
+
     def _matching_imeis_sql(self, conn, app_config, virt_imei_range_start, virt_imei_range_end, curr_date=None):
         """Overrides Dimension._matching_imeis_sql."""
         network_imeis_shard = part_utils.imei_shard_name(base_name='network_imeis',
@@ -48,15 +69,29 @@ class ExistsInMonitoringList(Dimension):
         monitoring_list_shard = part_utils.imei_shard_name(base_name='historic_monitoring_list',
                                                            virt_imei_range_start=virt_imei_range_start,
                                                            virt_imei_range_end=virt_imei_range_end)
-        query = sql.SQL("""SELECT imei_norm
-                             FROM {network_imeis_shard}
-                            WHERE EXISTS(SELECT imei_norm
-                                           FROM {mon_list_shard}
-                                          WHERE imei_norm = {network_imeis_shard}.imei_norm
-                                            AND end_date IS NULL)""").format(
-            network_imeis_shard=sql.Identifier(network_imeis_shard),
-            mon_list_shard=sql.Identifier(monitoring_list_shard)
-        )
+
+        if self._monitored_days > 0:
+            interval_sql = sql.SQL("""EXTRACT(DAY FROM NOW() - start_date)""")
+            query = sql.SQL("""SELECT imei_norm
+                                 FROM {network_imeis_shard}
+                                WHERE EXISTS(SELECT imei_norm
+                                               FROM {mon_list_shard}
+                                              WHERE imei_norm = {network_imeis_shard}.imei_norm
+                                                AND EXTRACT(DAY FROM NOW() - start_date)::INT >= {mon_days}
+                                                AND end_date IS NULL)""").format(  # noqa: Q449
+                network_imeis_shard=sql.Identifier(network_imeis_shard),
+                mon_list_shard=sql.Identifier(monitoring_list_shard),
+                interval_sql=interval_sql,
+                mon_days=sql.Literal(self._monitored_days))
+        else:
+            query = sql.SQL("""SELECT imei_norm
+                                 FROM {network_imeis_shard}
+                                WHERE EXISTS(SELECT imei_norm
+                                               FROM {mon_list_shard}
+                                              WHERE imei_norm = {network_imeis_shard}.imei_norm
+                                                AND end_date IS NULL)""").format(  # noqa: Q449
+                network_imeis_shard=sql.Identifier(network_imeis_shard),
+                mon_list_shard=sql.Identifier(monitoring_list_shard))
         return query.as_string(conn)
 
 

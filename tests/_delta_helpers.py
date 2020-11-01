@@ -1,7 +1,7 @@
 """
 Reusable test helpers for stolen, pairing, registration and golden list import tests.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -212,7 +212,7 @@ def delta_list_import_common(db_conn, mocked_config, tmpdir, importer_name, hist
     result = runner.invoke(dirbs_import_cli, [importer_name, valid_zip_import_data_file_path],
                            obj={'APP_CONFIG': mocked_config})
     assert result.exit_code == 1
-    assert 'Pre-validation failed: b\'Error:   ' \
+    assert "Pre-validation failed: b\'Error:   " \
            'Metadata header, cannot find the column headers - change_type' in logger_stream_contents(logger)
 
     # Test part 2) Verify import success using delta option

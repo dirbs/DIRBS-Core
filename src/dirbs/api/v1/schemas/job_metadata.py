@@ -1,7 +1,7 @@
 """
 DIRBS REST-ful job_metadata API schema module.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -86,7 +86,7 @@ class JobMetadataArgs(Schema):
                          required=False, missing=[], description='Filter results to only include jobs '
                                                                  'having the specified status')
     show_details = fields.Boolean(required=False, missing=True, description='Whether or not to include '
-                                                                            '\'extra_metadata\' field in the results')
+                                                                            "\'extra_metadata\' field in the results")
 
     @property
     def fields_dict(self):

@@ -1,7 +1,7 @@
 """
 DIRBS dimension function for a TAC not found in the GSMA TAC DB.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -54,7 +54,7 @@ class GSMANotFound(Dimension):
         super().__init__(**kwargs)
 
         if not isinstance(ignore_rbi_delays, bool):
-            raise ValueError('\'ignore_rbi_delays\' parameter should be boolean.')
+            raise ValueError("\'ignore_rbi_delays\' parameter should be boolean.")
 
         # Default values for RBI delays based on GSMA DB allocation-appearance lag analysis
         default_rbi_delays = {
@@ -69,18 +69,18 @@ class GSMANotFound(Dimension):
         if per_rbi_delays is None:
             per_rbi_delays = {}
         elif ignore_rbi_delays:
-            raise ValueError('\'ignore_rbi_delays\' parameter cannot be set to True when \'per_rbi_delays\' '
+            raise ValueError("\'ignore_rbi_delays\' parameter cannot be set to True when \'per_rbi_delays\' "
                              'parameter is also defined!')
 
         # Validate that the keys are all 2 - digit strings
         invalid_keys = [k for k in per_rbi_delays.keys() if not re.search(r'^\d{2}$', k)]
         if len(invalid_keys) > 0:
-            raise ValueError('Invalid entry in \'per_rbi_delays\' parameter. RBI value must be a 2-digit string.')
+            raise ValueError("Invalid entry in \'per_rbi_delays\' parameter. RBI value must be a 2-digit string.")
 
         # Validate that the values are all integers
         invalid_values = [v for v in per_rbi_delays.values() if not isinstance(v, int) or v < 0]
         if len(invalid_values) > 0:
-            raise ValueError('Invalid entry in \'per_rbi_delays\' parameter. RBI delay value must be an integer.')
+            raise ValueError("Invalid entry in \'per_rbi_delays\' parameter. RBI delay value must be an integer.")
 
         self.final_rbi_delays = {**default_rbi_delays, **per_rbi_delays} if not ignore_rbi_delays else {}
 

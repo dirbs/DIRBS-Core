@@ -1,7 +1,7 @@
 """
 DIRBS REST-ful version API module.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -39,7 +39,7 @@ from dirbs import db_schema_version as code_db_schema_version
 from dirbs.api.v1.schemas.version import Version
 
 
-def version():
+def version() -> jsonify:
     """DB metadata API endpoint."""
     with get_db_connection() as db_conn:
         return jsonify(

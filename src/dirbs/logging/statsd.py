@@ -1,7 +1,7 @@
 """
 DIRBS implementation of StatsD metrics using statsd.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -90,7 +90,7 @@ class StatsClient:
                 _logger.info('Setting StatsD gauge %s to value %d', stat, value)
             return self._client.gauge(stat, value, rate, delta)
 
-    def set(self, stat, value, rate=1):
+    def set(self, stat, value, rate=1):  # noqa: A003
         """Logging, thread-safe, multiprocess-safe version of StatsClient.set."""
         with _lock:
             self._logger.info('Setting StatsD stat %s to value %d', stat, value)

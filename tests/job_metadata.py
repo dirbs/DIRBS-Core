@@ -1,7 +1,7 @@
 """
 job_metadata api data import unit tests.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -46,32 +46,44 @@ def test_classification_json_api(flask_app, db_conn, api_version):
     Verify that job_metadata returns a JSON containing job metadata
     for classification job.
     """
-    extra_metadata = {'matched_imei_counts':
-                          {'compound_dimension': 0,
-                           'simple_dimension': 0},
-                      'curr_date': None,
-                      'conditions':
-                          [{'dimensions':
-                                [{'module': 'gsma_not_found'}],
-                            'grace_period_days': 30,
-                            'sticky': False,
-                            'reason': 'Violated simple dimension',
-                            'max_allowed_matching_ratio': 0.1,
-                            'label': 'simple_dimension',
-                            'blocking': True},
-                           {'dimensions':
-                                [{'module': 'stolen_list'},
-                                 {'invert': True,
-                                  'parameters':
-                                      {'threshold': 3.1,
-                                       'period_days': 30},
-                                  'module': 'duplicate_daily_avg'}],
-                            'grace_period_days': 0,
-                            'sticky': False,
-                            'reason': 'Violated compound dimension',
-                            'max_allowed_matching_ratio': 0.1,
-                            'label': 'compound_dimension',
-                            'blocking': True}]}  # noqa E127
+    extra_metadata = {
+        'matched_imei_counts':
+            {
+                'compound_dimension': 0,
+                'simple_dimension': 0
+            },
+        'curr_date': None,
+        'conditions': [
+            {
+                'dimensions': [{'module': 'gsma_not_found'}],
+                'grace_period_days': 30,
+                'sticky': False,
+                'reason': 'Violated simple dimension',
+                'max_allowed_matching_ratio': 0.1,
+                'label': 'simple_dimension',
+                'blocking': True
+            },
+            {
+                'dimensions': [
+                    {'module': 'stolen_list'},
+                    {
+                        'invert': True,
+                        'parameters': {
+                            'threshold': 3.1,
+                            'period_days': 30
+                        },
+                        'module': 'duplicate_daily_avg'
+                    }
+                ],
+                'grace_period_days': 0,
+                'sticky': False,
+                'reason': 'Violated compound dimension',
+                'max_allowed_matching_ratio': 0.1,
+                'label': 'compound_dimension',
+                'blocking': True
+            }
+        ]  # noqa: E122
+    }  # noqa E127
 
     job_metadata_importer(db_conn=db_conn, command='dirbs-classify', run_id=1, subcommand='', status='success',
                           extra_metadata=extra_metadata)
@@ -181,50 +193,48 @@ def test_operator_import_json_api(flask_app, db_conn, api_version):
     Verify that job_metadata returns a JSON containing job metadata
     for importing operator job.
     """
-    extra_metadata = {'performance_timing':
-                          {'init_staging_end': '2017-08-16T01:05:17.17081+00:00',
-                           'init_staging_start': '2017-08-16T01:05:16.817426+00:00',
-                           'extract_split_start': '2017-08-16T01:05:16.10788+00:00',
-                           'prevalidate_upload_start': '2017-08-16T01:05:17.34236+00:00',
-                           'analyze_staging_end': '2017-08-16T01:05:  20.807413+00:00',
-                           'validation_binary_checks_end': '2017-08-16T01:05:25.565519+00:00',
-                           'prevalidate_upload_end': '2017-08-16T01:05:20.125746+00:00',
-                           'analyze_staging_start': '2017-08-16T01:05:20.296765+00:00',
-                           'preprocess_start': '2017-08-16T01:05:16.474489+00:00',
-                           'extract_split_end': '2017-08-16T01:05:16.301238+00:00',
-                           'preprocess_end': '2017-08-16T01:05:16.645968+00:00',
-                           'postprocess_staging_end': '2017-08-16T01:05:24.531709+00:00',
-                           'validation_threshold_checks_start': '2017-08-16T01:05:25.741384+00:00',
-                           'validation_binary_checks_start': '2017-08-16T01:05:24.705607+00:00',
-                           'postprocess_staging_start': '2017-08-16T01:05:20.978153+00:00'},
-                      'home_threshold': 0.2,
-                      'cc': ['22%'],
-                      'clean_threshold': 0.05,
-                      'null_msisdn_threshold': 0.05,
-                      'perform_leading_zero_check': True,
-                      'perform_file_daterange_check': True,
-                      'perform_null_check': True,
-                      'perform_clean_check': True,
-                      'perform_historic_imsi_check': True,
-                      'perform_null_imsi_check': True,
-                      'perform_null_msisdn_check': True,
-                      'perform_historic_msisdn_check': True,
-                      'operator_id':
-                          'operator1',
-                      'input_file':
-                          '/workspace/data/operator1_home_'
-                          'check_exceeded_20160701_20160731.zip',
-                      'batch_size':
-                          1000000, 'mcc_mnc_pairs':
-                          [{'mnc': '01', 'mcc': '111'}],
-                      'perform_historic_imei_check': True,
-                      'null_imsi_threshold': 0.05,
-                      'perform_rat_import': False,
-                      'perform_null_imei_check': True,
-                      'perform_home_check': True,
-                      'null_imei_threshold': 0.05,
-                      'region_threshold': 0.1,
-                      'perform_region_check': False}  # noqa E127
+    extra_metadata = {'performance_timing': {
+        'init_staging_end': '2017-08-16T01:05:17.17081+00:00',
+        'init_staging_start': '2017-08-16T01:05:16.817426+00:00',
+        'extract_split_start': '2017-08-16T01:05:16.10788+00:00',
+        'prevalidate_upload_start': '2017-08-16T01:05:17.34236+00:00',
+        'analyze_staging_end': '2017-08-16T01:05:  20.807413+00:00',
+        'validation_binary_checks_end': '2017-08-16T01:05:25.565519+00:00',
+        'prevalidate_upload_end': '2017-08-16T01:05:20.125746+00:00',
+        'analyze_staging_start': '2017-08-16T01:05:20.296765+00:00',
+        'preprocess_start': '2017-08-16T01:05:16.474489+00:00',
+        'extract_split_end': '2017-08-16T01:05:16.301238+00:00',
+        'preprocess_end': '2017-08-16T01:05:16.645968+00:00',
+        'postprocess_staging_end': '2017-08-16T01:05:24.531709+00:00',
+        'validation_threshold_checks_start': '2017-08-16T01:05:25.741384+00:00',
+        'validation_binary_checks_start': '2017-08-16T01:05:24.705607+00:00',
+        'postprocess_staging_start': '2017-08-16T01:05:20.978153+00:00'
+    },
+        'home_threshold': 0.2,
+        'cc': ['22%'],
+        'clean_threshold': 0.05,
+        'null_msisdn_threshold': 0.05,
+        'perform_leading_zero_check': True,
+        'perform_file_daterange_check': True,
+        'perform_null_check': True,
+        'perform_clean_check': True,
+        'perform_historic_imsi_check': True,
+        'perform_null_imsi_check': True,
+        'perform_null_msisdn_check': True,
+        'perform_historic_msisdn_check': True,
+        'operator_id': 'operator1',
+        'input_file': '/workspace/data/operator1_home_check_exceeded_20160701_20160731.zip',
+        'batch_size': 1000000,
+        'mcc_mnc_pairs': [{'mnc': '01', 'mcc': '111'}],
+        'perform_historic_imei_check': True,
+        'null_imsi_threshold': 0.05,
+        'perform_rat_import': False,
+        'perform_null_imei_check': True,
+        'perform_home_check': True,
+        'null_imei_threshold': 0.05,
+        'region_threshold': 0.1,
+        'perform_region_check': False
+    }  # noqa E127
 
     job_metadata_importer(db_conn=db_conn, command='dirbs-import', run_id=1, subcommand='operator',
                           status='error', extra_metadata=extra_metadata)
@@ -256,41 +266,45 @@ def test_stolen_import_json_api(flask_app, db_conn, api_version):
     Verify that job_metadata returns a JSON containing job metadata
     for importing stolen_list job.
     """
-    extra_metadata = {'output_stats':
-                          {'num_records_updated': 20,
-                           'num_records': 20,
-                           'num_records_inserted': 20},
-                      'performance_timing':
-                          {'init_staging_end': '2017-08-22T01:42:30.695313+00:00',
-                           'analyze_staging_end': '2017-08-22T01:42:34.286028+00:00',
-                           'validation_threshold_checks_end': '2017-08-22T01:42:36.380127+00:00',
-                           'analyze_staging_start': '2017-08-22T01:42:33.78045+00:00',
-                           'preprocess_start': '2017-08-22T01:42:30.023073+00:00',
-                           'copy_from_staging_end': '2017-08-22T01:42:38.553902+00:00',
-                           'validation_binary_checks_start': '2017-08-22T01:42:35.537445+00:00',
-                           'validation_threshold_checks_start': '2017-08-22T01:42:36.208775+00:00',
-                           'output_stats_start': '2017-08-22T01:42:38.721215+00:00',
-                           'validation_historical_checks_end': '2017-08-22T01:42:37.049421+00:00',
-                           'extract_split_end': '2017-08-22T01:42:29.855514+00:00',
-                           'copy_from_staging_start': '2017-08-22T01:42:37.38383+00:00',
-                           'extract_split_start': '2017-08-22T01:42:29.674068+00:00',
-                           'validation_historical_checks_start': '2017-08-22T01:42:36.547579+00:00',
-                           'preprocess_end': '2017-08-22T01:42:30.191182+00:00',
-                           'postprocess_staging_end': '2017-08-22T01:42:35.370151+00:00',
-                           'init_staging_start': '2017-08-22T01:42:30.358302+00:00',
-                           'validation_binary_checks_end': '2017-08-22T01:42:36.041237+00:00',
-                           'output_stats_end': '2017-08-22T01:42:39.225688+00:00',
-                           'prevalidate_upload_end': '2017-08-22T01:42:33.612194+00:00',
-                           'prevalidate_upload_start': '2017-08-22T01:42:30.862953+00:00',
-                           'postprocess_staging_start': '2017-08-22T01:42:34.458834+00:00'},
-                      'perform_historic_check': True,
-                      'input_file':
-                          '/workspace/data/sample_import_list.zip',
-                      'batch_size': 1000000,
-                      'input_stats':
-                          {'num_records_valid': 20,
-                           'num_records': 20,
-                           'num_records_invalid': 0}}  # noqa E127
+    extra_metadata = {
+        'output_stats': {
+            'num_records_updated': 20,
+            'num_records': 20,
+            'num_records_inserted': 20
+        },
+        'performance_timing': {
+            'init_staging_end': '2017-08-22T01:42:30.695313+00:00',
+            'analyze_staging_end': '2017-08-22T01:42:34.286028+00:00',
+            'validation_threshold_checks_end': '2017-08-22T01:42:36.380127+00:00',
+            'analyze_staging_start': '2017-08-22T01:42:33.78045+00:00',
+            'preprocess_start': '2017-08-22T01:42:30.023073+00:00',
+            'copy_from_staging_end': '2017-08-22T01:42:38.553902+00:00',
+            'validation_binary_checks_start': '2017-08-22T01:42:35.537445+00:00',
+            'validation_threshold_checks_start': '2017-08-22T01:42:36.208775+00:00',
+            'output_stats_start': '2017-08-22T01:42:38.721215+00:00',
+            'validation_historical_checks_end': '2017-08-22T01:42:37.049421+00:00',
+            'extract_split_end': '2017-08-22T01:42:29.855514+00:00',
+            'copy_from_staging_start': '2017-08-22T01:42:37.38383+00:00',
+            'extract_split_start': '2017-08-22T01:42:29.674068+00:00',
+            'validation_historical_checks_start': '2017-08-22T01:42:36.547579+00:00',
+            'preprocess_end': '2017-08-22T01:42:30.191182+00:00',
+            'postprocess_staging_end': '2017-08-22T01:42:35.370151+00:00',
+            'init_staging_start': '2017-08-22T01:42:30.358302+00:00',
+            'validation_binary_checks_end': '2017-08-22T01:42:36.041237+00:00',
+            'output_stats_end': '2017-08-22T01:42:39.225688+00:00',
+            'prevalidate_upload_end': '2017-08-22T01:42:33.612194+00:00',
+            'prevalidate_upload_start': '2017-08-22T01:42:30.862953+00:00',
+            'postprocess_staging_start': '2017-08-22T01:42:34.458834+00:00'
+        },
+        'perform_historic_check': True,
+        'input_file': '/workspace/data/sample_import_list.zip',
+        'batch_size': 1000000,
+        'input_stats': {
+            'num_records_valid': 20,
+            'num_records': 20,
+            'num_records_invalid': 0
+        }
+    }  # noqa E127
 
     job_metadata_importer(db_conn=db_conn, command='dirbs-import', run_id=1, subcommand='stolen_list',
                           status='success', extra_metadata=extra_metadata)
@@ -370,41 +384,45 @@ def test_gsma_import_json_api(flask_app, db_conn, api_version):
     Verify that job_metadata returns a JSON containing job metadata
     for importing GSMA TAC data job.
     """
-    extra_metadata = {'output_stats':
-                          {'num_records_updated': 4,
-                           'num_records': 4,
-                           'num_records_inserted': 4},
-                      'performance_timing':
-                          {'init_staging_end': '2017-08-22T01:56:25.875908+00:00',
-                           'analyze_staging_end': '2017-08-22T01:56:29.386537+00:00',
-                           'validation_threshold_checks_end': '2017-08-22T01:56:31.231756+00:00',
-                           'analyze_staging_start': '2017-08-22T01:56:28.886486+00:00',
-                           'preprocess_start': '2017-08-22T01:56:25.192466+00:00',
-                           'copy_from_staging_end': '2017-08-22T01:56:33.42097+00:00',
-                           'validation_binary_checks_start': '2017-08-22T01:56:30.725186+00:00',
-                           'validation_threshold_checks_start': '2017-08-22T01:56:31.063007+00:00',
-                           'output_stats_start': '2017-08-22T01:56:33.589227+00:00',
-                           'validation_historical_checks_end': '2017-08-22T01:56:31.915001+00:00',
-                           'extract_split_end': '2017-08-22T01:56:25.023654+00:00',
-                           'copy_from_staging_start': '2017-08-22T01:56:32.250857+00:00',
-                           'extract_split_start': '2017-08-22T01:56:24.844737+00:00',
-                           'validation_historical_checks_start': '2017-08-22T01:56:31.400242+00:00',
-                           'preprocess_end': '2017-08-22T01:56:25.368138+00:00',
-                           'postprocess_staging_end': '2017-08-22T01:56:30.557336+00:00',
-                           'init_staging_start': '2017-08-22T01:56:25.536523+00:00',
-                           'validation_binary_checks_end': '2017-08-22T01:56:30.895228+00:00',
-                           'output_stats_end': '2017-08-22T01:56:34.097277+00:00',
-                           'prevalidate_upload_end': '2017-08-22T01:56:28.718421+00:00',
-                           'prevalidate_upload_start': '2017-08-22T01:56:26.043878+00:00',
-                           'postprocess_staging_start': '2017-08-22T01:56:29.554878+00:00'},
-                      'perform_historic_check': True,
-                      'input_file':
-                          '/workspace/data/duplicate_gsma.zip',
-                      'batch_size': 1000000,
-                      'input_stats':
-                          {'num_records_valid': 4,
-                           'num_records': 7,
-                           'num_records_invalid': 3}}  # noqa E127
+    extra_metadata = {
+        'output_stats': {
+            'num_records_updated': 4,
+            'num_records': 4,
+            'num_records_inserted': 4
+        },
+        'performance_timing': {
+            'init_staging_end': '2017-08-22T01:56:25.875908+00:00',
+            'analyze_staging_end': '2017-08-22T01:56:29.386537+00:00',
+            'validation_threshold_checks_end': '2017-08-22T01:56:31.231756+00:00',
+            'analyze_staging_start': '2017-08-22T01:56:28.886486+00:00',
+            'preprocess_start': '2017-08-22T01:56:25.192466+00:00',
+            'copy_from_staging_end': '2017-08-22T01:56:33.42097+00:00',
+            'validation_binary_checks_start': '2017-08-22T01:56:30.725186+00:00',
+            'validation_threshold_checks_start': '2017-08-22T01:56:31.063007+00:00',
+            'output_stats_start': '2017-08-22T01:56:33.589227+00:00',
+            'validation_historical_checks_end': '2017-08-22T01:56:31.915001+00:00',
+            'extract_split_end': '2017-08-22T01:56:25.023654+00:00',
+            'copy_from_staging_start': '2017-08-22T01:56:32.250857+00:00',
+            'extract_split_start': '2017-08-22T01:56:24.844737+00:00',
+            'validation_historical_checks_start': '2017-08-22T01:56:31.400242+00:00',
+            'preprocess_end': '2017-08-22T01:56:25.368138+00:00',
+            'postprocess_staging_end': '2017-08-22T01:56:30.557336+00:00',
+            'init_staging_start': '2017-08-22T01:56:25.536523+00:00',
+            'validation_binary_checks_end': '2017-08-22T01:56:30.895228+00:00',
+            'output_stats_end': '2017-08-22T01:56:34.097277+00:00',
+            'prevalidate_upload_end': '2017-08-22T01:56:28.718421+00:00',
+            'prevalidate_upload_start': '2017-08-22T01:56:26.043878+00:00',
+            'postprocess_staging_start': '2017-08-22T01:56:29.554878+00:00'
+        },
+        'perform_historic_check': True,
+        'input_file': '/workspace/data/duplicate_gsma.zip',
+        'batch_size': 1000000,
+        'input_stats': {
+            'num_records_valid': 4,
+            'num_records': 7,
+            'num_records_invalid': 3
+        }
+    }  # noqa E127
 
     job_metadata_importer(db_conn=db_conn, command='dirbs-import', run_id=1, subcommand='gsma_tac',
                           status='success', extra_metadata=extra_metadata)
@@ -481,19 +499,21 @@ def test_golden_import_json_api(flask_app, db_conn, api_version):
     Verify that job_metadata returns a JSON containing job metadata
     for importing golden_list job.
     """
-    extra_metadata = {'performance_timing':
-                          {'init_staging_end': '2017-08-22T01:43:05.017337+00:00',
-                           'init_staging_start': '2017-08-22T01:43:04.681766+00:00',
-                           'extract_split_start': '2017-08-22T01:43:03.993331+00:00',
-                           'prevalidate_upload_start': '2017-08-22T01:43:05.18436+00:00',
-                           'preprocess_start': '2017-08-22T01:43:04.337401+00:00',
-                           'extract_split_end': '2017-08-22T01:43:04.17081+00:00',
-                           'preprocess_end': '2017-08-22T01:43:04.504815+00:00'},
-                      'perform_historic_check': True,
-                      'pre_hashed': False,
-                      'input_file':
-                          '/workspace/data/sample_import_list.zip',
-                      'batch_size': 1000000}  # noqa E127
+    extra_metadata = {
+        'performance_timing': {
+            'init_staging_end': '2017-08-22T01:43:05.017337+00:00',
+            'init_staging_start': '2017-08-22T01:43:04.681766+00:00',
+            'extract_split_start': '2017-08-22T01:43:03.993331+00:00',
+            'prevalidate_upload_start': '2017-08-22T01:43:05.18436+00:00',
+            'preprocess_start': '2017-08-22T01:43:04.337401+00:00',
+            'extract_split_end': '2017-08-22T01:43:04.17081+00:00',
+            'preprocess_end': '2017-08-22T01:43:04.504815+00:00'
+        },
+        'perform_historic_check': True,
+        'pre_hashed': False,
+        'input_file': '/workspace/data/sample_import_list.zip',
+        'batch_size': 1000000
+    }  # noqa E127
 
     job_metadata_importer(db_conn=db_conn, command='dirbs-import', run_id=1, subcommand='golden_list',
                           status='error', extra_metadata=extra_metadata)
@@ -556,68 +576,97 @@ def test_list_gen_schema_json_api(flask_app, db_conn, api_version):
 
     Verify that job_metadata returns a JSON containing list generation metadata.
     """
-    extra_metadata = {'blacklist':
-                          {'file_size_bytes': 25,
-                           'md5sum': 'd623e56b7c73d27fc7ce68e3dfc6e448',
-                           'num_records': 0,
-                           'filename': '/workspace/data/20170822_021142/blacklist.csv'},
-                      'notification_lists':
-                          [{'file_size_bytes': 37,
-                            'md5sum': '3ac7b8ae8722e47e1ce4b0a01fe8b1e2',
-                            'num_records': 0,
-                            'filename': '/workspace/data/20170822_021142/notifications_operator1.csv'},
-                           {'file_size_bytes': 37,
-                            'md5sum': '3ac7b8ae8722e47e1ce4b0a01fe8b1e2',
-                            'num_records': 0,
-                            'filename': '/workspace/data/20170822_021142/notifications_operator2.csv'},
-                           {'file_size_bytes': 37,
-                            'md5sum': '3ac7b8ae8722e47e1ce4b0a01fe8b1e2',
-                            'num_records': 0,
-                            'filename': '/workspace/data/20170822_021142/notifications_operator3.csv'},
-                           {'file_size_bytes': 37,
-                            'md5sum': '3ac7b8ae8722e47e1ce4b0a01fe8b1e2',
-                            'num_records': 0,
-                            'filename': '/workspace/data/20170822_021142/notifications_operator4.csv'}],
-                      'curr_date': None,
-                      'exception_lists':
-                          [{'file_size_bytes': 11,
-                            'md5sum': 'b9a2f42722d13636dfb6c84e2ee765fe',
-                            'num_records': 0,
-                            'filename': '/workspace/data/20170822_021142/exceptions_operator1.csv'},
-                           {'file_size_bytes': 11,
-                            'md5sum': 'b9a2f42722d13636dfb6c84e2ee765fe',
-                            'num_records': 0,
-                            'filename': '/workspace/data/20170822_021142/exceptions_operator2.csv'},
-                           {'file_size_bytes': 11,
-                            'md5sum': 'b9a2f42722d13636dfb6c84e2ee765fe',
-                            'num_records': 0,
-                            'filename': '/workspace/data/20170822_021142/exceptions_operator3.csv'},
-                           {'file_size_bytes': 11,
-                            'md5sum': 'b9a2f42722d13636dfb6c84e2ee765fe',
-                            'num_records': 0,
-                            'filename': '/workspace/data/20170822_021142/exceptions_operator4.csv'}],
-                      'blocking_conditions':
-                          [{'dimensions':
-                                [{'module': 'gsma_not_found'}],
-                            'grace_period_days': 30,
-                            'sticky': False,
-                            'reason': 'Violated simple dimension',
-                            'max_allowed_matching_ratio': 0.1,
-                            'label': 'simple_dimension',
-                            'blocking': True},
-                           {'dimensions':
-                                [{'module': 'stolen_list'},
-                                 {'invert': True,
-                                  'parameters':
-                                      {'threshold': 3.1,
-                                       'period_days': 30},
-                                  'module': 'duplicate_daily_avg'}],
-                            'grace_period_days': 0,
-                            'sticky': False,
-                            'reason': 'Violated compound dimension',
-                            'max_allowed_matching_ratio': 0.1,
-                            'label': 'compound_dimension',
-                            'blocking': True}]}  # noqa E127
+    extra_metadata = {
+        'blacklist': {
+            'file_size_bytes': 25,
+            'md5sum': 'd623e56b7c73d27fc7ce68e3dfc6e448',
+            'num_records': 0,
+            'filename': '/workspace/data/20170822_021142/blacklist.csv'
+        },
+        'notification_lists': [
+            {
+                'file_size_bytes': 37,
+                'md5sum': '3ac7b8ae8722e47e1ce4b0a01fe8b1e2',
+                'num_records': 0,
+                'filename': '/workspace/data/20170822_021142/notifications_operator1.csv'
+            },
+            {
+                'file_size_bytes': 37,
+                'md5sum': '3ac7b8ae8722e47e1ce4b0a01fe8b1e2',
+                'num_records': 0,
+                'filename': '/workspace/data/20170822_021142/notifications_operator2.csv'
+            },
+            {
+                'file_size_bytes': 37,
+                'md5sum': '3ac7b8ae8722e47e1ce4b0a01fe8b1e2',
+                'num_records': 0,
+                'filename': '/workspace/data/20170822_021142/notifications_operator3.csv'
+            },
+            {
+                'file_size_bytes': 37,
+                'md5sum': '3ac7b8ae8722e47e1ce4b0a01fe8b1e2',
+                'num_records': 0,
+                'filename': '/workspace/data/20170822_021142/notifications_operator4.csv'
+            }
+        ],
+        'curr_date': None,
+        'exception_lists': [
+            {
+                'file_size_bytes': 11,
+                'md5sum': 'b9a2f42722d13636dfb6c84e2ee765fe',
+                'num_records': 0,
+                'filename': '/workspace/data/20170822_021142/exceptions_operator1.csv'
+            },
+            {
+                'file_size_bytes': 11,
+                'md5sum': 'b9a2f42722d13636dfb6c84e2ee765fe',
+                'num_records': 0,
+                'filename': '/workspace/data/20170822_021142/exceptions_operator2.csv'
+            },
+            {
+                'file_size_bytes': 11,
+                'md5sum': 'b9a2f42722d13636dfb6c84e2ee765fe',
+                'num_records': 0,
+                'filename': '/workspace/data/20170822_021142/exceptions_operator3.csv'
+            },
+            {
+                'file_size_bytes': 11,
+                'md5sum': 'b9a2f42722d13636dfb6c84e2ee765fe',
+                'num_records': 0,
+                'filename': '/workspace/data/20170822_021142/exceptions_operator4.csv'
+            }
+        ],
+        'blocking_conditions': [
+            {
+                'dimensions': [{'module': 'gsma_not_found'}],
+                'grace_period_days': 30,
+                'sticky': False,
+                'reason': 'Violated simple dimension',
+                'max_allowed_matching_ratio': 0.1,
+                'label': 'simple_dimension',
+                'blocking': True
+            },
+            {
+                'dimensions': [
+                    {'module': 'stolen_list'},
+                    {
+                        'invert': True,
+                        'parameters': {
+                            'threshold': 3.1,
+                            'period_days': 30
+                        },
+                        'module': 'duplicate_daily_avg'
+                    }
+                ],
+                'grace_period_days': 0,
+                'sticky': False,
+                'reason': 'Violated compound dimension',
+                'max_allowed_matching_ratio': 0.1,
+                'label': 'compound_dimension',
+                'blocking': True
+            }
+        ]
+    }  # noqa E127
 
     job_metadata_importer(db_conn=db_conn, command='dirbs-listgen', run_id=1, subcommand='',
                           status='success', extra_metadata=extra_metadata)
@@ -693,7 +742,7 @@ def test_job_metadata_bad_pos_int_params(flask_app, db_conn, api_version):
                                    show_details=False))
 
         assert rv.status_code == 400
-        assert b'Bad \'run_id\':\'{0: [\'Not a valid integer.\']}\' argument format' in rv.data
+        assert b"Bad \'run_id\':\'{0: [\'Not a valid integer.\']}\' argument format" in rv.data
 
         # not positive run_id
         rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version),
@@ -703,7 +752,7 @@ def test_job_metadata_bad_pos_int_params(flask_app, db_conn, api_version):
                                    show_details=False))
 
         assert rv.status_code == 400
-        assert b'Bad \'run_id\':\'{0: [\'Must be at least 1.\']}\' argument format' in rv.data
+        assert b"Bad \'run_id\':\'{0: [\'Must be at least 1.\']}\' argument format" in rv.data
 
         # not numeric max_result
         rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version),
@@ -714,7 +763,7 @@ def test_job_metadata_bad_pos_int_params(flask_app, db_conn, api_version):
                                    show_details=False))
 
         assert rv.status_code == 400
-        assert b'Bad \'max_results\':\'[\'Not a valid integer.\']\' argument format. Accepts only integer' in rv.data
+        assert b"Bad \'max_results\':\'[\'Not a valid integer.\']\' argument format. Accepts only integer" in rv.data
 
         # not positive max_result
         rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version),
@@ -725,7 +774,7 @@ def test_job_metadata_bad_pos_int_params(flask_app, db_conn, api_version):
                                    show_details=False))
 
         assert rv.status_code == 400
-        assert b'Bad \'max_results\':\'[\'Must be at least 1.\']\' argument format. Accepts only integer' in rv.data
+        assert b"Bad \'max_results\':\'[\'Must be at least 1.\']\' argument format. Accepts only integer" in rv.data
 
         # list of max_result (will take just the first elem of the list)
         rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version),
@@ -762,7 +811,7 @@ def test_job_metadata_bad_pos_int_params(flask_app, db_conn, api_version):
                                    show_details=False))
 
         assert rv.status_code == 400
-        assert b'Bad \'run_id\':\'{0: [\'Not a valid integer.\']}\' argument format' in rv.data
+        assert b"Bad \'run_id\':\'{0: [\'Not a valid integer.\']}\' argument format" in rv.data
 
         # not positive run_id
         rv = flask_app.get(url_for('{0}.job_metadata_get_api'.format(api_version),
@@ -772,7 +821,7 @@ def test_job_metadata_bad_pos_int_params(flask_app, db_conn, api_version):
                                    show_details=False))
 
         assert rv.status_code == 400
-        assert b'Bad \'run_id\':\'{0: [\'Must be at least 1.\']}\' argument format' in rv.data
+        assert b"Bad \'run_id\':\'{0: [\'Must be at least 1.\']}\' argument format" in rv.data
 
         # set max_result to 1 and check that only one record is returned
         job_metadata_importer(db_conn=db_conn, command='dirbs-classify', run_id=1, subcommand='sub_one',
@@ -801,38 +850,38 @@ def test_job_metadata_bad_params(flask_app, api_version):
         # unknown status
         rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version), status='unknown'))
         assert rv.status_code == 400
-        assert b'Bad \'status\':\'{0: [\'Not a valid choice.\']}\' argument format' in rv.data
+        assert b"Bad \'status\':\'{0: [\'Not a valid choice.\']}\' argument format" in rv.data
 
         # list of status containing an unknown status
         rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version), status=['error', 'unknown']))
         assert rv.status_code == 400
-        assert b'Bad \'status\':\'{1: [\'Not a valid choice.\']}\' argument format' in rv.data
+        assert b"Bad \'status\':\'{1: [\'Not a valid choice.\']}\' argument format" in rv.data
 
         # not boolean show_details
         rv = flask_app.get(url_for('{0}.job_metadata_api'.format(api_version),
                                    show_details='not_boolean'))
 
         assert rv.status_code == 400
-        assert b'Bad \'show_details\':\'[\'Not a valid boolean.\']\' argument format. ' \
-               b'Accepts only one of [\'0\', \'1\', \'true\', \'false\']' in rv.data
+        assert b"Bad \'show_details\':\'[\'Not a valid boolean.\']\' argument format. " \
+               b"Accepts only one of [\'0\', \'1\', \'true\', \'false\']" in rv.data
     else:  # api version 2.0
         # unknown status
         rv = flask_app.get(url_for('{0}.job_metadata_get_api'.format(api_version), status='unknown'))
         assert rv.status_code == 400
-        assert b'Bad \'status\':\'{0: [\'Not a valid choice.\']}\' argument format' in rv.data
+        assert b"Bad \'status\':\'{0: [\'Not a valid choice.\']}\' argument format" in rv.data
 
         # list of status containing an unknown status
         rv = flask_app.get(url_for('{0}.job_metadata_get_api'.format(api_version), status=['error', 'unknown']))
         assert rv.status_code == 400
-        assert b'Bad \'status\':\'{1: [\'Not a valid choice.\']}\' argument format' in rv.data
+        assert b"Bad \'status\':\'{1: [\'Not a valid choice.\']}\' argument format" in rv.data
 
         # not boolean show_details
         rv = flask_app.get(url_for('{0}.job_metadata_get_api'.format(api_version),
                                    show_details='not_boolean'))
 
         assert rv.status_code == 400
-        assert b'Bad \'show_details\':\'[\'Not a valid boolean.\']\' argument format. ' \
-               b'Accepts only one of [\'0\', \'1\', \'true\', \'false\']' in rv.data
+        assert b"Bad \'show_details\':\'[\'Not a valid boolean.\']\' argument format. " \
+               b"Accepts only one of [\'0\', \'1\', \'true\', \'false\']" in rv.data
 
 
 def test_json_show_details(flask_app, db_conn, api_version):
@@ -841,33 +890,43 @@ def test_json_show_details(flask_app, db_conn, api_version):
     Verify that job_metadata returns a JSON containing job metadata
     with extra information if show_details is set to true.
     """
-    extra_metadata = {'matched_imei_counts':
-                          {'compound_dimension': 0,
-                           'simple_dimension': 0},  # noqa E127
-                      'conditions':
-                          [{'label': 'simple_dimension',
-                            'blocking': True,
-                            'sticky': False,
-                            'reason': 'Violated simple dimension',
-                            'max_allowed_matching_ratio': 0.1,
-                            'dimensions':
-                                [{'module': 'gsma_not_found'}],
-                            'grace_period_days': 30},
-                           {'label': 'compound_dimension',
-                            'blocking': True,
-                            'sticky': False,
-                            'reason':
-                                'Violated compound dimension',
-                            'max_allowed_matching_ratio': 0.1,
-                            'dimensions':
-                                [{'module': 'stolen_list'},
-                                 {'invert': True,
-                                  'module': 'duplicate_daily_avg',
-                                  'parameters':
-                                      {'period_days': 30,
-                                       'threshold': 3.1}}],
-                            'grace_period_days': 0}],
-                      'curr_date': None}
+    extra_metadata = {
+        'matched_imei_counts': {
+            'compound_dimension': 0,
+            'simple_dimension': 0
+        },
+        'conditions': [
+            {
+                'label': 'simple_dimension',
+                'blocking': True,
+                'sticky': False,
+                'reason': 'Violated simple dimension',
+                'max_allowed_matching_ratio': 0.1,
+                'dimensions': [{'module': 'gsma_not_found'}],
+                'grace_period_days': 30
+            },
+            {
+                'label': 'compound_dimension',
+                'blocking': True,
+                'sticky': False,
+                'reason': 'Violated compound dimension',
+                'max_allowed_matching_ratio': 0.1,
+                'dimensions': [
+                    {'module': 'stolen_list'},
+                    {
+                        'invert': True,
+                        'module': 'duplicate_daily_avg',
+                        'parameters': {
+                            'period_days': 30,
+                            'threshold': 3.1
+                        }
+                    }
+                ],
+                'grace_period_days': 0
+            }
+        ],
+        'curr_date': None
+    }
 
     job_metadata_importer(db_conn=db_conn, command='dirbs-classify', run_id=1, subcommand='',
                           status='success', extra_metadata=extra_metadata)
@@ -986,7 +1045,7 @@ def test_json_unknown_command_param(flask_app, db_conn, api_version):
                                    show_details=True))
 
         assert rv.status_code == 400
-        assert b'Bad \'command\':\'{0: [\'Not a valid choice.\']}\' argument format' in rv.data
+        assert b"Bad \'command\':\'{0: [\'Not a valid choice.\']}\' argument format" in rv.data
     else:  # api version 2.0
         rv = flask_app.get(url_for('{0}.job_metadata_get_api'.format(api_version),
                                    command='dirbs-unknown',
@@ -996,7 +1055,7 @@ def test_json_unknown_command_param(flask_app, db_conn, api_version):
                                    show_details=True))
 
         assert rv.status_code == 400
-        assert b'Bad \'command\':\'{0: [\'Not a valid choice.\']}\' argument format' in rv.data
+        assert b"Bad \'command\':\'{0: [\'Not a valid choice.\']}\' argument format" in rv.data
 
 
 def test_json_multiple_values_same_param(flask_app, db_conn, api_version):
@@ -1039,7 +1098,7 @@ def test_json_multiple_values_same_param(flask_app, db_conn, api_version):
                                    show_details=False))
 
         assert rv.status_code == 400
-        assert b'Bad \'run_id\':\'{1: [\'Must be at least 1.\']}\' argument format' in rv.data
+        assert b"Bad \'run_id\':\'{1: [\'Must be at least 1.\']}\' argument format" in rv.data
     else:  # api version 2.0
         rv = flask_app.get(url_for('{0}.job_metadata_get_api'.format(api_version),
                                    run_id=[1, 2],
@@ -1066,7 +1125,7 @@ def test_json_multiple_values_same_param(flask_app, db_conn, api_version):
                                    show_details=False))
 
         assert rv.status_code == 400
-        assert b'Bad \'run_id\':\'{1: [\'Must be at least 1.\']}\' argument format' in rv.data
+        assert b"Bad \'run_id\':\'{1: [\'Must be at least 1.\']}\' argument format" in rv.data
 
 
 def test_json_no_run_id_param(flask_app, db_conn, api_version):

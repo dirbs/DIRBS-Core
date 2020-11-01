@@ -1,7 +1,7 @@
 """
 DIRBS REST-ful TAC API module.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -34,11 +34,12 @@ POSSIBILITY OF SUCH DAMAGE.
 from flask import abort
 
 
-def validate_tac(val):
+def validate_tac(val: str) -> abort:
     """
     Validate TAC input argument format.
 
-    :param val: tac value
+    Arguments:
+        val: string value of the TAC to evaluate
     """
     if len(val) != 8:
         abort(400, 'Bad TAC format')

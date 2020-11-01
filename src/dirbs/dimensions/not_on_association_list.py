@@ -1,7 +1,7 @@
 """
 DIRBS dimension function for a IMEIs on the device association list.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -64,7 +64,7 @@ class NotOnAssociationList(Dimension):
                                            WHERE NOT EXISTS(SELECT imei_norm
                                                               FROM {association_shard}
                                                              WHERE imei_norm = {network_imeis_shard}.imei_norm
-                                                               AND end_date IS NULL)""").format(
+                                                               AND end_date IS NULL)""").format(  # noqa: Q449
             network_imeis_shard=sql.Identifier(network_imeis_shard),
             association_shard=sql.Identifier(association_list_shard))
 

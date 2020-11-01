@@ -1,7 +1,7 @@
 """
 Stolen data import unit tests.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -180,7 +180,7 @@ def test_reporting_date_optional(stolen_list_importer, logger, db_conn, mocked_c
                                                '01234567891234,20160401,\n'
                                                '01234567891234,20160402,')) as imp:
         expect_failure(imp, 'Conflicting rows check failed (1 rows with same primary key and conflicting data)')
-        assert 'Found 1 conflicting row(s) with primary key (\'imei_norm\',): (\'01234567891234\',)' \
+        assert "Found 1 conflicting row(s) with primary key (\'imei_norm\',): (\'01234567891234\',)" \
                in logger_stream_contents(logger)
 
     # valid imei, reporting_date whitespace only -  error reporting_date type is date not string
@@ -195,7 +195,7 @@ def test_reporting_date_optional(stolen_list_importer, logger, db_conn, mocked_c
                                                '622222222222222,    ,\n'
                                                '122222222222223,20160425,')) as imp:
         expect_failure(imp,
-                       exc_message='Pre-validation failed: b\'Error:   '
+                       exc_message="Pre-validation failed: b\'Error:   "
                                    'regex("^(20[0-9]{2}((0[13578]|1[02])31|(01|0[3-9]|1[0-2])(29|30)|'
                                    '(0[1-9]|1[0-2])(0[1-9]|1[0-9]|2[0-8]))|20([02468][048]|[13579][26])0229)?$") '
                                    'fails for line: 1, column: reporting_date, value: "    "\\nFAIL')

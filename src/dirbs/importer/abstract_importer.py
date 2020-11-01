@@ -1,7 +1,7 @@
 """
 Common code for importing data sets into DIRBS Core.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -235,7 +235,7 @@ class AbstractImporter:
                                                **self._import_metadata)
 
             # Log initial message
-            self._logger.info('Importing {0} data from file \'{1}\''
+            self._logger.info("Importing {0} data from file \'{1}\'"
                               .format(self._import_type, self._filename))
 
             # Init staging table (commit afterwards to ensure other processes can see table)
@@ -611,7 +611,7 @@ class AbstractImporter:
                     except:  # noqa: E722
                         for t_not_deleted in remaining_tables_to_delete:
                             self._logger.warn('Failed to drop table {0} due to exception. Please issue '
-                                              '\'DROP TABLE IF EXISTS {0}\' manually!'.format(t_not_deleted))
+                                              "\'DROP TABLE IF EXISTS {0}\' manually!".format(t_not_deleted))
                         raise
         else:
             self._logger.warn('Skipping staging tables/intermediate files cleanup due to command-line option')

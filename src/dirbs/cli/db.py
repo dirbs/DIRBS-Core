@@ -1,7 +1,7 @@
 """
 DIRBS CLI for DB schema generation. Installed by setuptools as a dirbs-db console script.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -150,11 +150,14 @@ def check(ctx):
             logger.info('Whitelist Schema versions match between code and DB.')
 
 
-@cli.command()  # noqa: C901
+@cli.command()
 @click.pass_context
 @common.unhandled_exception_handler
-def upgrade(ctx):
-    """Upgrades the current DB schema to the version supported by this code using migration scripts."""
+def upgrade(ctx):  # noqa: C901
+    """Upgrades the current DB schema to the version supported by this code using migration scripts.
+
+    #TODO: fix suppressed C901 (upgrade is too complex)
+    """
     logger = logging.getLogger('dirbs.db')
     config = common.ensure_config(ctx)
     db_config = config.db_config
@@ -171,15 +174,15 @@ def upgrade(ctx):
                 version = None
 
             if version is None:
-                logger.error('DB currently not installed or version number could not be determined. Can\'t upgrade')
+                logger.error("DB currently not installed or version number could not be determined. Can\'t upgrade")
                 sys.exit(1)
 
             if version < min_schema_version:
-                logger.error('Current DB schema is older than DIRBS 4.0.0. Can\'t upgrade')
+                logger.error("Current DB schema is older than DIRBS 4.0.0. Can\'t upgrade")
                 sys.exit(1)
 
             if version > code_db_schema_version:
-                logger.error('DB schema newer than code. Can\'t upgrade')
+                logger.error("DB schema newer than code. Can\'t upgrade")
                 sys.exit(1)
 
             if version != code_db_schema_version:
@@ -199,7 +202,7 @@ def upgrade(ctx):
                             logger.info('Running Python migration script: %s', module_name)
                             migrator = module.migrator()
                             migrator.upgrade(conn)
-                        except ImportError as ex:
+                        except ImportError:
                             script_name = 'sql/migration_scripts/v{0:d}_upgrade.sql'.format(new_version)
                             logger.info('Running SQL migration script: %s', script_name)
                             sql = pkgutil.get_data('dirbs', script_name)
@@ -225,10 +228,10 @@ def upgrade(ctx):
 
                 if wl_version is None:
                     logger.error('Whitelist DB currently not installed or version number could not be determined. '
-                                 'Can\'t upgrade')
+                                 "Can\'t upgrade")
                     sys.exit(1)
                 if wl_version > wl_db_schema_version:
-                    logger.error('Whitelist DB schema newer than code. Can\'t upgrade')
+                    logger.error("Whitelist DB schema newer than code. Can\'t upgrade")
                     sys.exit(1)
                 if wl_version != wl_db_schema_version:
                     logger.info('Upgrading Whitelist DB schema version %d to %d', wl_version, wl_db_schema_version)
@@ -241,7 +244,7 @@ def upgrade(ctx):
                                 logger.info('Running Python migration script: %s', module_name)
                                 migrator = module.migrator()
                                 migrator.upgrade(conn)
-                            except ImportError as ex:
+                            except ImportError:
                                 script_name = 'sql/migration_scripts/whitelist/v{0:d}_upgrade.sql'.format(new_version)
                                 logger.info('Running SQL migration script: %s', script_name)
                                 sql = pkgutil.get_data('dirbs', script_name)
@@ -282,7 +285,7 @@ def install(ctx):
                         WHERE n.nspname = current_schema()""")
         is_clean = (cur.fetchone()[0] == 0)
         if not is_clean:
-            logger.error('Can\'t install latest schema into a non-clean DB')
+            logger.error("Can\'t install latest schema into a non-clean DB")
             logger.error('Instead, use dirbs-db upgrade to upgrade the schema to the latest version')
             sys.exit(1)
 

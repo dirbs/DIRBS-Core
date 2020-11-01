@@ -1,7 +1,7 @@
 """
 DIRBS metadata storage API.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -120,7 +120,7 @@ def query_for_command_runs(conn, job_command, subcommand=None, successful_only=F
     """Get all the metadata for all the invocations of a job commands, sorted most recent runs first."""
     with conn.cursor() as cursor:
         if successful_only:
-            status_filter_sql = sql.SQL('status = \'success\'')
+            status_filter_sql = sql.SQL("status = \'success\'")
         else:
             status_filter_sql = sql.SQL('TRUE')
 
@@ -154,7 +154,7 @@ def job_start_time_by_run_id(conn, run_id, successful_only=False):
     """Get the job start time for a job corresponding to the passed run_id."""
     with conn.cursor() as cursor:
         if successful_only:
-            status_filter_sql = sql.SQL('status = \'success\'')
+            status_filter_sql = sql.SQL("status = \'success\'")
         else:
             status_filter_sql = sql.SQL('TRUE')
 

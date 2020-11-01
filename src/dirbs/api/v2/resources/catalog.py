@@ -1,7 +1,7 @@
 """
 DIRBS REST-ful data_catalog API module.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -39,12 +39,14 @@ from dirbs.api.common.catalog import _build_sql_query_filters
 from dirbs.api.v2.schemas.catalog import CatalogFile, Keys
 
 
-def catalog_api(**kwargs):
+def catalog_api(**kwargs: dict) -> jsonify:
     """
     Defines handler for Catalog API (version 2.0) GET method.
 
-    :param kwargs: input args
-    :return: json
+    Arguments:
+        kwargs: required arguments dictionary
+    Returns:
+        JSON response
     """
     sort_order = kwargs.get('order')
     data_offset = kwargs.get('offset')

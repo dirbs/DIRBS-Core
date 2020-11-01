@@ -38,13 +38,15 @@ from dirbs.api.common.catalog import _build_sql_query_filters
 from dirbs.api.v1.schemas.catalog import CatalogFile
 
 
-def catalog_api(max_results=None, **kwargs):
+def catalog_api(max_results: int = None, **kwargs: dict) -> jsonify:
     """
     Data catalog API endpoint.
 
-    :param max_results: max output results
-    :param kwargs: input args
-    :return: json response
+    Arguments:
+        max_results: max number of results to return (default None)
+        kwargs: Query parameterized arguments
+    Returns:
+        response: json response
     """
     # Build filters to be applied to the SQL query
     filters, filter_params = _build_sql_query_filters(**kwargs)

@@ -65,7 +65,7 @@ class CatalogFile(Schema):
     import_status = fields.Dict()
 
     @pre_dump(pass_many=False)
-    def extract_fields(self, data):
+    def extract_fields(self, data, **kwargs):
         """
         Extract import status.
 
@@ -98,18 +98,15 @@ class CatalogArgs(Schema):
                                 load_from='cataloged_since', dump_to='cataloged_since',
                                 description='Filter results to include only files that were '
                                             'cataloged since the specified time')
-    offset = fields.Integer(required=True,
-                            missing=0,
+    offset = fields.Integer(missing=0,
                             validate=[validate.Range(min=0, error='Value must be 0 or greater than 0')],
                             description='Offset the results on the current page by the specified '
                                         'file_id. It should be the value of file_id for the '
                                         'last result on the previous page')
-    limit = fields.Integer(required=True,
-                           missing=10,
+    limit = fields.Integer(missing=10,
                            validate=validate.Range(min=1, error='Value must be greater than 0'),
                            description='Number of results to return on the current page')
-    order = fields.String(required=True,
-                          missing='ASC',
+    order = fields.String(missing='ASC',
                           validate=validate.OneOf([f.value for f in SortingOrders]),
                           description='The sort order for the results using imsi-msisdn as the key')
 

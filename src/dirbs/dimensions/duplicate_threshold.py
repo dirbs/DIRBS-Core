@@ -1,7 +1,7 @@
 """
 DIRBS dimension function for duplicate threshold within a time period.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -53,7 +53,7 @@ class DuplicateThreshold(DuplicateAbstractBase):
         try:
             self._threshold = int(threshold)
         except (TypeError, ValueError):
-            raise ValueError('\'threshold\' parameter must be an integer, got \'{0}\' instead...'.format(threshold))
+            raise ValueError("\'threshold\' parameter must be an integer, got \'{0}\' instead...".format(threshold))
 
     @property
     def algorithm_name(self):

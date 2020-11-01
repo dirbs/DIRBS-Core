@@ -1,7 +1,7 @@
 """
 DIRBS Core conditions configuration section parser.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -130,7 +130,7 @@ class DimensionConfig(ConfigSection):
             self.params = params
 
         except Exception as e:
-            msg_error = 'Could not create dimension \'{0}\' with supplied parameters'.format(self.module)
+            msg_error = "Could not create dimension \'{0}\' with supplied parameters".format(self.module)
             msg = '{0}: {1}. Cause: {2}'.format(self.section_name, msg_error, str(e))
             _logger.error(msg)
             raise ConfigParseException(msg)

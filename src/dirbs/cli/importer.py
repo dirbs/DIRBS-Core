@@ -1,7 +1,7 @@
 """
 DIRBS CLI for data import. Installed by setuptools as a dirbs-import console script.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -106,7 +106,7 @@ def _validate_operator_id(ctx, param, val):
         config = common.ensure_config(ctx)
         operator_id_list = [op.id for op in config.region_config.operators]
         if val.lower() not in operator_id_list:
-            raise click.BadParameter('\'{0}\' not in {1}'.format(val, operator_id_list))
+            raise click.BadParameter("\'{0}\' not in {1}".format(val, operator_id_list))
         elif val != val.lower():
             logger.warning('operator_id: {0} has been changed to lower case: {1}'.format(val, val.lower()))
     return val.lower()
@@ -360,7 +360,8 @@ def operator(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, 
                    'perform_region_checks': not disable_region_check,
                    'perform_home_network_check': not disable_home_check,
                    'perform_historic_checks': not disable_historic_check,
-                   'perform_auto_analyze': not disable_auto_analyze})
+                   'perform_auto_analyze': not disable_auto_analyze,
+                   'leading_zero_suspect_limit': op_tc.leading_zero_suspect_limit})
     with importer_factory.make_data_importer('operator', input_file, config, statsd, conn, metadata_conn,
                                              run_id, metrics_root, metrics_run_root, **params) as importer:
         importer.import_data()

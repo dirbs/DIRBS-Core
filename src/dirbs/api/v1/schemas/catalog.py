@@ -1,7 +1,7 @@
 """
 DIRBS REST-ful data_catalog API schema module.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -65,7 +65,7 @@ class CatalogFile(Schema):
     import_status = fields.Dict()
 
     @pre_dump(pass_many=False)
-    def extract_fields(self, data):
+    def extract_fields(self, data, **kwargs):
         """
         Extract import status.
 

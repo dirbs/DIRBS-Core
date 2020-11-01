@@ -1,7 +1,7 @@
 """
 Reusable test helpers for unit tests.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -190,7 +190,7 @@ def expect_failure(importer, exc_message=None):
         importer.import_data()
 
     if exc_message is not None:
-        assert exc_message in str(ex)
+        assert exc_message in str(ex.value)
 
 
 def imeis_md5_hashing_uuid(imei, convert_to_uuid=True):
@@ -216,7 +216,7 @@ def zip_files_to_tmpdir(file_list, tmpdir):
 
 def _logger_stream(logger):
     """Function which can retrieve a handle to the logger stream being used for this test."""
-    test_handlers = [l for l in logger.handlers if l.name == 'dirbs.test']
+    test_handlers = [handler for handler in logger.handlers if handler.name == 'dirbs.test']
     assert len(test_handlers) == 1
     return test_handlers[0].stream
 

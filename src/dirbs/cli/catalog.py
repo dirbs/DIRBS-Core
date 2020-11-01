@@ -1,7 +1,7 @@
 """
 DIRBS CLI for cataloging data received by DIRBS. Installed by setuptools as a dirbs-classify console script.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -259,8 +259,8 @@ def _populate_file_properties(config, file_list, run_id, perform_prevalidation, 
             logger.warning('The zip file is invalid: {0}'.format(file_properties.filename))
             logger.warning('Zip check error: {0}'.format(str(err)))
         except exceptions.PrevalidationCheckRawException as err:
-                is_valid_format = False
-                logger.warning('Pre-validation failed for file: {0} with error: {1}'.format(file_path, str(err)))
+            is_valid_format = False
+            logger.warning('Pre-validation failed for file: {0} with error: {1}'.format(file_path, str(err)))
         finally:
             logger.debug('Cleanup: deleting intermediate data files...')
             for fn in files_to_delete:

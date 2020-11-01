@@ -1,7 +1,7 @@
 """
 Setuptools configuration file
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 All rights reserved.
 Redistribution and use in source and binary forms, with or without modification, are permitted (subject to the
 limitations in the disclaimer below) provided that the following conditions are met:
@@ -133,6 +133,7 @@ setup(
     # our package installation doesn't download or install any opensource
     # packages without the cosent of the end user.
     install_requires=[],
+    python_requires='>=3.8',
 
     # If there are data files included in your packages that need to be
     # installed, specify them here.  If using Python 2.6 or less, then these

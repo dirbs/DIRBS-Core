@@ -1,7 +1,7 @@
 """
 DIRBS REST-ful IMEI API Schema module.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -130,8 +130,8 @@ class IMEIBatchArgs(Schema):
     imeis = fields.List(fields.String(required=True, validate=Validators.validate_imei),
                         required=True,
                         validate=validate.Length(min=1, max=1000, error='Min 1 and Max 1000 IMEIs allowed'))
-    include_stolen_status = fields.Boolean(required=True, missing=False)
-    include_registration_status = fields.Boolean(required=True, missing=False)
+    include_stolen_status = fields.Boolean(missing=False)
+    include_registration_status = fields.Boolean(missing=False)
 
     @property
     def fields_dict(self):
@@ -164,18 +164,15 @@ class SortingOrders(Enum):
 class SubscriberArgs(Schema):
     """Defines schema for IMEI-Subscriber API arguments."""
 
-    offset = fields.Integer(required=True,
-                            missing=0,
+    offset = fields.Integer(missing=0,
                             validate=[validate.Range(min=0, error='Value must be 0 or greater than 0')],
                             description='Offset the results on the current page by the specified imsi-msisdn pair. It '
                                         'should be the value of imsi-msisdn pair for the last result on the previous '
                                         'page')
-    limit = fields.Integer(required=True,
-                           missing=10,
+    limit = fields.Integer(missing=10,
                            validate=[validate.Range(min=1, error='Value must be greater than 0')],
                            description='Number of results to return on the current page')
-    order = fields.String(required=True,
-                          missing='ASC',
+    order = fields.String(missing='ASC',
                           validate=validate.OneOf([f.value for f in SortingOrders]),
                           description='The sort order for the results using imsi-msisdn as the key')
 
@@ -226,11 +223,11 @@ class IMEIInfo(Schema):
 class IMEIArgs(Schema):
     """Input argument schema for IMEI API."""
 
-    include_registration_status = fields.Boolean(required=False, missing=False,
-                                                 description='Whether or not to include \'registration_status\' '
+    include_registration_status = fields.Boolean(missing=False,
+                                                 description="Whether or not to include \'registration_status\' "
                                                              'field in the response')
-    include_stolen_status = fields.Boolean(required=False, missing=False,
-                                           description='Whether or not to include \'stolen_status\''
+    include_stolen_status = fields.Boolean(missing=False,
+                                           description="Whether or not to include \'stolen_status\'"
                                                        'field in the response')
 
     @property

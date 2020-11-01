@@ -1,7 +1,7 @@
 """
 Pairing list data import unit tests.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -43,7 +43,7 @@ from _importer_params import PairListParams
 from _helpers import get_importer, expect_success, expect_failure, data_file_to_test
 from _delta_helpers import multiple_changes_check_common, \
     delta_remove_check_and_disable_option_common, \
-    delta_add_same_entries_common, row_count_stats_common, historic_threshold_config_common
+    delta_add_same_entries_common, historic_threshold_config_common
 
 
 def test_cli_pairing_list_importer(postgres, db_conn, tmpdir, mocked_config, logger):
@@ -368,7 +368,7 @@ def test_empty_imsi(pairing_list_importer):
     imported into the database. This test has been added to verify that imsi column doesn't need to be trimmed because
     empty IMSI column will be refused by the validator.
     """
-    expect_failure(pairing_list_importer, exc_message='Pre-validation failed: b\'Error:   '
+    expect_failure(pairing_list_importer, exc_message="Pre-validation failed: b\'Error:   "
                                                       'regex("^[0-9]{1,15}$") fails for line: 1, column: imsi, '
                                                       'value: ""\\nFAIL')
 

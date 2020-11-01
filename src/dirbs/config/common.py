@@ -1,7 +1,7 @@
 """
 DIRBS Core configuration file parser commons.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -120,7 +120,7 @@ class ConfigSection:
                 raise ConfigParseException(msg)
 
             return parsed_val
-        except ValueError as ex:
+        except ValueError:
             msg = '{0}: {1} value "{2}" must be an integer value'\
                   .format(self.section_name, propname, self.raw_config[propname])
             _logger.error((msg))

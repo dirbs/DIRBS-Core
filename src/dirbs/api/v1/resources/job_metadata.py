@@ -1,7 +1,7 @@
 """
 DIRBS REST-ful job_metadata API module.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -30,6 +30,9 @@ BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 """
+
+from typing import List
+
 from flask import jsonify
 from psycopg2 import sql
 
@@ -37,17 +40,20 @@ from dirbs.api.common.db import get_db_connection
 from dirbs.api.v1.schemas.job_metadata import JobMetadata
 
 
-def job_metadata_api(command=None, subcommand=None, run_id=None, status=None, max_results=10, show_details=True):
+def job_metadata_api(command: List[str] = None, subcommand: List[str] = None, run_id: List[int] = None,
+                     status: List[str] = None, max_results: int = 10, show_details: bool = True) -> jsonify:
     """
     Job metadata API endpoint.
 
-    :param command: job command name (default none)
-    :param subcommand: job sub-command name (default none)
-    :param run_id: job run id (default none)
-    :param status: job execution status (default none)
-    :param max_results: max output results (default 10)
-    :param show_details: bool (default True)
-    :return: json response
+    Arguments:
+        command: list of commands in str format (default None)
+        subcommand: list of sub-commands in str format (default None)
+        run_id: list of run ids of the jobs (default None)
+        status: list of job statuses (default None)
+        max_results: show this many results (default 10)
+        show_details: bool to show complete details of jobs (default True)
+    Returns:
+        JSON response
     """
     with get_db_connection() as db_conn, db_conn.cursor() as cursor:
         # Build the query with params retrieved from request

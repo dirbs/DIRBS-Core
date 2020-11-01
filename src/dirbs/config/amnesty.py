@@ -1,7 +1,7 @@
 """
 DIRBS Core amnesty configuration section parser.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -44,7 +44,7 @@ class AmnestyConfig(ConfigSection):
         self.evaluation_period_end_date = self._parse_date('evaluation_period_end_date', '%Y%m%d', 'YYYYMMDD')
         self.amnesty_period_end_date = self._parse_date('amnesty_period_end_date', '%Y%m%d', 'YYYYMMDD')
         if self.amnesty_period_end_date <= self.evaluation_period_end_date:
-            msg = 'The \'amnesty_period_end_date\' must be greater than the \'evaluation_period_end_date\'!'
+            msg = "The \'amnesty_period_end_date\' must be greater than the \'evaluation_period_end_date\'!"
             _logger.error(msg)
             raise ConfigParseException(msg)
 

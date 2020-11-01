@@ -1,7 +1,7 @@
 """
 tac api data import unit tests.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -278,7 +278,7 @@ def test_batch_tacs(flask_app, gsma_tac_db_importer, api_version):
         rv = flask_app.post(url_for('{0}.tac_post_api'.format(api_version)), data=json.dumps({'tacs': tacs}),
                             content_type='application/json')
         assert rv.status_code == 400
-        assert b'Bad \'tacs\':\'[\'Min 1 and Max 1000 TACs are allowed\']\' argument format' in rv.data
+        assert b"Bad \'tacs\':\'[\'Min 1 and Max 1000 TACs are allowed\']\' argument format" in rv.data
 
 
 def test_method_put_not_allowed(flask_app, api_version):

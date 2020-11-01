@@ -1,7 +1,7 @@
 """
 Config parsing unit tests.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -146,7 +146,7 @@ def test_file_specified_explicitly_is_cataloged_correctly(postgres, db_conn, tmp
 
     with db_conn.cursor() as cursor:
         cursor.execute('SELECT is_valid_format FROM data_catalog WHERE filename = '
-                       '\'operator1_with_rat_info_20160701_20160731.zip\'')
+                       "\'operator1_with_rat_info_20160701_20160731.zip\'")
         assert cursor.fetchone().is_valid_format
 
 
@@ -178,7 +178,7 @@ def test_non_zip_files_are_not_harvested(postgres, db_conn, tmpdir, mocker, mock
 
     with db_conn.cursor() as cursor:
         cursor.execute('SELECT COUNT(*) FROM data_catalog WHERE filename = '
-                       '\'operator1_with_rat_info_20160701_20160731.csv\'')
+                       "\'operator1_with_rat_info_20160701_20160731.csv\'")
         assert cursor.fetchone()[0] == 0
 
 
@@ -208,7 +208,7 @@ def test_perform_prevalidation_option(postgres, db_conn, tmpdir, monkeypatch, mo
     # pre-validation enabled is implicitly tested in test_all_files_are_harvested test case.
     with db_conn.cursor() as cursor:
         cursor.execute('SELECT is_valid_format FROM data_catalog WHERE filename = '
-                       '\'operator1_with_rat_info_20160701_20160731.zip\'')
+                       "\'operator1_with_rat_info_20160701_20160731.zip\'")
         assert cursor.fetchone().is_valid_format is None
 
 

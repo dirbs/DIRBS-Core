@@ -1,7 +1,7 @@
 """
 DIRBS Core configuration file parser package.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -117,12 +117,12 @@ class AppConfig:
         self.gsma_threshold_config = GSMAThresholdConfig(ignore_env=ignore_env,
                                                          **(yaml_config.get('gsma_threshold', {}) or {}))
         self.pairing_threshold_config = PairingListThresholdConfig(ignore_env=ignore_env,
-                                                                   **(yaml_config.get('pairing_list_threshold', {}) or
-                                                                      {}))
+                                                                   **(yaml_config.get('pairing_list_threshold',
+                                                                                      {}) or {}))
         self.subscribers_threshold_config = SubscribersListThresholdConfig(ignore_env=ignore_env,
                                                                            **(yaml_config.get(
-                                                                               'subscribers_list_threshold', {}) or
-                                                                              {}))
+                                                                               'subscribers_list_threshold',
+                                                                               {}) or {}))
         self.stolen_threshold_config = StolenListThresholdConfig(ignore_env=ignore_env,
                                                                  **(yaml_config.get('stolen_list_threshold',
                                                                                     {}) or {}))

@@ -1,7 +1,7 @@
 """
 DIRBS CLI for IMEI classification. Installed by setuptools as a dirbs-classify console script.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -103,9 +103,8 @@ def cli(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metri
     successful_job_runs = metadata.query_for_command_runs(metadata_conn, 'dirbs-classify', successful_only=True)
     if successful_job_runs and not disable_sanity_checks and not _perform_sanity_checks(
             config, successful_job_runs[0].extra_metadata):
-            raise ClassifySanityCheckFailedException(
-                'Sanity checks failed, configurations are not identical to the last successful classification'
-            )
+        raise ClassifySanityCheckFailedException(
+            'Sanity checks failed, configurations are not identical to the last successful classification')
 
     logger.info('Classifying using conditions: {0}'.format(','.join([c.label for c in conditions])))
 
@@ -169,9 +168,9 @@ def cli(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metri
                 max_matched_imeis = max_ratio * total_imei_count
                 if safety_check and total_imei_count > 0 and num_matched_imeis > max_matched_imeis:
                     ratio = min(num_matched_imeis / total_imei_count, 1)
-                    logger.error('Refusing to classify using condition \'{0}\': '
+                    logger.error("Refusing to classify using condition \'{0}\': "
                                  'This condition matches more than the maximum number of IMEIs allowed by the '
-                                 'condition\'s configuration '
+                                 "condition\'s configuration "
                                  '(matched_imeis={1:d}, ratio={2:f}, max_ratio={3:f})'
                                  .format(condition.label, num_matched_imeis, ratio, max_ratio))
                     had_errored_condition = True
@@ -263,7 +262,7 @@ def _completed_calc_jobs(futures_to_condition, per_condition_state, logger):
         state = per_condition_state[condition.label]
         state['num_completed_calc_jobs'] += 1
         state['num_matched_imeis'] += num_matched_imeis
-        logger.debug('Processed {0:d} of {1:d} jobs to calculate matching IMEIs for condition \'{2}\' '
+        logger.debug("Processed {0:d} of {1:d} jobs to calculate matching IMEIs for condition \'{2}\' "
                      '(duration {3:.3f}s)'
                      .format(state['num_completed_calc_jobs'],
                              state['num_total_calc_jobs'],
@@ -271,7 +270,7 @@ def _completed_calc_jobs(futures_to_condition, per_condition_state, logger):
                              duration / 1000))
 
         if state['num_completed_calc_jobs'] == state['num_total_calc_jobs']:
-            logger.info('Finished calculating {0:d} matching IMEIs for condition \'{1}\''
+            logger.info("Finished calculating {0:d} matching IMEIs for condition \'{1}\'"
                         .format(state['num_matched_imeis'], condition.label))
             yield condition, state
 
@@ -290,7 +289,7 @@ def _completed_update_jobs(futures_to_condition, per_condition_state, logger):
         state = per_condition_state[condition.label]
         state['num_completed_update_jobs'] += 1
 
-        logger.debug('Processed {0:d} of {1:d} jobs to update classification_state table for condition \'{2}\''
+        logger.debug("Processed {0:d} of {1:d} jobs to update classification_state table for condition \'{2}\'"
                      ' (duration {3:.3f}s)'
                      .format(state['num_completed_update_jobs'],
                              state['num_total_update_jobs'],
@@ -298,7 +297,7 @@ def _completed_update_jobs(futures_to_condition, per_condition_state, logger):
                              duration / 1000))
 
         if state['num_completed_update_jobs'] == state['num_total_update_jobs']:
-            logger.info('Finished updating classification_state table for condition \'{0}\''
+            logger.info("Finished updating classification_state table for condition \'{0}\'"
                         .format(condition.label))
             yield condition, state
 
@@ -345,5 +344,5 @@ def _do_final_cleanup(conn, logger, is_locked, tables_to_delete):
             except:  # noqa: E722
                 for t_not_deleted in remaining_tables_to_delete:
                     logger.warning('Failed to drop table {0} due to exception. Please issue '
-                                   '\'DROP TABLE IF EXISTS {0}\' manually!'.format(t_not_deleted))
+                                   "\'DROP TABLE IF EXISTS {0}\' manually!".format(t_not_deleted))
                 raise

@@ -1,7 +1,7 @@
 """
 Package for DIRBS REST-ful API common handlers package.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -31,16 +31,20 @@ BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 POSSIBILITY OF SUCH DAMAGE.
 """
 
+from typing import Callable
+
 from werkzeug.exceptions import BadRequest
 from marshmallow import fields, validate
 
 
-def validate_error(error):
+def validate_error(error) -> BadRequest:
     """
     Transform marshmallow validation errors to custom responses to maintain backward-compatibility.
 
-    :param error: intercepted http error
-    :return: custom http error response
+    Arguments:
+        error: intercepted http error object
+    Returns:
+        custom http error message
     """
     field_name = error.exc.field_names[0]
     field_value = error.exc.data[field_name] if error.exc.data else None
@@ -53,42 +57,42 @@ def validate_error(error):
     return BadRequest(description=get_error_desc(field_type, field_name, field_value))
 
 
-def get_error_desc(field, name, value):
+def get_error_desc(field: fields, name: str, value: str) -> str:
     """
     Helper function to construct error description.
 
-    :param field: Marshmallow field
-    :param name: field name
-    :param value: field value
-    :return:
+    Arguments:
+        field -- evaluated argument
+        name -- name of the evaluated argument
+        value -- evaluated value of the argument
+    Returns:
+        error_desc -- custom description of the error
     """
-    error_desc = 'Bad \'{0}\':\'{1}\' argument format.'.format(name, value)
+    error_desc = "Bad \'{0}\':\'{1}\' argument format.".format(name, value)
     if isinstance(field, fields.Integer):
         try:
             if isinstance(value, str):
                 int(value)
                 msg_allow_zero = 'or equal to ' if field.validate.min < 1 else ''
-                error_desc = 'Param \'{0}\':\'{1}\' must be greater than {2}0' \
-                    .format(name, value, msg_allow_zero)
+                error_desc = "Param \'{0}\':\'{1}\' must be greater than {2}0".format(name, value, msg_allow_zero)
             else:
                 raise ValueError
         except ValueError:
-            error_desc = 'Bad \'{0}\':\'{1}\' argument format. Accepts only integer'.format(name, value)
+            error_desc = "Bad \'{0}\':\'{1}\' argument format. Accepts only integer".format(name, value)
     if isinstance(field, fields.Boolean):
         allowed_values = ['0', '1', 'true', 'false']
-        error_desc = 'Bad \'{0}\':\'{1}\' argument format. Accepts only one of {2}'\
-            .format(name, value, allowed_values)
+        error_desc = "Bad \'{0}\':\'{1}\' argument format. Accepts only one of {2}".format(name, value, allowed_values)
     if isinstance(field, fields.String) and isinstance(field.validate, validate.OneOf):
-        error_desc = 'Bad \'{0}\':\'{1}\' argument format. Accepts only one of {2}'\
-            .format(name, value, field.validate.choices)
+        error_desc = "Bad \'{0}\':\'{1}\' argument format. Accepts only one of {2}".format(name, value,
+                                                                                           field.validate.choices)
     if isinstance(field, fields.DateTime):
         dateformat = 'YYYYMMDD' if field.dateformat == '%Y%m%d' else field.dateformat
-        error_desc = 'Bad \'{0}\':\'{1}\' argument format. Date must be in \'{2}\' format.'\
+        error_desc = "Bad \'{0}\':\'{1}\' argument format. Date must be in \'{2}\' format."\
             .format(name, value, dateformat)
     return error_desc
 
 
-def disable_options_method():
+def disable_options_method() -> Callable:
     """Decorator function to disable OPTIONS method on the endpoint."""
     def wrapper(f):
         f.provide_automatic_options = False

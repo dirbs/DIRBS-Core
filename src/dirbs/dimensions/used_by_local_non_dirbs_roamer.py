@@ -1,7 +1,7 @@
 """
 DIRBS dimension function for a IMEIs used by local non DIRBS roamer .
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -54,8 +54,8 @@ class UsedByLocalNonDirbsRoamer(Dimension):
         try:
             self._lookback_days = int(lookback_days)
         except (TypeError, ValueError):
-            raise ValueError('\'lookback_days\' parameter must be an integer, '
-                             'got \'{0}\' instead...'.format(lookback_days))
+            raise ValueError("\'lookback_days\' parameter must be an integer, "
+                             "got \'{0}\' instead...".format(lookback_days))
 
     @property
     def algorithm_name(self):

@@ -1,7 +1,7 @@
 """
 DIRBS REST-ful IMEI API Schema module.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -71,9 +71,9 @@ class IMEIArgs(Schema):
     """Input arguments for the IMEI API."""
 
     include_seen_with = fields.Boolean(required=False, missing=False,
-                                       description='Whether or not to include \'seen_with\' field in the response')
+                                       description="Whether or not to include \'seen_with\' field in the response")
     include_paired_with = fields.Boolean(required=False, missing=False,
-                                         description='Whether or not to include \'paired_with\' field in the response')
+                                         description="Whether or not to include \'paired_with\' field in the response")
 
     @property
     def fields_dict(self):

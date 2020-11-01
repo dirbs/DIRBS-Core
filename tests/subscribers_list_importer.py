@@ -1,7 +1,7 @@
 """
 Subscribers list data import unit tests.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -288,7 +288,7 @@ def test_empty_uid(subscribers_list_importer):
                          indirect=True)
 def test_empty_imsi(subscribers_list_importer):
     """Verify that the Subscribers list data is check for empty IMSI(s) and is not imported."""
-    expect_failure(subscribers_list_importer, exc_message='Pre-validation failed: b\'Error:   '
+    expect_failure(subscribers_list_importer, exc_message="Pre-validation failed: b\'Error:   "
                                                           'regex("^[0-9]{1,15}$") fails for line: 1, column: imsi, '
                                                           'value: ""\\nFAIL')
 

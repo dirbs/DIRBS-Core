@@ -1,7 +1,7 @@
 """
 DIRBS package for logging and metrics.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -63,7 +63,7 @@ class LogFormatter(logging.Formatter):
         # Whether or not to apply scrubbing to formatted messages
         self.enable_scrubbing = enable_scrubbing
 
-    def format(self, record):
+    def format(self, record):  # noqa: A003
         """Implements logging.Formatter interface."""
         # Delete all occurences of pattern matching confidential information
         formatted_msg = super().format(record)
@@ -75,7 +75,7 @@ class LogFormatter(logging.Formatter):
 class InfoAndBelowFilter(logging.Filter):
     """Filter used to select only info level and below messages so that these can be directed to stdout."""
 
-    def filter(self, rec):
+    def filter(self, rec):  # noqa: A003
         """Overrides logging.Filter.filter."""
         return rec.levelno <= logging.INFO
 
@@ -83,7 +83,7 @@ class InfoAndBelowFilter(logging.Filter):
 class WarningAndAboveFilter(logging.Filter):
     """Filter used to select only warning and above messages so that these can be directed to stderr."""
 
-    def filter(self, rec):
+    def filter(self, rec):  # noqa: A003
         """Overrides logging.Filter.filter."""
         return rec.levelno >= logging.WARNING
 
@@ -143,9 +143,9 @@ def setup_initial_logging():
         }
     }
 
-    for l in ['sql', 'flask', 'statsd', 'config', 'exception', 'classify', 'db',
-              'listgen', 'import', 'report', 'prune', 'catalog']:
-        dict_config['loggers']['dirbs.' + l] = {
+    for log_instance in ['sql', 'flask', 'statsd', 'config', 'exception', 'classify', 'db',
+                         'listgen', 'import', 'report', 'prune', 'catalog']:
+        dict_config['loggers']['dirbs.' + log_instance] = {
             'level': 'DEBUG',
             'propagate': True
         }

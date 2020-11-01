@@ -1,7 +1,7 @@
 """
 DIRBS dimension function for malformed IMEIs.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -57,8 +57,8 @@ class MalformedIMEI(Dimension):
 
         return sql.SQL("""SELECT imei_norm
                             FROM {network_imeis_shard}
-                           WHERE imei_norm !~ '^\d{{14}}$'""") \
-            .format(network_imeis_shard=sql.Identifier(network_imeis_shard)).as_string(conn)
+                           WHERE imei_norm !~ '^\d{{14}}$'""").format(  # noqa: W605
+            network_imeis_shard=sql.Identifier(network_imeis_shard)).as_string(conn)
 
 
 dimension = MalformedIMEI

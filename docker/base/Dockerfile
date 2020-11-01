@@ -2,7 +2,7 @@
 # Base Dockerfile for DIRBS
 #
 #
-# Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+# Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 #
 # All rights reserved.
 #
@@ -31,7 +31,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-FROM ubuntu:18.04
+FROM ubuntu:20.04
 
 # Set environment (set proper unicode locale, hush debconfig, etc.
 # Set PATH so that subsequent pip3 commands install into virtualenv.
@@ -40,7 +40,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     LC_ALL=C.UTF-8 \
     LANG=C.UTF-8 \
     PATH=/home/dirbs/dirbs-venv/bin:/opt/validator/bin:$PATH \
-    GOSU_VERSION=1.10
+    GOSU_VERSION=1.12
 
 #
 # - Set default shell to bash,

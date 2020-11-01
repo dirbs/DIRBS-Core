@@ -1,7 +1,7 @@
 """
 Config parsing unit tests.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -837,7 +837,7 @@ def test_config_invalid_use_reserved_operator():
                                      'id': '__all__',
                                      'mcc_mnc_pairs': [{'mnc': '01', 'mcc': '$$'}]}]}}
 
-    msg = 'Invalid use of reserved operator name \'__all__\' in config!'
+    msg = "Invalid use of reserved operator name \'__all__\' in config!"
     _expect_app_config_failure(config=cfg, expected_message=msg)
 
 
@@ -879,8 +879,8 @@ def test_config_dim_no_int_threshold_value():
                           'dimensions': [{'module': 'duplicate_threshold',
                                           'parameters': {'threshold': 'aaa', 'period_days': '120'}}]}]
 
-    msg = 'Could not create dimension \'duplicate_threshold\' with supplied parameters. Cause: ' \
-          '\'threshold\' parameter must be an integer, got \'aaa\' instead'
+    msg = "Could not create dimension \'duplicate_threshold\' with supplied parameters. Cause: " \
+          "\'threshold\' parameter must be an integer, got \'aaa\' instead"
     cfg = {'conditions': conditions_config, 'region': {'name': 'Country1', 'country_codes': '22'}}
     _expect_app_config_failure(config=cfg, expected_message=msg)
 
@@ -896,8 +896,8 @@ def test_config_dim_no_int_lookback_days_local_non_dirbs_roamer_dim():
                                           'parameters': {'lookback_days': 'AAA'}}]}]
 
     cfg = {'conditions': conditions_config, 'region': {'name': 'Country1', 'country_codes': '22'}}
-    msg = 'Could not create dimension \'used_by_local_non_dirbs_roamer\' with supplied parameters. Cause: ' \
-          '\'lookback_days\' parameter must be an integer, got \'AAA\' instead'
+    msg = "Could not create dimension \'used_by_local_non_dirbs_roamer\' with supplied parameters. Cause: " \
+          "\'lookback_days\' parameter must be an integer, got \'AAA\' instead"
     _expect_app_config_failure(config=cfg, expected_message=msg)
 
 
@@ -912,8 +912,8 @@ def test_config_dim_no_int_lookback_days_international_roamers_dim():
                                           'parameters': {'lookback_days': 'BBB'}}]}]
 
     cfg = {'conditions': conditions_config, 'region': {'name': 'Country1', 'country_codes': '22'}}
-    msg = 'Could not create dimension \'used_by_international_roamer\' with supplied parameters. ' \
-          'Cause: \'lookback_days\' parameter must be an integer, got \'BBB\' instead'
+    msg = "Could not create dimension \'used_by_international_roamer\' with supplied parameters. " \
+          "Cause: \'lookback_days\' parameter must be an integer, got \'BBB\' instead"
     _expect_app_config_failure(config=cfg, expected_message=msg)
 
 
@@ -928,8 +928,8 @@ def test_config_dim_no_int_lookback_days_dirbs_subscriber_dim():
                                           'parameters': {'lookback_days': 'CCC'}}]}]
 
     cfg = {'conditions': conditions_config, 'region': {'name': 'Country1', 'country_codes': '22'}}
-    msg = 'Could not create dimension \'used_by_dirbs_subscriber\' with supplied parameters. ' \
-          'Cause: \'lookback_days\' parameter must be an integer, got \'CCC\' instead'
+    msg = "Could not create dimension \'used_by_dirbs_subscriber\' with supplied parameters. " \
+          "Cause: \'lookback_days\' parameter must be an integer, got \'CCC\' instead"
     _expect_app_config_failure(config=cfg, expected_message=msg)
 
 
@@ -945,8 +945,8 @@ def test_config_duplicate_daily_avg_no_int_min_seen_days():
                                                          'period_days': '30'}}]}]
 
     cfg = {'conditions': conditions_config, 'region': {'name': 'Country1', 'country_codes': '22'}}
-    msg = 'Could not create dimension \'duplicate_daily_avg\' with supplied parameters. ' \
-          'Cause: \'min_seen_days\' parameter must be an integer, got \'ABC\' instead'
+    msg = "Could not create dimension \'duplicate_daily_avg\' with supplied parameters. " \
+          "Cause: \'min_seen_days\' parameter must be an integer, got \'ABC\' instead"
     _expect_app_config_failure(config=cfg, expected_message=msg)
 
 
@@ -962,8 +962,8 @@ def test_config_duplicate_daily_avg_no_float_threshold():
                                                          'period_days': '30'}}]}]
 
     cfg = {'conditions': conditions_config, 'region': {'name': 'Country1', 'country_codes': '22'}}
-    msg = 'Could not create dimension \'duplicate_daily_avg\' with supplied parameters. Cause: ' \
-          '\'threshold\' parameter must be a float, got \'AA\' instead'
+    msg = "Could not create dimension \'duplicate_daily_avg\' with supplied parameters. Cause: " \
+          "\'threshold\' parameter must be a float, got \'AA\' instead"
     _expect_app_config_failure(config=cfg, expected_message=msg)
 
 
@@ -979,8 +979,8 @@ def test_config_dupl_threshold_dim_null_param_values():
                                                          'period_days': '30'}}]}]
 
     cfg = {'conditions': conditions_config, 'region': {'name': 'Country1', 'country_codes': '22'}}
-    msg = 'Could not create dimension \'duplicate_threshold\' with supplied parameters. Cause: ' \
-          '\'threshold\' parameter must be an integer, got \'None\' instead'
+    msg = "Could not create dimension \'duplicate_threshold\' with supplied parameters. Cause: " \
+          "\'threshold\' parameter must be an integer, got \'None\' instead"
     _expect_app_config_failure(config=cfg, expected_message=msg)
 
 
@@ -997,8 +997,8 @@ def test_config_dim_invalid_param():
                                                          'period_days': '120'}}]}]
 
     cfg = {'conditions': conditions_config, 'region': {'name': 'Country1', 'country_codes': '22'}}
-    msg = 'Could not create dimension \'duplicate_threshold\' with supplied parameters. Cause: ' \
-          '__init__() got an unexpected keyword argument \'threshold2\''
+    msg = "Could not create dimension \'duplicate_threshold\' with supplied parameters. Cause: " \
+          "__init__() got an unexpected keyword argument \'threshold2\'"
     _expect_app_config_failure(config=cfg, expected_message=msg)
 
 
@@ -1059,7 +1059,7 @@ def test_config_duplicate_dim_period(logger):
         param_dict['period_months'] = 6
         dim = cls(**param_dict)
         assert dim._period_days is None
-        assert dim._period_months is 6
+        assert dim._period_months == 6
 
     # Case 6
     with pytest.raises(ValueError):
@@ -1136,6 +1136,6 @@ def test_amnesty_config():
                       'evaluation_period_end_date': 20180101,
                       'amnesty_period_end_date': 20180101}
 
-    msg = 'The \'amnesty_period_end_date\' must be greater than the \'evaluation_period_end_date\'!'
+    msg = "The \'amnesty_period_end_date\' must be greater than the \'evaluation_period_end_date\'!"
     cfg = {'amnesty': amnesty_config, 'region': {'name': 'Country1', 'country_codes': '22'}}
     _expect_app_config_failure(config=cfg, expected_message=msg)

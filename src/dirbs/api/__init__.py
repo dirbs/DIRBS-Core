@@ -1,7 +1,7 @@
 """
 Package for DIRBS REST-ful API modules.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -33,6 +33,7 @@ POSSIBILITY OF SUCH DAMAGE.
 import sys
 import time
 import logging
+from typing import Union
 from datetime import datetime
 
 from flask import Flask, request, g
@@ -92,12 +93,14 @@ statsd = StatsClient(app.config['DIRBS_CONFIG'].statsd_config)
 app.json_encoder = utils.JSONEncoder
 
 
-def _metrics_type_from_req_ctxt(req):
+def _metrics_type_from_req_ctxt(req: callable) -> str:
     """
     Utility method to get a metrics path for the API type.
 
-    :param req: input http request
-    :return: str
+    Arguments:
+        req: intercepted http request object
+    Returns:
+        str: representing API type & version
     """
     p = req.path.split('/')
     if (p[1] == 'api') and len(p) > 3:
@@ -110,8 +113,12 @@ def _metrics_type_from_req_ctxt(req):
 
 
 @app.before_first_request
-def verify_schema():
-    """Function to verify the schema before the first request."""
+def verify_schema() -> None:
+    """Function to verify the schema before the first request.
+
+    Raises:
+        ServiceUnavailable: in-case if schema is invalid or requires upgrade
+    """
     with get_db_connection() as conn:
         try:
             utils.verify_db_schema(conn, 'dirbs_core_api')
@@ -120,8 +127,12 @@ def verify_schema():
 
 
 @app.before_first_request
-def validate_exempted_device_types():
-    """Function to validate exempted devices types before the first request."""
+def validate_exempted_device_types() -> None:
+    """Function to validate exempted devices types before the first request.
+
+    Raises:
+        ServiceUnavailable: if invalid device types specified in exempted device types in config
+    """
     with get_db_connection() as conn:
         try:
             utils.validate_exempted_device_types(conn, app.config['DIRBS_CONFIG'])
@@ -131,18 +142,20 @@ def validate_exempted_device_types():
 
 
 @app.before_request
-def log_api_perf_start():
+def log_api_perf_start() -> None:
     """Logs the start time of every request by using Flasks's before_request hook."""
     g.request_start_time = time.time()
 
 
 @app.after_request
-def add_no_cache(response):
+def add_no_cache(response: callable) -> callable:
     """
     Makes sure no API responses are cached by setting headers on the response.
 
-    :param response: prep response
-    :return: response with modified headers
+    Arguments:
+        response: http response before dispatch
+    Returns:
+        response: modified http response with added headers
     """
     response.cache_control.no_cache = True
     response.cache_control.no_store = True
@@ -154,12 +167,14 @@ def add_no_cache(response):
 
 
 @app.after_request
-def log_api_successes(response):
+def log_api_successes(response: callable) -> callable:
     """
     Makes sure we record the number of successful API responses for each API.
 
-    :param response: prep response
-    :return: prep response
+    Arguments:
+        response: intercepted http response before dispatch to log
+    Returns:
+        response: same response without any change
     """
     code = response.status_code
     if 200 <= code < 300:
@@ -168,12 +183,14 @@ def log_api_successes(response):
 
 
 @app.after_request
-def add_security_headers(response):
+def add_security_headers(response: callable) -> callable:
     """
     Makes sure appropriate security headers are added for each API.
 
-    :param response: prep response
-    :return: response with security headers
+    Arguments:
+        response: http response object
+    Returns:
+        response: http response with added security headers
     """
     response.headers['X-Frame-Options'] = 'DENY'
     response.headers['X-Content-Type-Options'] = 'nosniff'
@@ -181,12 +198,14 @@ def add_security_headers(response):
 
 
 @app.after_request
-def log_api_perf_end(response):
+def log_api_perf_end(response: callable) -> callable:
     """
     Logs the response time of every request to StatsD.
 
-    :param response: prep response
-    :return: prep response
+    Arguments:
+        response: http response object
+    Returns:
+        response: unchanged http response object
     """
     start_time = getattr(g, 'request_start_time', None)
     if start_time is not None:
@@ -202,11 +221,14 @@ def log_api_perf_end(response):
 
 
 @app.teardown_appcontext
-def on_request_end(error):
+def on_request_end(error: callable) -> None:
     """
     Make sure we always close the DB at the end of a request.
 
-    :param error: error (unused)
+    Arguments:
+        error: required error object to pass, unused
+    Returns:
+        None
     """
     close_db_connection()
 
@@ -217,12 +239,18 @@ def on_request_end(error):
 @app.errorhandler(405)
 @app.errorhandler(500)
 @app.errorhandler(Exception)
-def app_error_handler(error):
+def app_error_handler(error: callable) -> Union[BadRequest, callable, callable]:
     """
     Make sure we log metrics for all failures.
 
-    :param error: intercepted http error
-    :return: http error (logged)
+    Arguments:
+        error: http error response object
+    Raises:
+        error: In debug mode, any non-HTTP exceptions to trigger the debugger
+    Returns:
+        BadRequest: if error contains status code 422
+        JSON error: if any other code or error
+        InternalServerError: if any internal server error
     """
     if isinstance(error, HTTPException):
         code = 400 if error.code == 422 else error.code
