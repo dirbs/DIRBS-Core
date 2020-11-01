@@ -31,7 +31,6 @@ BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 POSSIBILITY OF SUCH DAMAGE.
 """
 import re
-from typing import Union
 
 from flask import jsonify, current_app
 from psycopg2 import sql
