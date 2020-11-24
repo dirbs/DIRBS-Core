@@ -74,13 +74,12 @@ dist_test: dist
 	cd dist/tests && py.test --verbose
 
 
-# temp fix for (https://gitlab.com/pycqa/flake8-docstrings/issues/36) to restrict pydocstyle < 4.0.0
 audit:
-	pip3 install --upgrade flake8==3.5.0 pep8-naming==0.5.0 flake8-SQL==0.2.0 flake8-builtins==1.0.post0 \
-						   flake8-debugger==3.0.0 flake8-mutable==1.2.0 flake8-import-order==0.16 \
-						   flake8-pep3101==1.2.0 flake8-string-format==0.2.3 flake8-quotes==0.13.0 \
-						   flake8-docstrings==1.3.0 pydocstyle==3.0.0
-	flake8 src scripts tests
+	pip3 install --upgrade flake8==3.8.3 pep8-naming==0.11.1 flake8-SQL==0.4.0 flake8-builtins==1.5.3 \
+						   flake8-debugger==3.1.0 flake8-mutable==1.2.0 flake8-import-order==0.18.1 \
+						   flake8-pep3101==1.3.0 flake8-string-format==0.3.0 flake8-quotes==3.2.0 \
+						   flake8-docstrings==1.5.0 pydocstyle==5.0.2
+	flake8 src tests
 	eslint src/dirbs/js/*.js
 
 

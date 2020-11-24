@@ -1,7 +1,7 @@
 """
 DIRBS REST-ful job_metadata API module.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -31,6 +31,8 @@ BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 POSSIBILITY OF SUCH DAMAGE.
 """
 
+from typing import List
+
 from flask import jsonify
 from psycopg2 import sql
 
@@ -38,18 +40,21 @@ from dirbs.api.common.db import get_db_connection
 from dirbs.api.v2.schemas.job_metadata import JobKeys, JobMetadata
 
 
-def get_metadata(command=None, subcommand=None, run_id=None, status=None, order='ASC', offset=0, limit=10):
-    """
-    Get metadata for jobs.
+def get_metadata(command: List[str] = None, subcommand: List[str] = None,
+                 run_id: List[int] = None, status: List[str] = None,
+                 order: str = 'ASC', offset: int = 0, limit: int = 10):
+    """Job Metadata API method handler.
 
-    :param order:
-    :param limit:
-    :param offset:
-    :param command: command name (default None)
-    :param subcommand: sub-command name (default None)
-    :param run_id: job run id (default None)
-    :param status: job execution status (default None)
-    :return: psycopg2 results
+    Arguments:
+        command: List of specific command names
+        subcommand: List of specific sub-command names
+        run_id: List of run ids of the jobs
+        status: List of acceptable status of jobs
+        order: Ascending or Descending order by start_time of the job (default ASC)
+        offset: Offset of the results to fetch from (default from start)
+        limit: number of results per page (default 10)
+    Returns:
+        PostgreSQL records callables
     """
     with get_db_connection() as db_conn, db_conn.cursor() as cursor:
         # Build the query with params retrieved from request

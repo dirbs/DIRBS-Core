@@ -1,7 +1,7 @@
 """
 DIRBS CLI for data import. Common functions for processing command line options.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -53,8 +53,10 @@ def parse_verbosity_option(f):
     """
     Function to parse the verbosity flag used by all CLI programs.
 
-    :param f: click verbosity flag to parse
-    :return: click option obj
+    Arguments:
+        f -- function to decorate
+    Returns:
+        decorated click option
     """
     def callback(ctx, param, value):
         config = ensure_config(ctx)
@@ -73,10 +75,12 @@ def validate_date(ctx, param, val):
     """
     Function to validate a date string supplied on the command line.
 
-    :param ctx: cli context
-    :param param:
-    :param val: string date value
-    :return: date
+    Arguments:
+        ctx -- current cli context
+        param -- required param obj
+        val -- value to parse as datetime
+    Returns:
+        date -- acceptable date in format
     """
     if val is None:
         return None
@@ -93,8 +97,10 @@ def parse_statsd_options(f):
     """
     Decorator used to parse all the StatsD command line options and update the config.
 
-    :param f: obj
-    :return: obj
+    Arguments:
+        f -- function to decorate
+    Returns:
+        decorated click options
     """
     f = _parse_statsd_host(f)
     f = _parse_statsd_port(f)
@@ -106,8 +112,10 @@ def _parse_statsd_host(f):
     """
     Function to override the StatsD host on the command line.
 
-    :param f: obj
-    :return: option obj
+    Arguments:
+        f -- function to decorate
+    Returns:
+        decorated click option
     """
     def callback(ctx, param, value):
         config = ensure_config(ctx)
@@ -125,8 +133,10 @@ def _parse_statsd_port(f):
     """
     Function to override the StatsD port on the command line.
 
-    :param f: obj
-    :return: option obj
+    Arguments:
+        f -- function to decorate
+    Returns:
+        decorated click option
     """
     def callback(ctx, param, value):
         config = ensure_config(ctx)
@@ -147,8 +157,10 @@ def _parse_statsd_prefix(f):
     """
     Function to override the StatsD prefix on the command line.
 
-    :param f: obj
-    :return: option obj
+    Arguments:
+        f -- function to decorate
+    Returns:
+        decorated click option
     """
     def callback(ctx, param, value):
         config = ensure_config(ctx)
@@ -166,8 +178,10 @@ def parse_db_options(f):
     """
     Decorator used to parse all the PostgreSQL command line options and update the config.
 
-    :param f: obj
-    :return: option objs
+    Arguments:
+        f -- function to decorate
+    Returns:
+        decorated click options
     """
     f = _parse_db_host(f)
     f = _parse_db_port(f)
@@ -181,8 +195,10 @@ def _parse_db_host(f):
     """
     Function to override the DB host on the command line.
 
-    :param f: obj
-    :return: option obj
+    Arguments:
+        f -- function to decorate
+    Returns:
+        decorated click option
     """
     def callback(ctx, param, value):
         config = ensure_config(ctx)
@@ -200,8 +216,10 @@ def _parse_db_port(f):
     """
     Function to override the DB port on the command line.
 
-    :param f: obj
-    :return: option obj
+    Arguments:
+        f -- function to decorate
+    Returns:
+        decorated click option
     """
     def callback(ctx, param, value):
         config = ensure_config(ctx)
@@ -222,8 +240,10 @@ def _parse_db_database(f):
     """
     Function to override the DB port on the command line.
 
-    :param f: obj
-    :return: option obj
+    Arguments:
+        f -- function to decorate
+    Returns:
+        decorated click option
     """
     def callback(ctx, param, value):
         config = ensure_config(ctx)
@@ -241,8 +261,10 @@ def _parse_db_user(f):
     """
     Function to override the DB user on the command line.
 
-    :param f: obj
-    :return: option obj
+    Arguments:
+        f -- function to decorate
+    Returns:
+        decorated click option
     """
     def callback(ctx, param, value):
         config = ensure_config(ctx)
@@ -260,8 +282,10 @@ def _parse_db_password(f):
     """
     Function to override the DB password on the command line.
 
-    :param f: obj
-    :return: option obj
+    Arguments:
+        f -- function to decorate
+    Returns:
+        decorated click option
     """
     def callback(ctx, param, value):
         config = ensure_config(ctx)
@@ -287,8 +311,10 @@ def parse_multiprocessing_options(f):
     """
     Decorator used to parse all the multiprocessing command line options and update the config.
 
-    :param f: obj
-    :return: option obj
+    Arguments:
+         f -- function to decorate
+    Returns:
+         decorated click option
     """
     f = _parse_max_local_cpus(f)
     f = _parse_max_db_connections(f)
@@ -299,8 +325,10 @@ def _parse_max_local_cpus(f):
     """
     Function to override the number of max local CPUs to use on the command line.
 
-    :param f: obj
-    :return: option obj
+    Arguments:
+        f -- function to decorate
+    Returns:
+        decorated click option
     """
     def callback(ctx, param, value):
         config = ensure_config(ctx)
@@ -322,8 +350,10 @@ def _parse_max_db_connections(f):
     """
     Function to override the number of max database connections on the command line.
 
-    :param f: obj
-    :return: option obj
+    Arguments:
+        f -- function to decorate
+    Returns:
+        decorated click option (--max-db-connections)
     """
     def callback(ctx, param, value):
         config = ensure_config(ctx)
@@ -345,8 +375,10 @@ def ensure_config(ctx):
     """
     Ensures that the DIRBS config has been created in the context and returns it.
 
-    :param ctx: current cli context
-    :return: dirbs config obj
+    Arguments:
+        ctx -- current cli context
+    Returns:
+        ensured config object
     """
     if ctx.obj is None:
         ctx.obj = {}
@@ -373,8 +405,10 @@ def setup_initial_logging(f):
     The configure_logging decorator should be applied later after the config has been read so that logging takes
     into account user preferences.
 
-    :param f: obj
-    :return: decorated logging obj
+    Arguments:
+        f -- function to decorate
+    Returns:
+        decorated function
     """
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -390,8 +424,10 @@ def configure_logging(f):
     This decorator requires the click context so should be included after the click.pass_context decorator. It should
     included after the setup_initial_logging fixture, which is intended to init the logging.
 
-    :param f: obj
-    :return: decorated logging obj
+    Arguments:
+        f -- function to decorate
+    Returns:
+        decorated function
     """
     @wraps(f)
     def decorated(ctx, *args, **kwargs):
@@ -405,8 +441,10 @@ def ensure_statsd(ctx):
     """
     Ensures that the DIRBS config has been created in the context and returns it.
 
-    :param ctx: current cli context obj
-    :return: statsd config obj
+    Arguments:
+        ctx -- current cli context
+    Returns:
+        ctx.obj['STATSD_CLIENT'] -- statsd obj in context
     """
     if ctx.obj is None:
         ctx.obj = {}
@@ -429,8 +467,10 @@ def unhandled_exception_handler(f):
     thread and re-raised. If concurrent.futures is being used, this will always happen if you call result() on the
     future.
 
-    :param f: obj
-    :return: decorated obj
+    Arguments:
+        f -- function to decorate
+    Returns:
+        decorated -- decorated function
     """
     @contextlib.contextmanager
     def hook_exceptions():
@@ -483,13 +523,15 @@ def cli_wrapper(command=None, subcommand=None, logger_name=None, metrics_root=No
     This decorator requires the click context so should be included after the click.pass_context decorator. In most
     cases this should be the last decorator in the chain, directly above the actual CLI function.
 
-    :param command: command name (default None)
-    :param subcommand: sub-command name (default None)
-    :param logger_name: dirbs logger name (default None)
-    :param metrics_root: default None
-    :param duration_callback: callback duration (default None)
-    :param required_role: required db role for command (default dirbs_core_poweruser)
-    :return: decorator
+    Keyword Arguments:
+        command -- command name to wrap to (default None)
+        subcommand -- subcommand name to wrap to (default None)
+        logger_name -- related dirbs logger name (default None)
+        metrics_root -- statsd metrics root instance (default None)
+        duration_callback -- duration of the callback (default None)
+        required_role -- role required for the operation (default dirbs_core_poweruser)
+    Returns:
+        decorator -- decorated function
     """
     def decorator(f):
         @wraps(f)
@@ -607,10 +649,12 @@ def validate_conditions(ctx, param, condition_names_str):
 
     Need atleast one thread and the maximum count is capped at number of cores on the system minus one.
 
-    :param ctx: current cli context
-    :param param: param
-    :param condition_names_str: condition names strings
-    :return: condition list
+    Arguments:
+        ctx -- current cli context
+        param -- any extra param
+        condition_names_str -- comma separated list of condition names
+    Returns:
+        conditions -- list of acceptable conditions or None
     """
     config = ensure_config(ctx)
     if condition_names_str is None:
@@ -622,5 +666,32 @@ def validate_conditions(ctx, param, condition_names_str):
             matched_conditions = [c for c in config.conditions if c.label == cname]
             if len(matched_conditions) == 0:
                 raise click.BadParameter('Invalid condition name specified: {0}'.format(cname))
+            conditions += matched_conditions
+        return conditions
+
+
+def validate_blocking_conditions(ctx, param, condition_names_str):
+    """Checks if the passed value is acceptable for processing.
+
+    This will validate the condition names and return only those which are blocking.
+
+    Arguments:
+        ctx -- current cli context
+        param -- default required param for callback
+        condition_names_str -- comma separated list of condition names
+    Returns:
+        conditions -- list of blocking conditions or none
+    """
+    config = ensure_config(ctx)
+    if condition_names_str is None:
+        return None
+    else:
+        condition_names = set([c.strip() for c in condition_names_str.split(',')])
+        conditions = []
+        for cname in condition_names:
+            matched_conditions = [c for c in config.conditions if c.label == cname and c.blocking is True]
+            if len(matched_conditions) == 0:
+                raise click.BadParameter('Invalid condition name specified (should be valid and blocking): {0}'
+                                         .format(cname))
             conditions += matched_conditions
         return conditions

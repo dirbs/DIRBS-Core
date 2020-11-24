@@ -1,7 +1,7 @@
 """
 Operator data import unit tests.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -1472,25 +1472,25 @@ def test_rat_import(operator_data_importer, logger, db_conn):
     """
     expect_success(operator_data_importer, 9, db_conn, logger)
     with db_conn.cursor() as cursor:
-        cursor.execute('SELECT seen_rat_bitmask FROM network_imeis WHERE imei_norm = \'01132222698280\'')
+        cursor.execute("SELECT seen_rat_bitmask FROM network_imeis WHERE imei_norm = \'01132222698280\'")
         assert cursor.fetchone()[0] == int('00000000000000000000000000000010', 2)
 
-        cursor.execute('SELECT seen_rat_bitmask FROM network_imeis WHERE imei_norm = \'41255555638746\'')
+        cursor.execute("SELECT seen_rat_bitmask FROM network_imeis WHERE imei_norm = \'41255555638746\'")
         assert cursor.fetchone()[0] == int('00000000000000000001000010010000', 2)
 
-        cursor.execute('SELECT seen_rat_bitmask FROM network_imeis WHERE imei_norm = \'41266666370026\'')
+        cursor.execute("SELECT seen_rat_bitmask FROM network_imeis WHERE imei_norm = \'41266666370026\'")
         assert cursor.fetchone()[0] == int('00000000000000000001100100011000', 2)
 
-        cursor.execute('SELECT seen_rat_bitmask FROM network_imeis WHERE imei_norm = \'41277777370026\'')
+        cursor.execute("SELECT seen_rat_bitmask FROM network_imeis WHERE imei_norm = \'41277777370026\'")
         assert cursor.fetchone()[0] == int('00000000000000000000100000000000', 2)
 
-        cursor.execute('SELECT seen_rat_bitmask FROM network_imeis WHERE imei_norm = \'41288888370026\'')
+        cursor.execute("SELECT seen_rat_bitmask FROM network_imeis WHERE imei_norm = \'41288888370026\'")
         assert cursor.fetchone()[0] == int('00000000000000000000001010000000', 2)
 
-        cursor.execute('SELECT seen_rat_bitmask FROM network_imeis WHERE imei_norm = \'41299999370026\'')
+        cursor.execute("SELECT seen_rat_bitmask FROM network_imeis WHERE imei_norm = \'41299999370026\'")
         assert cursor.fetchone()[0] == int('00000000000000000000000000010000', 2)
 
-        cursor.execute('SELECT seen_rat_bitmask FROM network_imeis WHERE imei_norm = \'41233333638746\'')
+        cursor.execute("SELECT seen_rat_bitmask FROM network_imeis WHERE imei_norm = \'41233333638746\'")
         assert cursor.fetchone()[0] == int('00000000000000000001000010010000', 2)
 
 

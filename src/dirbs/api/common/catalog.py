@@ -1,7 +1,7 @@
 """
 DIRBS REST-ful data_catalog common module.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -30,15 +30,21 @@ BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 """
+
+from typing import Tuple
+
 from psycopg2 import sql
 
 
-def _build_sql_query_filters(**kwargs):
+def _build_sql_query_filters(**kwargs: dict) -> Tuple[list, list]:
     """
     Function to build list of filters to apply to SQL query.
 
-    :param kwargs: kay value sql filters
-    :return: filters, params
+    Arguments:
+        kwargs: parameters and values of SQL
+    Returns:
+        filters: formed SQL filters
+        filter_params: parameters for filters
     """
     filters = []
     filter_params = []

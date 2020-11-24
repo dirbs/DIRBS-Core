@@ -1,7 +1,7 @@
 """
 DIRBS REST-ful TAC API module.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -38,12 +38,14 @@ from dirbs.api.common.tac import validate_tac
 from dirbs.api.v2.schemas.tac import TacInfo
 
 
-def tac_api(tac):
+def tac_api(tac: str) -> jsonify:
     """
     TAC GET API endpoint (version 2).
 
-    :param tac: gsma tac
-    :return: json
+    Arguments:
+        tac: 8 digit TAC value
+    Returns:
+        JSON response
     """
     validate_tac(tac)
     with get_db_connection() as db_conn, db_conn.cursor() as cursor:
@@ -56,12 +58,14 @@ def tac_api(tac):
                                            gsma=gsma_data._asdict() if gsma_data is not None else None)).data)
 
 
-def tac_batch_api(**kwargs):
+def tac_batch_api(**kwargs: dict) -> jsonify:
     """
     TAC POST API endpoint (version 2).
 
-    :param kwargs: list of gsma tacs
-    :return: json
+    Arguments:
+        kwargs: required arguments (TAC list)
+    Returns:
+        JSON response
     """
     tacs = list(set(kwargs.get('tacs')))
 

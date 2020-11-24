@@ -1,8 +1,8 @@
 #
-# Dockerfile for PostgreSQL 10 server
+# Dockerfile for PostgreSQL 12 server
 #
 #
-# Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+# Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 #
 # All rights reserved.
 #
@@ -31,7 +31,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-FROM ubuntu:18.04
+FROM ubuntu:20.04
 
 # Set environment (set proper unicode locale, hush debconfig, etc.
 # Set PATH so that subsequent pip3 commands install into virtualenv.
@@ -39,9 +39,9 @@ FROM ubuntu:18.04
 ENV DEBIAN_FRONTEND=noninteractive \
     LC_ALL=C.UTF-8 \
     LANG=C.UTF-8 \
-    PATH=/usr/lib/postgresql/11/bin:$PATH \
-    GOSU_VERSION=1.10 \
-    HLL_VERSION=2.10.2
+    PATH=/usr/lib/postgresql/12/bin:$PATH \
+    GOSU_VERSION=1.12 \
+    HLL_VERSION=2.14
 
 #
 # - Set default shell to bash,
@@ -64,12 +64,12 @@ RUN set -x && groupadd -r postgres --gid=999 && useradd -r -g postgres --uid=999
 
 # Install Postgres 10, but don't create a cluster
 RUN set -x && \
-    echo 'deb http://apt.postgresql.org/pub/repos/apt/ bionic-pgdg main' > /etc/apt/sources.list.d/pgdg.list && \
+    echo 'deb http://apt.postgresql.org/pub/repos/apt/ focal-pgdg main' > /etc/apt/sources.list.d/pgdg.list && \
     wget -q -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - && \
     apt-get -q update --fix-missing && \
-    apt-get -q install -y --no-install-recommends postgresql-common pgtop postgresql-server-dev-11 && \
+    apt-get -q install -y --no-install-recommends postgresql-common pgtop postgresql-server-dev-12 && \
     sed -ri 's/#(create_main_cluster) .*$/\1 = false/' /etc/postgresql-common/createcluster.conf && \
-    apt-get -q install -y --no-install-recommends postgresql-11 postgresql-contrib-11 && \
+    apt-get -q install -y --no-install-recommends postgresql-12 postgresql-contrib-12 && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install gosu

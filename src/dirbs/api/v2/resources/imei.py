@@ -1,7 +1,7 @@
 """
 DIRBS REST-ful IMEI API module.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -40,13 +40,15 @@ from dirbs.api.common.imei import validate_imei, get_conditions, is_paired, is_i
 from dirbs.api.v2.schemas.imei import IMEIInfo, IMEI, IMEISubscribers, IMEIPairings
 
 
-def registration_list_status(cursor, imei_norm):
+def registration_list_status(cursor, imei_norm: str) -> dict:
     """
     Method to get RegistrationList status of an IMEI from Registration List.
 
-    :param cursor: db cursor
-    :param imei_norm: normalized imei
-    :return: status dict
+    Arguments:
+        cursor: PostgreSQL database cursor
+        imei_norm: Normalized IMEI
+    Returns:
+        Response dictionary
     """
     cursor.execute(sql.SQL("""SELECT status,
                                           CASE
@@ -73,13 +75,15 @@ def registration_list_status(cursor, imei_norm):
     })
 
 
-def stolen_list_status(cursor, imei_norm):
+def stolen_list_status(cursor, imei_norm: str) -> dict:
     """
     Method to get StolenList status of an IMEI from Stolen List.
 
-    :param cursor: db cursor
-    :param imei_norm: normalized imei
-    :return: status dict
+    Arguments:
+        cursor: PostgreSQL database cursor
+        imei_norm: Normalized IMEI
+    Returns:
+        Response dictionary
     """
     cursor.execute(sql.SQL("""SELECT status,
                                           CASE
@@ -105,13 +109,15 @@ def stolen_list_status(cursor, imei_norm):
         })
 
 
-def block_date(cursor, imei_norm):
+def block_date(cursor, imei_norm: str) -> str:
     """
     Method to get block date of an IMEI from Notification and Blacklist.
 
-    :param cursor: db cursor
-    :param imei_norm: normalized imei
-    :return: block date or none
+    Arguments:
+        cursor: PostgreSQL database connection cursor object
+        imei_norm: Normalized IMEI
+    Returns:
+        Block Date of the IMEI if exists otherwise None
     """
     # check if it is in blacklist
     cursor.execute("""SELECT MIN(block_date) AS block_date
@@ -124,8 +130,16 @@ def block_date(cursor, imei_norm):
     return imei_block_date.block_date
 
 
-def first_seen(cursor, imei_norm):
-    """Method to extract min first_seen of an IMEI."""
+def first_seen(cursor, imei_norm: str) -> str:
+    """
+    Method to extract min first_seen of an IMEI.
+
+    Arguments:
+        cursor: PostgreSQL database connection cursor object
+        imei_norm: Normalized IMEI
+    Returns:
+        first_seen date of IMEI if exists otherwise None
+    """
     cursor.execute("""SELECT MIN(first_seen) AS first_seen
                         FROM network_imeis
                        WHERE imei_norm = %(imei_norm)s
@@ -134,13 +148,15 @@ def first_seen(cursor, imei_norm):
     return cursor.fetchone().first_seen
 
 
-def is_exempted_device(cursor, imei_norm):
+def is_exempted_device(cursor, imei_norm: str) -> bool:
     """
     Method to check if an IMEI device has been exempted.
 
-    :param cursor: db cursor
-    :param imei_norm: normalized imei
-    :return: bool
+    Arguments:
+        cursor: PostgreSQL database cursor
+        imei_norm: Normalized IMEI
+    Returns:
+        Boolean value (True/False)
     """
     exempted_device_types = current_app.config['DIRBS_CONFIG'].region_config.exempted_device_types
 
@@ -155,12 +171,14 @@ def is_exempted_device(cursor, imei_norm):
     return False
 
 
-def imei_info_api(imei):
+def imei_info_api(imei: str) -> jsonify:
     """
     IMEI-Info API method handler.
 
-    :param imei: IMEI
-    :return: json
+    Arguments:
+        imei: IMEI value to extract information
+    Returns:
+        JSON response if exists otherwise
     """
     imei_norm = validate_imei(imei)
 
@@ -190,12 +208,16 @@ def imei_info_api(imei):
         return {}
 
 
-def imei_api(imei, include_registration_status=False, include_stolen_status=False):
+def imei_api(imei: str, include_registration_status: bool = False, include_stolen_status: bool = False) -> jsonify:
     """
     IMEI API handler.
 
-    :param imei: IMEI
-    :return: json
+    Arguments:
+        imei: value of the IMEI
+        include_registration_status: boolean weather to include reg status or not (default False)
+        include_stolen_status: boolean weather to include stolen status or not (default False)
+    Returns:
+        JSON response
     """
     imei_norm = validate_imei(imei)
     tac = imei_norm[:8]
@@ -242,13 +264,15 @@ def imei_api(imei, include_registration_status=False, include_stolen_status=Fals
         return jsonify(IMEI().dump(response).data)
 
 
-def imei_subscribers_api(imei, **kwargs):
+def imei_subscribers_api(imei: str, **kwargs: dict) -> jsonify:
     """
     IMEI-Subscribers API handler.
 
-    :param imei: IMEI
-    :param kwargs: extra input args
-    :return: json
+    Arguments:
+        imei: IMEI value
+        kwargs: required arguments dictionary
+    Returns:
+        JSON response
     """
     imei_norm = validate_imei(imei)
     offset = kwargs.get('offset')
@@ -281,13 +305,15 @@ def imei_subscribers_api(imei, **kwargs):
         return jsonify(IMEISubscribers().dump(dict(imei_norm=imei_norm, subscribers=None, _keys=keys)))
 
 
-def imei_pairings_api(imei, **kwargs):
+def imei_pairings_api(imei: str, **kwargs: dict) -> jsonify:
     """
     IMEI-Pairings API handler.
 
-    :param imei: IMEI
-    :param kwargs: extra input args
-    :return: json
+    Arguments:
+        imei: IMEI value
+        kwargs: required arguments dictionary
+    Returns:
+        JSON response
     """
     imei_norm = validate_imei(imei)
     offset = kwargs.get('offset')
@@ -320,12 +346,14 @@ def imei_pairings_api(imei, **kwargs):
         return jsonify(IMEIPairings().dump(dict(imei_norm=imei_norm, pairs=None, _keys=keys)))
 
 
-def imei_batch_api(**kwargs):
+def imei_batch_api(**kwargs: dict) -> jsonify:
     """
     IMEI API POST method handler for IMEI-Batch request.
 
-    :param kwargs: input imei list
-    :return: json
+    Arguments:
+        kwargs: required arguments (list of IMEIs)
+    Returns:
+        JSON response
     """
     imeis = kwargs.get('imeis')
     include_registration_status = kwargs.get('include_registration_status')

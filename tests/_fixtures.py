@@ -1,7 +1,7 @@
 """
 Reusable py.test fixtures for unit tests.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -269,7 +269,7 @@ def db_conn(postgres, mocked_config, request):
     conn = create_db_connection(mocked_config.db_config)
     with conn.cursor() as table_cursor, conn.cursor() as truncate_cursor:
         table_cursor.execute('SELECT tablename FROM pg_tables WHERE schemaname = current_schema() '
-                             'AND tablename != \'schema_metadata\' AND tablename != \'radio_access_technology_map\'')
+                             "AND tablename != \'schema_metadata\' AND tablename != \'radio_access_technology_map\'")
         for tblname in table_cursor:
             truncate_cursor.execute(sql.SQL('TRUNCATE {0} CASCADE').format(sql.Identifier(tblname[0])))
 

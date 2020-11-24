@@ -1,7 +1,7 @@
 """
 DIRBS class for generating lists (blacklist, per-MNO notification lists and per-MNO exception lists).
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -74,9 +74,25 @@ class ListGenerationSanityChecksFailedException(Exception):
 class ListsGenerator:
     """Class responsible for generating all classification lists (blacklists, notification lists, exception lists)."""
 
-    def __init__(self, *, config, logger, run_id, conn, metadata_conn, output_dir,
+    def __init__(self, *, config, logger, run_id, conn, metadata_conn, output_dir, conditions=None,
                  curr_date=None, no_full_lists=False, no_cleanup=False, base_run_id=-1, disable_sanity_checks=False):
-        """Constructor."""
+        """Constructor to initialize list generator processor.
+
+        Arguments:
+            config -- dirbs config object
+            logger -- dirbs logger object
+            run_id -- current run_id of the job
+            conn -- dirbs database connection required for job processing
+            metadata_conn -- dirbs database connection to write metadata about the job
+            output_dir -- path of the output dir to write lists to
+        Keyword Arguments:
+            conditions -- list of blocking conditions to generate lists of (default None)
+            curr_date -- date to use as current date for generation (default None)
+            no_full_lists -- boolean to indicate full or delta list generation only (default False)
+            no_cleanup -- boolean to indicate weather to clean up temporary tables or not (default False)
+            base_run_id -- run id to use as a base for the current job (default -1, means no run id)
+            disable_sanity_checks -- boolean to disable sanity checks on configurations (default false)
+        """
         self._config = config
         self._logger = logger
         self._run_id = run_id
@@ -86,6 +102,7 @@ class ListsGenerator:
         self._no_full_lists = no_full_lists
         self._curr_date = curr_date
         self._disable_sanity_checks = disable_sanity_checks
+        self._condtions = conditions
         self._lookback_days = self._config.listgen_config.lookback_days
         self._restrict_exceptions_list = self._config.listgen_config.restrict_exceptions_list
         self._include_barred_imeis = self._config.listgen_config.include_barred_imeis
@@ -133,9 +150,15 @@ class ListsGenerator:
         # Get blocking conditions, work out the most recent successful classification run across all blocking
         # conditions and get the maximum run_id of those
         with self._conn as conn:
-            self._blocking_conditions = [c for c in self._config.conditions if c.blocking]
+            if self._condtions is None:
+                self._blocking_conditions = [c for c in self._config.conditions if c.blocking]
+            else:
+                self._blocking_conditions = self._condtions
             if not self._blocking_conditions:
                 logger.warning('No blocking conditions configured, blacklist and notification lists will be empty.')
+            else:
+                condtion_labels = [c.label for c in self._blocking_conditions]
+                logger.info('Lists will be generated for these blocking conditions: {0}'.format(condtion_labels))
 
             blocking_conditions_config = most_recently_run_condition_info(conn,
                                                                           [c.label for c in self._blocking_conditions],
@@ -1348,7 +1371,7 @@ class ListsGenerator:
                                                                FROM {old_tbl}
                                                               WHERE imei_norm = nt.imei_norm
                                                                 AND virt_imei_shard = nt.virt_imei_shard)
-                                   """).format(delta_tbl=delta_tbl, old_tbl=old_tbl, new_tbl=new_tbl),
+                                   """).format(delta_tbl=delta_tbl, old_tbl=old_tbl, new_tbl=new_tbl),  # noqa: Q449
                            [self._run_id])
             num_records = cursor.rowcount
             # Next, generate a delta for any 'unblocked' records (new removals) (table direction flipped)
@@ -1366,7 +1389,7 @@ class ListsGenerator:
                                                                FROM {new_tbl}
                                                               WHERE imei_norm = ot.imei_norm
                                                                 AND virt_imei_shard = ot.virt_imei_shard)
-                                   """).format(delta_tbl=delta_tbl, old_tbl=old_tbl, new_tbl=new_tbl),
+                                   """).format(delta_tbl=delta_tbl, old_tbl=old_tbl, new_tbl=new_tbl),  # noqa: Q449
                            [self._run_id])
             num_records += cursor.rowcount
             # Next, generate a delta for any 'changed' records
@@ -1415,7 +1438,7 @@ class ListsGenerator:
                                                                 AND virt_imei_shard = nt.virt_imei_shard
                                                                 AND imsi = nt.imsi
                                                                 AND msisdn = nt.msisdn)
-                                   """).format(delta_tbl=delta_tbl, old_tbl=old_tbl, new_tbl=new_tbl),
+                                   """).format(delta_tbl=delta_tbl, old_tbl=old_tbl, new_tbl=new_tbl),  # noqa: Q449
                            [operator_id, self._run_id])
             num_records = cursor.rowcount
             # Next, generate a delta for any 'removed' records (new removals) (table direction flipped)
@@ -1435,7 +1458,7 @@ class ListsGenerator:
                                                                 AND virt_imei_shard = ot.virt_imei_shard
                                                                 AND imsi = ot.imsi
                                                                 AND msisdn = ot.msisdn)
-                                   """).format(delta_tbl=delta_tbl, old_tbl=old_tbl, new_tbl=new_tbl),
+                                   """).format(delta_tbl=delta_tbl, old_tbl=old_tbl, new_tbl=new_tbl),  # noqa: Q449
                            [operator_id, self._run_id])
             num_records += cursor.rowcount
 
@@ -1469,7 +1492,7 @@ class ListsGenerator:
                                                                 AND virt_imei_shard = nt.virt_imei_shard
                                                                 AND imsi = nt.imsi
                                                                 AND msisdn = nt.msisdn)
-                                   """).format(delta_tbl=delta_tbl, old_tbl=old_tbl, new_tbl=new_tbl),
+                                   """).format(delta_tbl=delta_tbl, old_tbl=old_tbl, new_tbl=new_tbl),  # noqa: Q449
                            [operator_id, self._run_id])
             num_records = cursor.rowcount
 
@@ -1533,12 +1556,13 @@ class ListsGenerator:
                                              AND virt_imei_shard = ot.virt_imei_shard
                                              AND imsi = ot.imsi
                                              AND msisdn = ot.msisdn)
-                                   """).format(delta_tbl=delta_tbl, old_tbl=old_tbl, new_tbl=new_tbl,  # noqa: Q447
+                                   """).format(delta_tbl=delta_tbl, old_tbl=old_tbl,   # noqa: Q447, Q449
+                                               new_tbl=new_tbl,
                                                blacklist_tbl=blacklist_tbl,
                                                notifications_imei_tbl=notifications_imei_tbl,
                                                pairings_tbl=pairings_tbl,
                                                notify_filter=imsi_change_filter),
-                           [operator_id, self._run_id])
+                [operator_id, self._run_id])
             num_records += cursor.rowcount
             # Finally, generate a delta for any triplets where the reasons/date have changed
             cursor.execute(sql.SQL("""INSERT INTO {delta_tbl}(operator_id,
@@ -2106,10 +2130,10 @@ class ListsGenerator:
     def _allowed_delta_reasons(self, conn, tblname):
         """Utility function to generate the allowed delta reasons for a particular table."""
         with conn.cursor() as cursor:
-            cursor.execute("""SELECT consrc
+            cursor.execute("""SELECT pg_get_expr(conbin, conrelid) AS consrc
                                 FROM pg_constraint
                                WHERE conrelid = %s::regclass
-                                 AND consrc LIKE '(delta_reason%%'""",
+                                 AND pg_get_expr(conbin, conrelid) LIKE '(delta_reason%%'""",
                            [tblname])
             result = cursor.fetchall()
             assert len(result) == 1

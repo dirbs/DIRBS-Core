@@ -1,7 +1,7 @@
 """
 Subscribers list data import unit tests.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -283,7 +283,7 @@ def test_empty_uid(device_association_list_importer):
                          indirect=True)
 def test_empty_imei(device_association_list_importer):
     """Verify that the list data is check for empty IMSI(s) and is not imported."""
-    expect_failure(device_association_list_importer, exc_message='Pre-validation failed: b\'Error:   '
+    expect_failure(device_association_list_importer, exc_message="Pre-validation failed: b\'Error:   "
                                                                  'regex("^[0-9A-Fa-f\\\\*\\\\#]{1,16}$") fails for '
                                                                  'line: 1, column: imei, value: ""\\nFAIL')
 

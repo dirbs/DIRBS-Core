@@ -2,7 +2,7 @@
 # Dockerfile to build sample Docker operator upload image for DIRBS
 #
 #
-# Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+# Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 #
 # All rights reserved.
 #
@@ -31,7 +31,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-FROM ubuntu:18.04
+FROM ubuntu:20.04
 
 # Set environment (set proper unicode locale, hush debconfig, etc.
 # Set PATH so that subsequent pip3 commands install into virtualenv.
@@ -39,8 +39,8 @@ FROM ubuntu:18.04
 ENV DEBIAN_FRONTEND=noninteractive \
     LC_ALL=C.UTF-8 \
     LANG=C.UTF-8 \
-    PATH=/usr/lib/postgresql/9.6/bin:$PATH \
-    GOSU_VERSION=1.10
+    PATH=/usr/lib/postgresql/12/bin:$PATH \
+    GOSU_VERSION=1.12
 
 #
 # - Set default shell to bash,

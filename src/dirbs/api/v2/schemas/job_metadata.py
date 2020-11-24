@@ -1,7 +1,7 @@
 """
 DIRBS REST-ful job_metadata API schema module.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -91,19 +91,16 @@ class JobMetadataArgs(Schema):
                          required=False, missing=[], description='Filter results to only include jobs '
                                                                  'having the specified status')
     show_details = fields.Boolean(required=False, missing=True, description='Whether or not to include '
-                                                                            '\'extra_metadata\' field in the results')
-    offset = fields.Integer(required=True,
-                            missing=0,
+                                                                            "\'extra_metadata\' field in the results")
+    offset = fields.Integer(missing=0,
                             validate=[validate.Range(min=0, error='Value must be 0 or greater than 0')],
                             description='Offset the results on the current page by the specified '
                                         'run_id. It should be the value of run_id for the last '
                                         'result on the previous page')
-    order = fields.String(required=True,
-                          missing='ASC',
+    order = fields.String(missing='ASC',
                           validate=validate.OneOf([f.value for f in SortingOrders]),
                           description='The sort order for the results using start_time as the key')
-    limit = fields.Integer(required=True,
-                           missing=10,
+    limit = fields.Integer(missing=10,
                            validate=validate.Range(min=1, error='Value must be greater than 0'),
                            description='Number of results to return on the current page')
 

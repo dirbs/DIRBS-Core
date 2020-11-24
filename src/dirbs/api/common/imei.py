@@ -1,7 +1,7 @@
 """
 DIRBS REST-ful IMEI API module.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -38,12 +38,14 @@ from psycopg2 import sql
 from dirbs.utils import filter_imei_list_sql_by_device_type, registration_list_status_filter_sql
 
 
-def validate_imei(imei):
+def validate_imei(imei: str) -> str:
     """
     Method for validating imei format.
 
-    :param imei: device imei
-    :return: normalized imei
+    Arguments:
+        imei: IMEI value to evaluate and normalize
+    Returns:
+        imei_norm: 14 digits normalized IMEI
     """
     if len(imei) > 16:
         abort(400, 'Bad IMEI format (too long)')
@@ -56,13 +58,15 @@ def validate_imei(imei):
     return imei_norm
 
 
-def get_conditions(cursor, imei_norm):
+def get_conditions(cursor, imei_norm: str) -> dict:
     """
     Method for reading conditions from config & DB.
 
-    :param cursor: db cursor
-    :param imei_norm: normalized imei
-    :return: matching condition results
+    Arguments:
+        cursor: PostgreSQL connection cursor
+        imei_norm: normalized IMEI
+    Returns:
+        condition_results: dict of matched condition results
     """
     conditions = current_app.config['DIRBS_CONFIG'].conditions
     condition_results = {c.label: {'blocking': c.blocking, 'result': False} for c in conditions}
@@ -79,38 +83,44 @@ def get_conditions(cursor, imei_norm):
     return condition_results
 
 
-def ever_observed_on_network(cursor, imei_norm):
+def ever_observed_on_network(cursor, imei_norm: str) -> bool:
     """
     Method to check if an IMEI is ever observed on the network.
 
-    :param cursor: db cursor
-    :param imei_norm: normalized imei
-    :return: bool
+    Arguments:
+        cursor: PostgreSQL connection cursor
+        imei_norm: normalized IMEI
+    Returns:
+        Boolean: True/False
     """
     cursor.execute(
         """SELECT EXISTS(SELECT 1
                            FROM network_imeis
                           WHERE imei_norm = %(imei_norm)s
                             AND virt_imei_shard =
-                                    calc_virt_imei_shard(%(imei_norm)s)) AS ever_observed_on_network""",
+                                    calc_virt_imei_shard(%(imei_norm)s)) AS ever_observed_on_network""",  # noqa: Q449
         {'imei_norm': imei_norm})
     return cursor.fetchone().ever_observed_on_network
 
 
-def is_in_registration_list(db_conn, cursor, imei_norm):
+def is_in_registration_list(db_conn, cursor, imei_norm: str) -> bool:
     """
     Method to check if an IMEI exists in the Registration List.
 
-    :param db_conn: database connection
-    :param cursor: database cursor
-    :param imei_norm: normalized imei
-    :return: bool
+    TODO: use either of "db_conn, cursor" in the function.
+
+    Arguments:
+        db_conn: PostgreSQL database connection object
+        cursor: PostgreSQL connection cursor
+        imei_norm: normalized IMEI
+    Returns:
+        is_in_registration_list: Boolean
     """
     cursor.execute(sql.SQL("""SELECT EXISTS(SELECT 1
                                               FROM registration_list
                                              WHERE imei_norm = %(imei_norm)s
                                                AND virt_imei_shard = calc_virt_imei_shard(%(imei_norm)s)
-                                               AND {wl_status_filter}) AS in_registration_list""")
+                                               AND {wl_status_filter}) AS in_registration_list""")  # noqa: Q449
                    .format(wl_status_filter=registration_list_status_filter_sql()), {'imei_norm': imei_norm})
     in_registration_list = cursor.fetchone().in_registration_list
     exempted_device_types = current_app.config['DIRBS_CONFIG'].region_config.exempted_device_types
@@ -128,13 +138,15 @@ def is_in_registration_list(db_conn, cursor, imei_norm):
     return in_registration_list
 
 
-def get_subscribers(cursor, imei_norm):
+def get_subscribers(cursor, imei_norm: str) -> list:
     """
     Method to get IMSI-MSISDN pairs seen on the network with imei_norm.
 
-    :param cursor: db cursor
-    :param imei_norm: normalized imei
-    :return: subscribers list
+    Arguments:
+        cursor: PostgreSQL connection cursor object
+        imei_norm: Normalized IMEI
+    Returns:
+        []: list of expected results
     """
     cursor.execute("""SELECT DISTINCT imsi, msisdn, last_seen
                         FROM monthly_network_triplets_country_no_null_imeis
@@ -146,17 +158,19 @@ def get_subscribers(cursor, imei_norm):
     return []
 
 
-def is_paired(cursor, imei_norm):
+def is_paired(cursor, imei_norm: str) -> bool:
     """
     Method to check if an IMEI is paired.
 
-    :param cursor: db cursor
-    :param imei_norm: normalized imei
-    :return: bool
+    Arguments:
+        cursor: PostgreSQL connection cursor object
+        imei_norm: Normalized IMEI
+    Returns:
+        Bool
     """
     cursor.execute("""SELECT EXISTS(SELECT 1
                                       FROM pairing_list
                                      WHERE imei_norm = %(imei_norm)s
-                                       AND virt_imei_shard = calc_virt_imei_shard(%(imei_norm)s))""",
+                                       AND virt_imei_shard = calc_virt_imei_shard(%(imei_norm)s))""",  # noqa: Q449
                    {'imei_norm': imei_norm})
     return cursor.fetchone()[0]

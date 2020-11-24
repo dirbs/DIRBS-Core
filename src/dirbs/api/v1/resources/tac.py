@@ -1,7 +1,7 @@
 """
 DIRBS REST-ful TAC API module.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -31,18 +31,23 @@ BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 POSSIBILITY OF SUCH DAMAGE.
 """
 
+from typing import Union
+
 from flask import abort, jsonify
 
 from dirbs.api.common.db import get_db_connection
 from dirbs.api.v1.schemas.tac import GSMATacInfo
 
 
-def api(tac):
+def api(tac: str) -> Union[abort, jsonify]:
     """
     TAC API endpoint (version 1).
 
-    :param tac: gsma tac
-    :return: json response
+    Arguments:
+        tac: str format TAC value
+    Returns:
+        abort: if any error in value
+        json: if correct value
     """
     if len(tac) != 8:
         abort(400, 'Bad TAC format')

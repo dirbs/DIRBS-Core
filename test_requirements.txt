@@ -8,5 +8,3 @@ pluggy==0.11.0
 py==1.8.0
 pg8000==1.12.2
 testing.common.database==2.0.3
-pytest-docker==0.7.2
-docker-compose==1.25.5

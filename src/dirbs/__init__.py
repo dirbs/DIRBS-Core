@@ -32,7 +32,7 @@ POSSIBILITY OF SUCH DAMAGE.
 """
 
 # Bump the version number as per semantic versioning guidelines
-__version__ = '13.0.0'
+__version__ = '14.0.0'
 
 # Bump this version everytime the schema is modified
 db_schema_version = 86

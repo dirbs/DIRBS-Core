@@ -790,7 +790,8 @@ def test_empty_imei_on_pairings_api(flask_app):
     Verify that IMEI-Pairings API should return 404 status for a zero-lenth IMEI.
     """
     rv = flask_app.get(url_for('v2.imei_get_pairings_api', imei=''))
-    assert rv.status_code == 404
+    print(rv.data)
+    assert rv.status_code == 308
 
 
 def test_imei_normalisation_on_pairings_api(flask_app):
@@ -1053,7 +1054,7 @@ def test_empty_imei_on_subscribers_api(flask_app):
     Verify that IMEI-SUbscribers API should return
     """
     rv = flask_app.get(url_for('v2.imei_get_subscribers_api', imei=''))
-    assert rv.status_code == 404
+    assert rv.status_code == 308
 
 
 def test_imei_normalisation_on_subscribers_api(flask_app):
@@ -1407,7 +1408,7 @@ def test_imei_info_api_with_empty_imei(flask_app):
     """
     imei = ''
     rv = flask_app.get(url_for('v2.imei_info_api', imei=imei))
-    assert rv.status_code == 404
+    assert rv.status_code == 308
 
 
 def test_imei_info_api_with_long_imeis(flask_app):

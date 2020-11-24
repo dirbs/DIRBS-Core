@@ -203,10 +203,10 @@ def verify_db_roles_installed(conn):
     # The below is not a guaranteed check, but a heuristic
     logger = logging.getLogger('dirbs.db')
     with conn.cursor() as cursor:
-        cursor.execute('SELECT 1 AS res FROM pg_roles WHERE rolname = \'dirbs_core_power_user\'')
+        cursor.execute("SELECT 1 AS res FROM pg_roles WHERE rolname = \'dirbs_core_power_user\'")
         if cursor.fetchone() is None:
-            logger.error('DIRBS Core roles have not been installed - run \'dirbs-db install_roles\' before '
-                         'running \'dirbs-db install\'')
+            logger.error("DIRBS Core roles have not been installed - run \'dirbs-db install_roles\' before "
+                         "running \'dirbs-db install\'")
             raise DatabaseSchemaException('DIRBS Core database roles have not been installed')
 
 
@@ -246,17 +246,17 @@ def verify_db_ownership(conn):
 def verify_core_schema(conn):
     """Function used to check whether Core schema exists and has correct ownership."""
     if not query_schema_existence(conn, 'core'):
-        raise DatabaseSchemaException('Missing schema \'core\' in DB. Was dirbs-db install run successfully?')
+        raise DatabaseSchemaException("Missing schema \'core\' in DB. Was dirbs-db install run successfully?")
 
     if query_schema_ownership(conn, 'core') != 'dirbs_core_power_user':
-        raise DatabaseSchemaException('Schema \'core\' is not owned by dirbs_core_power_user!')
+        raise DatabaseSchemaException("Schema \'core\' is not owned by dirbs_core_power_user!")
 
 
 def verify_hll_schema(conn):
     """Function used to check whether HLL schema exists and that extension is installed correctly."""
     logger = logging.getLogger('dirbs.db')
     if not query_schema_existence(conn, 'hll'):
-        logger.error('Schema \'hll\' does not exist. Please ensure the hll extension is installed and run the '
+        logger.error("Schema \'hll\' does not exist. Please ensure the hll extension is installed and run the "
                      'following as a superuser whilst connected to this DB: '
                      '\n\t1. CREATE SCHEMA hll;'
                      '\n\t2. GRANT USAGE ON SCHEMA hll TO dirbs_core_base;'
@@ -266,7 +266,7 @@ def verify_hll_schema(conn):
     # Check if extension installed correctly by looking for hll.hll_print
     with conn.cursor() as cursor:
         try:
-            cursor.execute('SELECT pg_get_functiondef(\'hll.hll_print(hll.hll)\'::regprocedure)')
+            cursor.execute("SELECT pg_get_functiondef(\'hll.hll_print(hll.hll)\'::regprocedure)")
         except psycopg2.ProgrammingError:
             logger.error('The HLL extension is not installed correctly. Please issue the following as a superuser '
                          'whilst connected to this DB: '
@@ -279,13 +279,13 @@ def verify_db_search_path(conn):
     logger = logging.getLogger('dirbs.db')
     is_search_path_valid = True
     with conn.cursor() as cursor:
-        cursor.execute('SELECT to_regclass(\'schema_version\')')
+        cursor.execute("SELECT to_regclass(\'schema_version\')")
         res = cursor.fetchone()[0]
         if res is None:
             is_search_path_valid = False
 
         try:
-            cursor.execute('SELECT pg_get_functiondef(\'hll_print(hll)\'::regprocedure)')
+            cursor.execute("SELECT pg_get_functiondef(\'hll_print(hll)\'::regprocedure)")
         except psycopg2.ProgrammingError:
             is_search_path_valid = False
 
@@ -309,11 +309,7 @@ def query_db_schema_version(conn):
 
 
 def query_wl_db_schema_version(conn):
-    """Function to fetch the WHITELIST DB version number from the database.
-
-    Arguments:
-        conn -- dirbs postgresql connection
-    """
+    """Function to fetch the WHITELIST DB version number from the database."""
     logger = logging.getLogger('dirbs.db')
     with conn.cursor() as cur:
         try:
@@ -337,12 +333,7 @@ def set_db_schema_version(conn, new_version):
 
 
 def set_wl_db_schema_version(conn, new_version):
-    """Function to set the Whitelist DB version number in the database.
-
-    Arguments:
-        conn -- dirbs postgresql connection
-        new_version -- new version number to be updated on old
-    """
+    """Function to set the Whitelist DB version number in the database."""
     with conn.cursor() as cur:
         cur.execute('UPDATE schema_metadata SET wl_version = %s', [new_version])
 
@@ -579,8 +570,8 @@ def validate_exempted_device_types(conn, config):
             else:
                 invalid_device_types = set(exempted_device_types) - set(all_device_types)
                 if len(invalid_device_types) > 0:
-                    msg = 'RegionConfig: exempted_device_types \'{0}\' is/are not valid device type(s). ' \
-                          'The valid GSMA device types are: \'{1}\''.format(invalid_device_types, all_device_types)
+                    msg = "RegionConfig: exempted_device_types \'{0}\' is/are not valid device type(s). " \
+                          "The valid GSMA device types are: \'{1}\'".format(invalid_device_types, all_device_types)
                     logger.error(msg)
                     raise ConfigParseException(msg)
 
@@ -600,7 +591,7 @@ def log_analysis_window(logger, analysis_start_date, analysis_end_date, start_me
 
 def registration_list_status_filter_sql():
     """SQL to filter for whitelisted or null registration_list statuses."""
-    return sql.SQL('(status IS NULL OR status = \'whitelist\')')
+    return sql.SQL("(status IS NULL OR status = \'whitelist\')")
 
 
 def compute_amnesty_flags(app_config, curr_date):

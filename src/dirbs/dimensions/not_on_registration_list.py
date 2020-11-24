@@ -65,10 +65,10 @@ class NotOnRegistrationList(Dimension):
                                                    FROM {reg_list_shard}
                                                   WHERE imei_norm = {network_imeis_shard}.imei_norm
                                                     AND end_date IS NULL
-                                                    AND {wl_status_filter})""") \
-            .format(network_imeis_shard=sql.Identifier(network_imeis_shard),
-                    reg_list_shard=sql.Identifier(registration_list_shard),
-                    wl_status_filter=registration_list_status_filter_sql())
+                                                    AND {wl_status_filter})""").format(  # noqa: Q449
+            network_imeis_shard=sql.Identifier(network_imeis_shard),
+            reg_list_shard=sql.Identifier(registration_list_shard),
+            wl_status_filter=registration_list_status_filter_sql())
 
         sql_query = sql_query.as_string(conn)
 

@@ -1,7 +1,7 @@
 """
 Package for DIRBS REST-ful API (version 2).
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -57,8 +57,10 @@ def validation_errors(error):
     """
     Transform marshmallow validation errors to custom responses to maintain backward-compatibility.
 
-    :param error: intercepted 422 http error
-    :return: modified json error response
+    Arguments:
+        error: intercepted 422 http error
+    Returns:
+        Modified error response
     """
     return validate_error(error)
 
@@ -67,7 +69,10 @@ def register_docs(api_doc):
     """
     Register all endpoints with the ApiDoc object.
 
-    :param api_doc: apidoc instance
+    Arguments:
+        api_doc: Flask Apispec instance to register
+    Returns:
+        None
     """
     for endpoint in [version_api, tac_post_api, tac_get_api, msisdn_get_api, imei_get_api,
                      imei_get_subscribers_api, imei_get_pairings_api, imei_batch_api,
@@ -82,12 +87,14 @@ def register_docs(api_doc):
 @use_kwargs(TacArgs().fields_dict, locations=['json'])
 @marshal_with(None, code=400, description='Bad TAC format')
 @disable_options_method()
-def tac_post_api(**kwargs):
+def tac_post_api(**kwargs: dict) -> str:
     """
     Batch TAC API (version 2) POST route.
 
-    :param kwargs: list of tacs
-    :return: json
+    Arguments:
+        kwargs: list of TACs to process
+    Returns:
+        JSON response
     """
     return tac_resource.tac_batch_api(**kwargs)
 
@@ -97,12 +104,14 @@ def tac_post_api(**kwargs):
 @marshal_with(TacInfo, code=200, description='On success (TAC found in GSMA database)')
 @marshal_with(None, code=400, description='Bad TAC format')
 @disable_options_method()
-def tac_get_api(tac):
+def tac_get_api(tac: str) -> str:
     """
     TAC API (version 2) GET route.
 
-    :param tac: gsma tac
-    :return: json
+    Arguments:
+        tac: 8 digit TAC
+    Returns:
+        JSON response
     """
     return tac_resource.tac_api(tac)
 
@@ -113,12 +122,14 @@ def tac_get_api(tac):
 @marshal_with(MSISDNResp, code=200, description='On success (MSISDN info found in database)')
 @marshal_with(None, code=400, description='Bad MSISDN format')
 @disable_options_method()
-def msisdn_get_api(msisdn):
+def msisdn_get_api(msisdn: str) -> str:
     """
     MSISDN API (version 2) GET route.
 
-    :param msisdn: MSISDN
-    :return: json
+    Arguments:
+        msisdn: 15 digit MSISDN
+    Returns:
+        JSON response
     """
     return msisdn_resource.msisdn_api(msisdn)
 
@@ -131,12 +142,15 @@ def msisdn_get_api(msisdn):
 @marshal_with(IMEI, code=200, description='On success (IMEI info found in Core)')
 @marshal_with(None, code=400, description='Bad IMEI format')
 @disable_options_method()
-def imei_get_api(imei, **kwargs):
+def imei_get_api(imei: str, **kwargs: dict) -> str:
     """
     IMEI API (version 2.0) GET route.
 
-    :param imei: IMEI
-    :return: json
+    Arguments:
+        imei: 14-15 digit IMEI
+        kwargs: other optional keyword arguments
+    Returns:
+        JSON response
     """
     return imei_resource.imei_api(imei, **kwargs)
 
@@ -148,13 +162,15 @@ def imei_get_api(imei, **kwargs):
 @marshal_with(IMEISubscribers, code=200, description='On success (Info found in database)')
 @marshal_with(None, code=400, description='Bad IMEI format')
 @disable_options_method()
-def imei_get_subscribers_api(imei, **kwargs):
+def imei_get_subscribers_api(imei: str, **kwargs: dict) -> str:
     """
     IMEI Subscribers API (version 2.0) GET route.
 
-    :param imei: IMEI
-    :param kwargs: extra input args
-    :return: json
+    Arguments:
+        imei: 14-15 digit IMEI
+        kwargs: other optional kwargs
+    Returns:
+        JSON response
     """
     return imei_resource.imei_subscribers_api(imei, **kwargs)
 
@@ -166,13 +182,15 @@ def imei_get_subscribers_api(imei, **kwargs):
 @marshal_with(IMEIPairings, code=200, description='On success (Info found in database)')
 @marshal_with(None, code=400, description='Bad IMEI format')
 @disable_options_method()
-def imei_get_pairings_api(imei, **kwargs):
+def imei_get_pairings_api(imei: str, **kwargs: dict) -> str:
     """
     IMEI Pairings API (version 2.0) GET route.
 
-    :param imei: IMEI
-    :param kwargs: extra input args
-    :return: json
+    Arguments:
+        imei: 14-15 digits IMEI
+        kwargs: other optional kwargs
+    Returns:
+        JSON response
     """
     return imei_resource.imei_pairings_api(imei, **kwargs)
 
@@ -183,12 +201,14 @@ def imei_get_pairings_api(imei, **kwargs):
 @marshal_with(IMEIInfo, code=200, description='On success (Info found in database)')
 @marshal_with(None, code=400, description='Bad IMEI format')
 @disable_options_method()
-def imei_info_api(imei):
+def imei_info_api(imei: str) -> str:
     """
     IMEI-Info API (Version 2.0) GET route.
 
-    :param imei: IMEI
-    :return: json
+    Arguments:
+        imei: 14-15 digits IMEI
+    Returns:
+        JSON response
     """
     return imei_resource.imei_info_api(imei)
 
@@ -200,12 +220,14 @@ def imei_info_api(imei):
 @marshal_with(BatchIMEI, code=200, description='On success (Info found in database)')
 @marshal_with(None, code=400, description='Bad IMEI format')
 @disable_options_method()
-def imei_batch_api(**kwargs):
+def imei_batch_api(**kwargs: dict) -> str:
     """
     IMEI Batch API (version 2.0) POST route.
 
-    :param kwargs: list of IMEI's
-    :return: json
+    Arguments:
+        kwargs: list of IMEIs to process
+    Returns:
+        JSON response
     """
     return imei_resource.imei_batch_api(**kwargs)
 
@@ -218,12 +240,14 @@ def imei_batch_api(**kwargs):
 @marshal_with(Jobs, code=200, description='On success')
 @marshal_with(None, code=400, description='Bad parameter value')
 @disable_options_method()
-def job_metadata_get_api(**kwargs):
+def job_metadata_get_api(**kwargs: dict) -> str:
     """
     Job Metadata API GET route.
 
-    :param kwargs: input args
-    :return: json
+    Arguments:
+        kwargs: input arguments
+    Returns:
+        JSON response
     """
     return job_resource.job_metadata_api(**kwargs)
 
@@ -236,12 +260,14 @@ def job_metadata_get_api(**kwargs):
 @marshal_with(Catalog, code=200, description='On success')
 @marshal_with(None, code=400, description='Bad parameter value')
 @disable_options_method()
-def catalog_get_api(**kwargs):
+def catalog_get_api(**kwargs: dict) -> str:
     """
     Catalog API GET route.
 
-    :param kwargs: input args
-    :return: json
+    Arguments:
+        kwargs: input arguments
+    Returns:
+        JSON response
     """
     return catalog_resource.catalog_api(**kwargs)
 
@@ -251,6 +277,6 @@ def catalog_get_api(**kwargs):
 @api.route('/version', methods=['GET'])
 @marshal_with(Version, code=200, description='On success')
 @disable_options_method()
-def version_api():
+def version_api() -> str:
     """Version API (version 2) route."""
     return version_resource.version()

@@ -1,7 +1,7 @@
 """
 DIRBS reporting class for generating data for operator/country reports.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -874,7 +874,7 @@ def _generate_compliance_data_table(conn, year, month, operator, condition_tuple
                                                                   WHERE imei_norm = network_triplet_counts.imei_norm)
                                                   ) ga_cond
                                           ON TRUE
-                                    """,  # noqa: Q447
+                                    """,  # noqa: Q447, Q449
                            {'num_conditions': len(condition_tuples)})
             cursor.execute('ANALYZE per_imei_compliance')
         durations.append(scp.duration)

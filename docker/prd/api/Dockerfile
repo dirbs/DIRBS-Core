@@ -2,7 +2,7 @@
 # Dockerfile to build Docker API image for DIRBS
 #
 #
-# Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+# Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 #
 # All rights reserved.
 #

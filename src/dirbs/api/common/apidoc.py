@@ -1,7 +1,7 @@
 """
 Subclass FlaskApiSpec to add support for documenting multiple API versions.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -40,12 +40,13 @@ from flask_apispec.apidoc import ViewConverter, ResourceConverter
 class ApiDoc(FlaskApiSpec):
     """Override base FlaskApiSpec constructor."""
 
-    def __init__(self, app, *, version):
+    def __init__(self, app, *, version: str):
         """
         Constructor.
 
-        :param app: app instance
-        :param version: api version
+        Arguments:
+            app: current flask/wsgi app instance
+            version: version of the api (string format)
         """
         self.title = 'DIRBS Core'
         self.version = version
@@ -60,11 +61,12 @@ class ApiDoc(FlaskApiSpec):
         self.app = app
         self.init_app()
 
-    def init_app(self, **kwargs):
+    def init_app(self, **kwargs: dict) -> None:
         """
         Override base init_app method.
 
-        :param kwargs: args
+        Arguments:
+            kwargs: required kwargs
         """
         self.spec = APISpec(
             title=self.title,
@@ -81,7 +83,7 @@ class ApiDoc(FlaskApiSpec):
         for deferred in self._deferred:
             deferred()
 
-    def add_swagger_routes(self):
+    def add_swagger_routes(self) -> None:
         """Override base add_swagger_routes method.
 
         Define blueprint for the OpenAPI spec to be served.
@@ -102,9 +104,9 @@ class ApiDoc(FlaskApiSpec):
             """
             Method to map custom urls for swagger.
 
-            :param endpoint: swagger endpoint
-            :param values: url value to map
-            :return:
+            Arguments:
+                endpoint: swagger designated endpoint
+                values: url values to map to endpoints
             """
             endpoint = endpoint.replace('flask-apispec', 'flask-apispec-{0}'.format(self.version))
             return url_for(endpoint, **values)
@@ -114,12 +116,12 @@ class ApiDoc(FlaskApiSpec):
         self.app.register_blueprint(spec_blueprint)
 
     @property
-    def top_level_description(self):
+    def top_level_description(self) -> str:
         """Generate text for top level API document description."""
         description = 'The document lists the APIs exposed by DIRBS Core system. ' \
                       'The APIs provide programmatic access to read data from DIRBS Core. ' \
                       'This documentation was built using Swagger UI. ' \
-                      'Swagger UI allows users to visualize and interact with the API\'s resources ' \
+                      "Swagger UI allows users to visualize and interact with the API\'s resources " \
                       'without having any of the implementation logic in place. ' \
                       '\n' \
                       '## MIME Types ' \

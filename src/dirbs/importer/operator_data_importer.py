@@ -1,7 +1,7 @@
 """
 Code for importing MNO data sets into DIRBS Core.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -70,6 +70,7 @@ class OperatorDataImporter(AbstractImporter):
                  historic_imei_threshold=0.9,
                  historic_imsi_threshold=0.9,
                  historic_msisdn_threshold=0.9,
+                 leading_zero_suspect_limit=0.5,
                  perform_msisdn_import=True,
                  perform_rat_import=True,
                  perform_file_daterange_check=True,
@@ -106,6 +107,7 @@ class OperatorDataImporter(AbstractImporter):
         self._historic_imei_threshold = historic_imei_threshold
         self._historic_imsi_threshold = historic_imsi_threshold
         self._historic_msisdn_threshold = historic_msisdn_threshold
+        self._leading_zero_suspect_limit = leading_zero_suspect_limit
         # Switches to disable importing of certain columns
         self._perform_msisdn_import = perform_msisdn_import
         self._perform_rat_import = perform_rat_import
@@ -170,6 +172,7 @@ class OperatorDataImporter(AbstractImporter):
             'historic_imei_threshold': self._historic_imei_threshold,
             'historic_imsi_threshold': self._historic_imsi_threshold,
             'historic_msisdn_threshold': self._historic_msisdn_threshold,
+            'leading_zero_suspect_limit': self._leading_zero_suspect_limit,
             'perform_file_daterange_check': self._perform_file_daterange_check,
             'perform_leading_zero_check': self._perform_leading_zero_check,
             'perform_null_checks': self._perform_null_checks,
@@ -322,7 +325,7 @@ class OperatorDataImporter(AbstractImporter):
                            .format(self._staging_tbl_identifier))
             suspect_missing_zero_imeis = cursor.fetchone()[0]
 
-            leading_zero_suspect_limit = 0.5
+            leading_zero_suspect_limit = self._leading_zero_suspect_limit
             if leading_one_count > 1 and suspect_missing_zero_imeis / leading_one_count > leading_zero_suspect_limit:
                 return False, 'Too many IMEIs that start with 1 match the TAC DB when prepended with 0', metric_key
 
@@ -970,7 +973,7 @@ class OperatorDataImporter(AbstractImporter):
                                        WHERE excluded.first_seen < target.first_seen
                                           OR excluded.last_seen > target.last_seen
                                           OR (target.seen_rat_bitmask | excluded.seen_rat_bitmask)
-                                                   != target.seen_rat_bitmask"""  # noqa: Q441, Q447
+                                                   != target.seen_rat_bitmask"""  # noqa: Q441, Q447, W605
 
             cursor.execute(sql.SQL(query).format(sql.Identifier(dest_partition), sql.Identifier(src_partition)))
 

@@ -55,6 +55,7 @@ class OperatorThresholdConfig(ConfigSection):
         self.historic_imei_threshold = self._parse_float_ratio('historic_imei_threshold')
         self.historic_imsi_threshold = self._parse_float_ratio('historic_imsi_threshold')
         self.historic_msisdn_threshold = self._parse_float_ratio('historic_msisdn_threshold')
+        self.leading_zero_suspect_limit = self._parse_float_ratio('leading_zero_suspect_limit')
 
     @property
     def section_name(self):
@@ -79,7 +80,8 @@ class OperatorThresholdConfig(ConfigSection):
             'non_home_network_threshold': 0.2,
             'historic_imei_threshold': 0.9,
             'historic_imsi_threshold': 0.9,
-            'historic_msisdn_threshold': 0.9
+            'historic_msisdn_threshold': 0.9,
+            'leading_zero_suspect_limit': 0.5
         }
 
 

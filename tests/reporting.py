@@ -1,7 +1,7 @@
 """
 Reporting unit tests.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -1964,8 +1964,8 @@ def test_report_contains_condition_count_table(postgres, db_conn, gsma_tac_db_im
              ['False', 'True', 'False', 'False', 'False', 'False', '3', '3', '3', '4', '4', '0'],
              ['False', 'True', 'True', 'False', 'False', 'False', '1', '1', '1', '1', '1', '0']]
         assert lines[0] == expected_csv_headers
-        for l in lines[1:]:
-            assert l in expected_rows
+        for line in lines[1:]:
+            assert line in expected_rows
 
     operator1_operator_report = 'Country1_operator1_11_2016.json'
     with open(os.path.join(reports_dir, operator1_operator_report), 'r') as file:
@@ -2035,8 +2035,8 @@ def test_report_contains_condition_count_table(postgres, db_conn, gsma_tac_db_im
              ['False', 'False', 'True', 'False', 'False', 'False', '1', '1', '1', '1', '1', '0'],
              ['False', 'True', 'False', 'False', 'False', 'False', '1', '1', '1', '1', '1', '0']]
         assert lines[0] == expected_csv_headers
-        for l in lines[1:]:
-            assert l in expected_rows
+        for line in lines[1:]:
+            assert line in expected_rows
 
     operator4_operator_report = 'Country1_operator4_11_2016.json'
     with open(os.path.join(reports_dir, operator4_operator_report), 'r') as file:
@@ -2105,8 +2105,8 @@ def test_report_contains_condition_count_table(postgres, db_conn, gsma_tac_db_im
              ['False', 'True', 'False', 'False', 'False', 'False', '2', '2', '2', '3', '3', '0'],
              ['False', 'True', 'True', 'False', 'False', 'False', '1', '1', '1', '1', '1', '0']]
         assert lines[0] == expected_csv_headers
-        for l in lines[1:]:
-            assert l in expected_rows
+        for line in lines[1:]:
+            assert line in expected_rows
 
 
 @pytest.mark.parametrize('operator_data_importer',

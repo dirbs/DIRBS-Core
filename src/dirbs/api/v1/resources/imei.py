@@ -1,7 +1,7 @@
 """
 DIRBS REST-ful API-V1 imei module.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -40,14 +40,16 @@ from dirbs.api.common.imei import validate_imei, get_conditions, ever_observed_o
     get_subscribers, is_paired
 
 
-def imei_api(imei, include_seen_with=False, include_paired_with=False):
+def imei_api(imei: str, include_seen_with: bool = False, include_paired_with: bool = False) -> jsonify:
     """
     IMEI API handler.
 
-    :param imei: normalized imei
-    :param include_seen_with: bool (to include seen_with info)
-    :param include_paired_with: bool (to include paired with info)
-    :return: json response
+    Arguments:
+        imei: IMEI number in format [15, 16] digits
+        include_seen_with: bool to include seen with information in response (default False)
+        include_paired_with: bool to include paired with information in response (default False)
+    Returns:
+        JSON response
     """
     imei_norm = validate_imei(imei)
 

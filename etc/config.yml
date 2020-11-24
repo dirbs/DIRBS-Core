@@ -68,7 +68,7 @@ operational:
   # Boolean variable used to activate whitelist mode, default False
   # By setting it true will result in activation of extra migrations and functions related to
   # DIRBS Core Whitelisting mode
-  activate_whitelist: True
+  activate_whitelist: False
   # The boolean variable to toggle the settings weather to share the whitelist with the operators or not.
   restrict_whitelist: True
 
@@ -225,6 +225,9 @@ operator_threshold:
   # The minimum valid ratio of average daily MSISDN count against historical daily MSISDN count for a data dump to be
   # considered valid. Ignored if MSISDN if disabled
   historic_msisdn_threshold: 0.9
+  # Limit for suspected leading zeros in operator data dump. The value can be between 0-1, default is 0.5
+  # Leading zero check is used to validate that the input file did not have leading zeroes stripped from it
+  leading_zero_suspect_limit: 0.5
 
 # Each of the following importers specifies 2 historic_thresholds which can be used to validate new import
 # row count against previously imported data for the same importer.
@@ -329,7 +332,7 @@ conditions:
           period_days: 30
           min_seen_days: 5
     grace_period_days: 5
-    blocking: true
+    blocking: false
     sticky: false
     reason: Daily Average UID Limit Exceeded
     max_allowed_matching_ratio: 1.0

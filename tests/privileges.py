@@ -491,7 +491,7 @@ def test_imei_api(per_test_flask_app, per_test_postgres, logger, mocked_statsd, 
                                                 imei='388260336982806'))
             assert rv.status_code == 200
             data = json.loads(rv.data.decode('utf-8'))
-            assert len(data['subscribers']) is not 0
+            assert len(data['subscribers']) != 0
             assert data['subscribers'] == [
                 {
                     'imsi': '11101400135251',

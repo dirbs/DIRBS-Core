@@ -1,7 +1,7 @@
 """
 DIRBS dimension function for average duplicate uids within a time period.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -54,13 +54,13 @@ class DailyAvgUidThreshold(DuplicateAbstractBase):
         try:
             self._threshold = float(threshold)
         except (TypeError, ValueError):
-            raise ValueError('\'threshold\' parameter must be a float, got \'{0}\' instead...'.format(threshold))
+            raise ValueError("\'threshold\' parameter must be a float, got \'{0}\' instead...".format(threshold))
 
         try:
             self._min_seen_days = int(min_seen_days)
         except (TypeError, ValueError):
-            raise ValueError('\'min_seen_days\' parameter must be an integer, '
-                             'got \'{0}\' instead...'.format(min_seen_days))
+            raise ValueError("\'min_seen_days\' parameter must be an integer, "
+                             "got \'{0}\' instead...".format(min_seen_days))
 
         if self._period_days is not None and self._min_seen_days > self._period_days:
             # TODO: Handle this for period_months as well -- difficult to do this without knowing curr_date

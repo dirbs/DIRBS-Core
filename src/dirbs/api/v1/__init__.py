@@ -1,7 +1,7 @@
 """
 Package for DIRBS REST-ful API (version 1).
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -31,6 +31,8 @@ BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 POSSIBILITY OF SUCH DAMAGE.
 """
 
+from typing import Callable
+
 from flask import Blueprint
 from flask_apispec import use_kwargs, marshal_with, doc
 
@@ -53,27 +55,32 @@ api = Blueprint('v1', __name__.split('.')[0])
 
 
 @api.app_errorhandler(422)
-def validation_errors(error):
+def validation_errors(error) -> Callable:
     """
     Transform marshmallow validation errors to custom responses to maintain backward-compatibility.
 
-    :param error: intercepted http error
-    :return: modified json error response
+    Arguments:
+        error: intercepted http error message object
+    Returns:
+        f(): custom validated error message
     """
     return validate_error(error)
 
 
-def register_docs(apidoc):
+def register_docs(apidoc) -> None:
     """
     Register all endpoints with the ApiDoc object.
 
-    :param apidoc: apidoc instance
+    Arguments:
+        apidoc: flask-apispec api doc object to register
+    Returns:
+        None
     """
     for endpoint in [tac_api, catalog_api, version_api, msisdn_api, imei_api, job_metadata_api]:
         apidoc.register(endpoint, blueprint='v1')
 
 
-@doc(description='Information Core knows about the IMEI, as well as the results of all \'conditions\' '
+@doc(description="Information Core knows about the IMEI, as well as the results of all \'conditions\' "
                  'evaluated as part of DIRBS core. Calling systems should expose as little or as much '
                  'of this information to the end user as is appropriate.', tags=['IMEI'])
 @api.route('/imei/<imei>', methods=['GET'])
@@ -81,13 +88,15 @@ def register_docs(apidoc):
 @marshal_with(IMEI, code=200, description='On success')
 @marshal_with(None, code=400, description='Bad parameter value')
 @disable_options_method()
-def imei_api(imei, **kwargs):
+def imei_api(imei: str, **kwargs: dict) -> Callable[[str, dict], str]:
     """
     IMEI API route.
 
-    :param imei: IMEI
-    :param kwargs: args
-    :return: json
+    Arguments:
+        imei: IMEI to search and respond about
+        kwargs: other optional arguments
+    Returns:
+        Json response
     """
     return imei_resource.imei_api(imei, **kwargs)
 
@@ -97,12 +106,14 @@ def imei_api(imei, **kwargs):
 @marshal_with(GSMATacInfo, code=200, description='On success (TAC found in the GSMA database)')
 @marshal_with(None, code=400, description='Bad TAC format')
 @disable_options_method()
-def tac_api(tac):
+def tac_api(tac: str) -> Callable[[str], str]:
     """
     TAC API route.
 
-    :param tac: gsma tac
-    :return: json
+    Arguments:
+        tac: TAC value
+    Returns:
+        JSON response
     """
     return tac_resource.api(tac)
 
@@ -114,12 +125,14 @@ def tac_api(tac):
 @marshal_with(Catalog, code=200, description='On success')
 @marshal_with(None, code=400, description='Bad parameter value')
 @disable_options_method()
-def catalog_api(**kwargs):
+def catalog_api(**kwargs: dict) -> Callable[[dict], str]:
     """
     Catalog API route.
 
-    :param kwargs: input args
-    :return: json
+    Arguments:
+        kwargs: required keyword arguments
+    Returns:
+        JSON response
     """
     return catalog_resource.catalog_api(**kwargs)
 
@@ -131,12 +144,14 @@ def catalog_api(**kwargs):
 @marshal_with(JobMetadata, code=200, description='On success')
 @marshal_with(None, code=400, description='Bad parameter value')
 @disable_options_method()
-def job_metadata_api(**kwargs):
+def job_metadata_api(**kwargs: dict) -> Callable[[dict], str]:
     """
     Job Metadata API route.
 
-    :param kwargs: input args
-    :return: json
+    Arguments:
+        kwargs: required keyword arguments
+    Returns:
+        JSON response
     """
     return job_resource.job_metadata_api(**kwargs)
 
@@ -146,7 +161,7 @@ def job_metadata_api(**kwargs):
 @api.route('/version', methods=['GET'])
 @marshal_with(Version, code=200, description='On success')
 @disable_options_method()
-def version_api():
+def version_api() -> Callable[[], str]:
     """Version API route."""
     return version_resource.version()
 
@@ -156,11 +171,13 @@ def version_api():
 @api.route('/msisdn/<msisdn>', methods=['GET'])
 @marshal_with(MSISDN, code=200, description='On success')
 @disable_options_method()
-def msisdn_api(msisdn):
+def msisdn_api(msisdn: str) -> Callable[[str], str]:
     """
     MSISDN API route.
 
-    :param msisdn:
-    :return: json
+    Arguments:
+        msisdn: MSISDN value
+    Returns:
+        JSON response
     """
     return msisdn_resource.msisdn_api(msisdn)

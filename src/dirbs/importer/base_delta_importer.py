@@ -1,7 +1,7 @@
 """
 Common code for importing delta and full list data sets into DIRBS Core.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -231,7 +231,7 @@ class BaseDeltaImporter(AbstractImporter):
 
         self._logger.info('Counting the approximate number of entries in staging table based on delta...')
         futures_list = []
-        filter_str = 'change_type != \'update\''
+        filter_str = "change_type != \'update\'"
         with futures.ThreadPoolExecutor(max_workers=self._max_db_connections) as executor:
             if self._supports_imei_shards:
                 for name, rstart, rend in partition_utils.physical_imei_shards(self._conn,

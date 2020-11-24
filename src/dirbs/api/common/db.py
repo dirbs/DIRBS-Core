@@ -36,7 +36,7 @@ from flask import g, current_app
 from dirbs.utils import create_db_connection
 
 
-def get_db_connection():
+def get_db_connection() -> g:
     """Opens a new DB connection if there is not yet for the current app context."""
     if not hasattr(g, 'db_conn'):
         db_config = current_app.config['DIRBS_CONFIG'].db_config
@@ -45,7 +45,7 @@ def get_db_connection():
     return g.db_conn
 
 
-def close_db_connection():
+def close_db_connection() -> None:
     """Closes the database again at the end of the request."""
     if hasattr(g, 'db_conn'):
         g.db_conn.close()

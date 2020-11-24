@@ -39,12 +39,7 @@ class BrokerConfig(ConfigSection):
     """Class representing the 'broker' section of the config."""
 
     def __init__(self, *, ignore_env, **broker_config):
-        """Constructor which parses the broker config.
-
-        Arguments:
-            ignore_env -- bool to ignore env variables or not
-            broker_config -- broker config dictionary
-        """
+        """Constructor which parses the broker config."""
         super(BrokerConfig, self).__init__(ignore_env=ignore_env, **broker_config)
         self.kafka = KafkaConfig(ignore_env=ignore_env, **broker_config.get('kafka'))
         self.operators = [BrokerOperatorConfig(ignore_env=ignore_env, **o) for o in broker_config.get('operators', [])]
@@ -73,11 +68,7 @@ class KafkaConfig(ConfigSection):
     """Class representing kafka config subsection in the broker config."""
 
     def __init__(self, **kafka_config):
-        """Constructor which parses the kafka config.
-
-        Keyword Arguments:
-            kafka_config -- kafka config dictionary/key value pairs
-        """
+        """Constructor which parses the kafka config."""
         super(KafkaConfig, self).__init__(**kafka_config)
         self.hostname = self._parse_string('hostname')
         self.port = self._parse_positive_int('port')
@@ -118,11 +109,7 @@ class BrokerOperatorConfig(ConfigSection):
     COUNTRY_OPERATOR_NAME = '__all__'
 
     def __init__(self, **operator_config):
-        """Constructor which parses the operator config.
-
-        Keyword Arguments:
-            operator_config -- operator configuration for broker
-        """
+        """Constructor which parses the operator config."""
         super(BrokerOperatorConfig, self).__init__(**operator_config)
         self.id = self._parse_string('id', max_len=16)
 
@@ -137,7 +124,7 @@ class BrokerOperatorConfig(ConfigSection):
 
         self.name = self._parse_string('name')
         if self.id == self.COUNTRY_OPERATOR_NAME:
-            msg = 'Invalid use of reserved operator name \'__all__\' in config!'
+            msg = "Invalid use of reserved operator name \'__all__\' in config!"
             _logger.error(msg)
             raise ConfigParseException(msg)
         self.topic = self._parse_string('topic')

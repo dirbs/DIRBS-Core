@@ -1,7 +1,7 @@
 """
 List generation unit tests.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -64,8 +64,9 @@ def _verify_per_operator_lists_generated(dir_path, type_list):
         assert find_file_in_dir(pattern, dir_path)
 
 
-def _cli_listgen_helper(db_conn, tmpdir, sub_temp_dir, mocked_config, date=None, base_run_id=None, no_full_list=None,
-                        no_clean_up=None, unzip_files=True, combine_deltas=True, disable_sanity_checks=True):
+def _cli_listgen_helper(db_conn, tmpdir, sub_temp_dir, mocked_config, date=None, base_run_id=None,  # noqa: C901
+                        no_full_list=None, no_clean_up=None, unzip_files=True, combine_deltas=True,
+                        disable_sanity_checks=True, conditions=None):
     """Helper function for CLI list-gen."""
     options_list = []
     if date:
@@ -76,6 +77,8 @@ def _cli_listgen_helper(db_conn, tmpdir, sub_temp_dir, mocked_config, date=None,
         options_list.extend(['--no-full-lists'])
     if no_clean_up:
         options_list.extend(['--no-cleanup'])
+    if conditions:
+        options_list.extend(['--conditions', conditions])
     options_list.extend(['--disable-sanity-checks'])
     output_dir = str(tmpdir.mkdir(sub_temp_dir))
     options_list.append(output_dir)
@@ -262,17 +265,17 @@ def _sql_func_gen_delta_list_common_code(db_conn, name_proc):
 
         with pytest.raises(Exception) as ex:
             cursor.callproc(name_proc, ['operator_1', -1, 'a'])
-        assert 'invalid input syntax for integer: "a"' in str(ex)
+        assert 'invalid input syntax for type bigint: "a"' in str(ex.value)
 
     with db_conn, db_conn.cursor() as cursor:
         with pytest.raises(Exception) as ex:
             cursor.callproc(name_proc, ['operator_1', 'a'])
-        assert 'invalid input syntax for integer: "a"' in str(ex)
+        assert 'invalid input syntax for type bigint: "a"' in str(ex.value)
 
     with db_conn, db_conn.cursor() as cursor:
         with pytest.raises(Exception) as ex:
             cursor.callproc(name_proc, ['operator_1', 8, 2])
-        assert 'Parameter base_run_id 8 greater than run_id 2' in str(ex)
+        assert 'Parameter base_run_id 8 greater than run_id 2' in str(ex.value)
 
 
 def _sql_func_gen_list_common_code(db_conn, name_proc):
@@ -282,7 +285,7 @@ def _sql_func_gen_list_common_code(db_conn, name_proc):
         cursor.callproc(name_proc, ['operator_1', -1])
         with pytest.raises(Exception) as ex:
             cursor.callproc(name_proc, ['operator_1', 'a'])
-        assert 'invalid input syntax for integer: "a"' in str(ex)
+        assert 'invalid input syntax for type bigint: "a"' in str(ex.value)
 
 
 def test_cli_arg_no_full_lists(tmpdir, db_conn, mocked_config):
@@ -310,7 +313,7 @@ def test_cli_invalid_arg_base_test(tmpdir, db_conn, mocked_config):
     """Test invalid input handling for base CLI arg."""
     with pytest.raises(Exception) as ex:
         _cli_listgen_helper(db_conn, tmpdir, 'run_4', mocked_config, base_run_id=1)
-    assert 'Specified base run id 1 not found in list of successful dirbs-listgen runs' in str(ex)
+    assert 'Specified base run id 1 not found in list of successful dirbs-listgen runs' in str(ex.value)
 
     run_id, _ = _cli_listgen_helper(db_conn, tmpdir, 'run_1', mocked_config)
     _cli_listgen_helper(db_conn, tmpdir, 'run_2', mocked_config, base_run_id=run_id)
@@ -357,18 +360,18 @@ def test_sql_func_overall_delta_reason(db_conn):
     reasons_list = ['new', 'new']
     with pytest.raises(Exception) as ex:
         overall_delta_reason_helper(reasons_list)
-    assert 'Multiple add reasons in a row - should not happen!' in str(ex)
+    assert 'Multiple add reasons in a row - should not happen!' in str(ex.value)
 
     # Test some invalid combinations
     reasons_list = ['unblocked', 'unblocked']
     with pytest.raises(Exception) as ex:
         overall_delta_reason_helper(reasons_list)
-    assert 'Multiple remove reasons in a row - should not happen!' in str(ex)
+    assert 'Multiple remove reasons in a row - should not happen!' in str(ex.value)
 
     reasons_list = ['foo', 'bar']
     with pytest.raises(Exception) as ex:
         overall_delta_reason_helper(reasons_list)
-    assert 'Unknown reason "foo" - not add, remove or change type!' in str(ex)
+    assert 'Unknown reason "foo" - not add, remove or change type!' in str(ex.value)
 
 
 def test_sql_func_gen_blacklist(db_conn):
@@ -383,7 +386,7 @@ def test_sql_func_gen_blacklist(db_conn):
 
         with pytest.raises(Exception) as ex:
             cursor.callproc('gen_blacklist', ['a'])
-        assert 'invalid input syntax for integer: "a"' in str(ex)
+        assert 'invalid input syntax for type bigint: "a"' in str(ex.value)
 
 
 def test_sql_func_gen_notifications_list(db_conn):
@@ -416,12 +419,12 @@ def test_sql_func_gen_delta_blacklist(db_conn):
 
         with pytest.raises(Exception) as ex:
             cursor.callproc('gen_delta_blacklist', [-1, 'a'])
-        assert 'invalid input syntax for integer: "a"' in str(ex)
+        assert 'invalid input syntax for type bigint: "a"' in str(ex.value)
 
     with db_conn, db_conn.cursor() as cursor:
         with pytest.raises(Exception) as ex:
             cursor.callproc('gen_delta_blacklist', ['a'])
-        assert 'invalid input syntax for integer: "a"' in str(ex)
+        assert 'invalid input syntax for type bigint: "a"' in str(ex.value)
 
 
 def test_sql_func_gen_delta_notifications_list(db_conn):
@@ -2646,6 +2649,42 @@ def test_exception_list_barred_tac_restriction(postgres, pairing_list_importer, 
             reader = csv.reader(exp_file)
             rows = list(reader)
             assert all([x in rows for x in expected_list])
+
+
+@pytest.mark.parametrize('classification_data',
+                         ['classification_state/imei_api_class_state.csv'],
+                         indirect=True)
+def test_per_condition_blacklist_gen(postgres, classification_data, db_conn, tmpdir, mocked_config):
+    """Test that dirbs-listgen generates blacklist only for the specified condition."""
+    runner = CliRunner()
+    output_dir = str(tmpdir.mkdir('per_cond_run'))
+    result = runner.invoke(dirbs_classify_cli, ['--curr-date=20170101'], obj={'APP_CONFIG': mocked_config})
+    assert result.exit_code == 0
+
+    # find blacklist for all conditions in clasification_state
+    _, output_dir, = _cli_listgen_helper(db_conn, tmpdir, 'run_1', mocked_config, date='20170101')
+    dir_path = find_subdirectory_in_dir('listgen*', output_dir)
+    file_list = os.listdir(dir_path)
+    assert fnmatch.filter(file_list, '*blacklist.csv')
+    fn = find_file_in_dir('*blacklist.csv', dir_path)
+    with open(fn, 'r') as file:
+        rows = [tuple(map(str, i.split(',')))[:1] for i in file]
+        assert ('35000000000000',) in rows
+        assert ('35900000000000',) in rows
+        assert ('86222222222226',) in rows
+
+    # find blacklist for only specified condition
+    _, output_dir, = _cli_listgen_helper(db_conn, tmpdir, 'run_2', mocked_config, date='20170101',
+                                         conditions='gsma_not_found')
+    dir_path = find_subdirectory_in_dir('listgen*', output_dir)
+    file_list = os.listdir(dir_path)
+    assert fnmatch.filter(file_list, '*blacklist.csv')
+    fn = find_file_in_dir('*blacklist.csv', dir_path)
+    with open(fn, 'r') as file:
+        rows = [tuple(map(str, i.split(',')))[:1] for i in file]
+        assert ('35000000000000',) not in rows
+        assert ('35900000000000',) not in rows
+        assert ('86222222222226',) not in rows
 
 
 def test_sanity_checks_operators(per_test_postgres, mocked_config, tmpdir, logger, monkeypatch):

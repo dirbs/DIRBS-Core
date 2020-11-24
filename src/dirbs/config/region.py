@@ -1,7 +1,7 @@
 """
 DIRBS Core region configuration section parser.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -133,7 +133,7 @@ class OperatorConfig(ConfigSection):
 
         self.name = self._parse_string('name')
         if self.id == self.COUNTRY_OPERATOR_NAME:
-            msg = 'Invalid use of reserved operator name \'__all__\' in config!'
+            msg = "Invalid use of reserved operator name \'__all__\' in config!"
             _logger.error(msg)
             raise ConfigParseException(msg)
 

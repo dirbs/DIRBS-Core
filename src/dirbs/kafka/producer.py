@@ -43,14 +43,7 @@ class KProducer:
     # TODO: add support for multiple topics
 
     def __init__(self, config, kafka_host, kafka_port, logger):
-        """Constructor to initialize kafka producer object.
-
-        Arguments:
-            config -- dirbs configurations
-            kafka_host -- kafka host ip address
-            kafka_port -- kafka host port to connect to
-            logger -- dirbs logger
-        """
+        """Constructor."""
         self._config = config
         self._host = kafka_host
         self._port = kafka_port

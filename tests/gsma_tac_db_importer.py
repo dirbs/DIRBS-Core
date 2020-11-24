@@ -1,7 +1,7 @@
 """
 GSMA data import unit tests.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -530,32 +530,32 @@ def test_rat_bitmask_computation(gsma_tac_db_importer, logger, db_conn):
     expect_success(gsma_tac_db_importer, 9, db_conn, logger)
     with db_conn.cursor() as cursor:
         # Test GSM only model
-        cursor.execute('SELECT rat_bitmask FROM gsma_data WHERE tac = \'01132222\'')
+        cursor.execute("SELECT rat_bitmask FROM gsma_data WHERE tac = \'01132222\'")
         result = cursor.fetchone()
         assert result[0] == int('00000000000000000000000001000000', 2)
 
         # Test LTE only model
-        cursor.execute('SELECT rat_bitmask FROM gsma_data WHERE tac = \'41233333\'')
+        cursor.execute("SELECT rat_bitmask FROM gsma_data WHERE tac = \'41233333\'")
         result = cursor.fetchone()
         assert result[0] == int('00000000000000000001000000000000', 2)
 
         # Test GSM + WCDMA model
-        cursor.execute('SELECT rat_bitmask FROM gsma_data WHERE tac = \'41255555\'')
+        cursor.execute("SELECT rat_bitmask FROM gsma_data WHERE tac = \'41255555\'")
         result = cursor.fetchone()
         assert result[0] == int('00000000000000000000001001000000', 2)
 
         # Test WCDMA only model
-        cursor.execute('SELECT rat_bitmask FROM gsma_data WHERE tac = \'41266666\'')
+        cursor.execute("SELECT rat_bitmask FROM gsma_data WHERE tac = \'41266666\'")
         result = cursor.fetchone()
         assert result[0] == int('00000000000000000000001000000000', 2)
 
         # Test GSM + WCDMA + LTE model
-        cursor.execute('SELECT rat_bitmask FROM gsma_data WHERE tac = \'41277777\'')
+        cursor.execute("SELECT rat_bitmask FROM gsma_data WHERE tac = \'41277777\'")
         result = cursor.fetchone()
         assert result[0] == int('00000000000000000001001001000000', 2)
 
         # Test GSM + LTE model
-        cursor.execute('SELECT rat_bitmask FROM gsma_data WHERE tac = \'41288888\'')
+        cursor.execute("SELECT rat_bitmask FROM gsma_data WHERE tac = \'41288888\'")
         result = cursor.fetchone()
         assert result[0] == int('00000000000000000001000001000000', 2)
 

@@ -1,7 +1,7 @@
 """
 DIRBS CLI for report generation (Operator, Country). Installed by setuptools as a dirbs-report console script.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -31,60 +31,32 @@ BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 POSSIBILITY OF SUCH DAMAGE.
 """
 
-import json
 import datetime
-import hashlib
-import logging
 import pkgutil
 import os
-import sys
-import csv
-import contextlib
 
-from dateutil import relativedelta
-from psycopg2 import sql
 import click
 
-from dirbs import report_schema_version
-from dirbs.reports import CountryReport, OperatorReport, generate_monthly_report_stats
-import dirbs.cli.common as common
-from dirbs.config.region import OperatorConfig
-import dirbs.metadata as metadata
 import dirbs.utils as utils
-import dirbs.reports.exceptions as exceptions
-from dirbs.dimensions.gsma_not_found import GSMANotFound
-import dirbs.partition_utils as partition_utils
+import dirbs.cli.common as common
+import dirbs.metadata as metadata
+from dirbs import report_schema_version
+from dirbs.config.region import OperatorConfig
+from dirbs.reports import CountryReport, OperatorReport, generate_monthly_report_stats
+from dirbs.reports.csv_reports import reports_validation_checks, make_report_directory, write_report, \
+    write_country_gsma_not_found_report, write_country_duplicates_report, write_condition_imei_overlaps, \
+    operators_configured_check, write_stolen_violations, write_non_active_pairs, write_un_registered_subscribers, \
+    write_classified_triplets, write_blacklist_violations, write_association_list_violations
 
 
-def _gen_metadata_for_reports(filenames, output_dir):
-    """
-    Function to generate a metadata dictionary for a list file pointer and a passed number of records.
-
-    :param filenames: list of file names
-    :param output_dir: output directory path
-    :return: dict
-    """
-    rv = []
-    for fn in filenames:
-        abs_fn = os.path.join(output_dir, fn)
-        file_size = os.stat(abs_fn).st_size
-        md5_hash = hashlib.md5()
-        md5_hash.update(open(abs_fn, 'rb').read())
-        md5sum = md5_hash.hexdigest()
-        rv.append({
-            'filename': os.path.abspath(abs_fn),
-            'md5sum': md5sum,
-            'file_size_bytes': file_size
-        })
-    return rv
-
-
-def _parse_month_year_report_options_args(f):
+def _parse_month_year_report_options_args(f: callable) -> callable:
     """
     Decorator used to parse all the monthly, year command line options and update the config.
 
-    :param f: obj
-    :return: obj
+    Arguments:
+        f: callable function to be decorated
+    Returns:
+        f: decorated callable function
     """
     f = _parse_force_refresh(f)
     f = _parse_disable_retention_check(f)
@@ -96,47 +68,55 @@ def _parse_month_year_report_options_args(f):
     return f
 
 
-def _parse_month(f):
+def _parse_month(f: callable) -> callable:
     """
     Function to parse month option on the command line.
 
-    :param f: obj
-    :return: click arg obj
+    Arguments:
+        f: callable function
+    Returns:
+        click argument
     """
     return click.argument('month',
                           type=int,
                           callback=_validate_month)(f)
 
 
-def _parse_year(f):
+def _parse_year(f: callable) -> callable:
     """
     Function to parse year option on the command line.
 
-    :param f: obj
-    :return: click arg obj
+    Arguments:
+        f: callable function
+    Returns:
+        click argument
     """
     return click.argument('year',
                           type=int,
                           callback=_validate_year)(f)
 
 
-def _parse_output_dir(f):
+def _parse_output_dir(f: callable) -> callable:
     """
     Function to parse output dir option on the command line.
 
-    :param f: obj
-    :return: click arg obj
+    Arguments:
+        f: callable function
+    Returns:
+        click argument
     """
     return click.argument('output_dir',
                           type=click.Path(exists=True, file_okay=False, writable=True))(f)
 
 
-def _parse_force_refresh(f):
+def _parse_force_refresh(f: callable) -> callable:
     """
     Function to parse force refresh option on the command line.
 
-    :param f: obj
-    :return: click option obj
+    Arguments:
+        f: callable function
+    Returns:
+        click argument
     """
     return click.option('--force-refresh/--no-refresh',
                         default=True,
@@ -145,12 +125,14 @@ def _parse_force_refresh(f):
                              'from previously-calculated data (default: --no-refresh).')(f)
 
 
-def _parse_disable_retention_check(f):
+def _parse_disable_retention_check(f: callable) -> callable:
     """
     Function to parse disable retention check option on the command line.
 
-    :param f: obj
-    :return: click option obj
+    Arguments:
+        f: callable function
+    Returns:
+        click argument
     """
     return click.option('--disable-retention-check',
                         default=False,
@@ -158,12 +140,14 @@ def _parse_disable_retention_check(f):
                         help='Disable check that stops reports being run for months outside the retention period.')(f)
 
 
-def _parse_disable_data_check(f):
+def _parse_disable_data_check(f: callable) -> callable:
     """
     Function to parse disable data check option on the command line.
 
-    :param f: obj
-    :return: click option obj
+    Arguments:
+        f: callable function
+    Returns:
+        click argument
     """
     return click.option('--disable-data-check',
                         default=False,
@@ -172,12 +156,14 @@ def _parse_disable_data_check(f):
                              'reporting month.')(f)
 
 
-def _parse_debug_query_performance(f):
+def _parse_debug_query_performance(f: callable) -> callable:
     """
     Function to parse debug query performance option on the command line.
 
-    :param f: obj
-    :return: click option obj
+    Arguments:
+        f: callable function
+    Returns:
+        click argument
     """
     return click.option('--debug-query-performance',
                         default=False,
@@ -186,420 +172,63 @@ def _parse_debug_query_performance(f):
                              'generation.')(f)
 
 
-def _validate_month(ctx, param, val):
+def _validate_month(ctx, param, val: int) -> int:
     """
     Helper function to validate a month coming from the CLI.
 
-    :param ctx: current cli context
-    :param param: param
-    :param val: month value
-    :return: validated month value
+    Arguments:
+        ctx: click cmd context
+        param: required default parameter
+        val: value to validate (month between 1-12)
+    Returns:
+        val: validated month value
+    Raises:
+        click.BadParameter: When month value does not lie in between 1-12
     """
     if val < 1 or val > 12:
         raise click.BadParameter('Month must be between 1 and 12')
     return val
 
 
-def _validate_year(ctx, param, val):
+def _validate_year(ctx, param, val: int) -> int:
     """
     Helper function to validate a year coming from the CLI.
 
-    :param ctx: current cli context
-    :param param: param
-    :param val: year value
-    :return: validated year value
+    Arguments:
+        ctx: click cmd context
+        param: required default parameter
+        val: value to validate (year between 2000-2100)
+    Returns:
+        val: validated month value
+    Raises:
+        click.BadParameter: When year value does not lie in between 2000-2100
     """
     if val < 2000 or val > 2100:
         raise click.BadParameter('Year must be between 2000 and 2100')
     return val
 
 
-def _write_report(report, month, year, output_dir, filename_prefix, css_filename, js_filename,
-                  per_tac_compliance_data):
+def _parse_positive_int(ctx: callable, param, value: str) -> int:
+    """Helper function to parse a positive integer and return.
+
+    Arguments:
+        ctx: click context
+        param: required param
+        value: value to parse
+    Returns:
+        parsed_value: parsed integer value
+    Raises:
+        BadParameter: if value is less than or equal to 0 or not given or negative
     """
-    Helper function to write an individual report to disk.
-
-    :param report: report type
-    :param month: reporting month
-    :param year: reporting year
-    :param output_dir: output dir path
-    :param filename_prefix: file name prefix
-    :param css_filename: stylesheet file name
-    :param js_filename: js file name
-    :param per_tac_compliance_data: per tac compliance flag
-    :return: metadata obj
-    """
-    # Generate the raw data
-    logger = logging.getLogger('dirbs.report')
-    data = report.gen_report_data()
-
-    data_filename = '{0}_{1:d}_{2:d}.json'.format(filename_prefix, month, year)
-    html_filename = '{0}_{1:d}_{2:d}.html'.format(filename_prefix, month, year)
-    per_tac_csv_filename = '{0}_{1:d}_{2:d}.csv'.format(filename_prefix, month, year)
-    condition_counts_filename = '{0}_{1:d}_{2:d}_condition_counts.csv'.format(filename_prefix, month, year)
-
-    # Store a list of generate filenames so we can generate metadata
-    generated_filenames = [html_filename, data_filename]
-
-    # Write the raw JSON data to disk
-    json_data = json.dumps(data, indent=4, sort_keys=True, cls=utils.JSONEncoder).encode('utf-8')
-    with open(os.path.join(output_dir, data_filename), 'wb') as of:
-        of.write(json_data)
-
-    # Write the CSV per-TAC compliance data to disk
-    if data['has_data']:
-        condition_labels = [c['label'] for c in data['classification_conditions']]
-        condition_table_headers = condition_labels + \
-            ['IMEI count', 'IMEI gross adds count', 'IMEI-IMSI count', 'IMEI-MSISDN count', 'Subscriber triplet count',
-             'Compliance Level']
-        value_keys = ['num_imeis', 'num_imei_gross_adds', 'num_imei_imsis', 'num_imei_msisdns',
-                      'num_subscriber_triplets', 'compliance_level']
-        if per_tac_compliance_data is not None:
-            with open(os.path.join(output_dir, per_tac_csv_filename), 'w', encoding='utf8') as of:
-                writer = csv.writer(of)
-                writer.writerow(['TAC'] + condition_table_headers)
-                for tac, combinations in per_tac_compliance_data.items():
-                    for combination, compliance_stats in combinations.items():
-                        combination_list = list(combination)
-                        writer.writerow([tac] + combination_list +
-                                        [compliance_stats[key] for key in value_keys])
-            generated_filenames.append(per_tac_csv_filename)
-        else:
-            logger.warning('No per-TAC compliance data will be output to CSV file, as compliance data was not '
-                           'calculated or is empty')
-
-    # Write the CSV condition combination data to disk
-    condition_combination_table = data.get('condition_combination_table')
-    if condition_combination_table is not None:
-        with open(os.path.join(output_dir, condition_counts_filename), 'w', encoding='utf8') as of:
-            writer = csv.writer(of)
-            writer.writerow(condition_table_headers)
-            for combination in data['condition_combination_table']:
-                combination_list = [combination['combination'][label] for label in condition_labels]
-                writer.writerow(combination_list + [combination[key] for key in value_keys])
-        generated_filenames.append(condition_counts_filename)
-    else:
-        logger.warning('No condition counts table data will be output to CSV file, as table data is empty')
-
-    # Generate the HTML report
-    html = report.gen_html_report(data, css_filename, js_filename)
-
-    # Write the HTML file to disk
-    with open(os.path.join(output_dir, html_filename), 'wb') as of:
-        of.write(html)
-
-    return _gen_metadata_for_reports(generated_filenames, output_dir)
-
-
-def _validate_data_partitions(config, conn, month, year, logger, disable_data_check):
-    """
-    Validate that data is present for all configured operators and only configured operators.
-
-    :param config: dirbs config obj
-    :param conn: database conection
-    :param month: data month
-    :param year: data year
-    :param logger: dirbs logger obj
-    :param disable_data_check: data check flag
-    """
-    operators = config.region_config.operators
-    assert len(operators) > 0
-
-    operator_partitions = utils.child_table_names(conn, 'monthly_network_triplets_per_mno')
-    observed_operator_ids = {x for x in utils.table_invariants_list(conn, operator_partitions, ['operator_id'])}
-    required_operator_ids = {(o.id,) for o in operators}
-    missing_operator_ids = required_operator_ids - observed_operator_ids
-    if len(missing_operator_ids) > 0:
-        msg = 'Missing monthly_network_triplets_per_mno partitions for operators: {0}' \
-              .format(', '.join([x[0] for x in missing_operator_ids]))
-        if disable_data_check:
-            logger.warning(msg)
-        else:
-            logger.error(msg)
-            raise exceptions.MissingOperatorDataException(msg)
-
-    extra_operator_ids = observed_operator_ids - required_operator_ids
-    if len(extra_operator_ids) > 0:
-        msg = 'Extra monthly_network_triplets_per_mno partitions detected for unconfigured operators: {0}' \
-              .format(', '.join([x[0] for x in extra_operator_ids]))
-        if disable_data_check:
-            logger.warning(msg)
-        else:
-            logger.error(msg)
-            raise exceptions.ExtraOperatorDataException(msg)
-
-    operator_monthly_partitions = set()
-    for op_partition in operator_partitions:
-        operator_monthly_partitions.update(utils.child_table_names(conn, op_partition))
-    observed_invariants = {x for x in utils.table_invariants_list(conn,
-                                                                  operator_monthly_partitions,
-                                                                  ['operator_id', 'triplet_year', 'triplet_month'])}
-    observed_invariants = {x for x in observed_invariants if x.triplet_year == year and x.triplet_month == month}
-    required_invariants = {(o.id, year, month) for o in operators}
-    missing_invariants = required_invariants - observed_invariants
-    if len(missing_invariants) > 0:
-        msg = 'Missing monthly_network_triplets_per_mno partitions for the requested reporting ' \
-              'month for the following configured operators: {0}' \
-              .format(', '.join([x[0] for x in missing_invariants]))
-        if disable_data_check:
-            logger.warning(msg)
-        else:
-            logger.error(msg)
-            raise exceptions.MissingOperatorDataException(msg)
-
-    extra_invariants = observed_invariants - required_invariants
-    if len(extra_invariants) > 0:
-        msg = 'Extra monthly_network_triplets_per_mno partitions detected for the requested ' \
-              'reporting month for the following unconfigured operators: {0}' \
-              .format(', '.join([x[0] for x in extra_invariants]))
-        if disable_data_check:
-            logger.warning(msg)
-        else:
-            logger.error(msg)
-            raise exceptions.ExtraOperatorDataException(msg)
-
-    country_imei_shard_name = partition_utils.monthly_network_triplets_country_partition(month=month, year=year)
-    with conn.cursor() as cursor:
-        cursor.execute(utils.table_exists_sql(), [country_imei_shard_name])
-        partition_exists = cursor.fetchone()[0]
-        if not partition_exists:
-            msg = 'Missing monthly_network_triplets_country partition for year and month'
-            if disable_data_check:
-                logger.warning(msg)
-            else:
-                logger.error(msg)
-                raise exceptions.ExtraOperatorDataException(msg)
-
-
-def _write_country_gsma_not_found_report(conn, config, month, year, country_name, output_dir):
-    """
-    Helper function to write out the country-wide GSMA not found report.
-
-    :param conn: database connection
-    :param config: dirbs config obj
-    :param month: data month
-    :param year: data year
-    :param country_name: name of the country
-    :param output_dir: output directory path
-    :return: metadata obj
-    """
-    gsma_not_found_csv_filename = '{0}_{1:d}_{2:d}_gsma_not_found.csv'.format(country_name, month, year)
-    with open(os.path.join(output_dir, gsma_not_found_csv_filename), 'w', encoding='utf8') as of:
-        writer = csv.writer(of)
-        writer.writerow(['IMEI'])
-        dim = GSMANotFound()
-        sql = dim.sql(conn, config, 1, 100)
-        with conn.cursor(name='gsma_not_found_report') as cursor:
-            cursor.execute(sql)
-            for res in cursor:
-                writer.writerow([res.imei_norm])
-
-    return _gen_metadata_for_reports([gsma_not_found_csv_filename], output_dir)
-
-
-def _write_country_duplicates_report(conn, config, month, year, country_name, output_dir, imsi_min_limit=5):
-    """
-    Helper function to write out the country-wide duplicates report.
-
-    :param conn: database connection
-    :param config: dirbs config obj
-    :param month: data month
-    :param year: data year
-    :param country_name: country name
-    :param output_dir: output directory path
-    :param imsi_min_limit: imsi min limit
-    :return: metadata obj
-    """
-    duplicates_csv_filename = '{0}_{1:d}_{2:d}_duplicates.csv'.format(country_name, month, year)
-    with open(os.path.join(output_dir, duplicates_csv_filename), 'w', encoding='utf8') as of:
-        writer = csv.writer(of)
-        writer.writerow(['IMEI', 'IMSI count'])
-        # We can't use our normal duplicate dimension here as it doesn't give the limits, so unfortunately,
-        # we have to use a modified query that is also slightly optimized as it can query using triplet_year
-        # and triplet_month
-        with conn.cursor(name='duplicates_report') as cursor:
-            cursor.execute("""SELECT imei_norm,
-                                     COUNT(*) AS imsi_count
-                                FROM (SELECT DISTINCT imei_norm, imsi
-                                        FROM monthly_network_triplets_country_no_null_imeis
-                                       WHERE triplet_month = %s
-                                         AND triplet_year = %s
-                                         AND is_valid_imsi(imsi)) all_network_imei_imsis
-                            GROUP BY imei_norm HAVING COUNT(*) >= %s
-                            ORDER BY imsi_count DESC""",
-                           [month, year, imsi_min_limit])
-            for res in cursor:
-                writer.writerow([res.imei_norm, res.imsi_count])
-
-    return _gen_metadata_for_reports([duplicates_csv_filename], output_dir)
-
-
-def _write_condition_imei_overlaps(conn, config, month, year, country_name, output_dir, cond_names):
-    """
-    Helper function to write out IMEIs that are seen on multiple operators that have been classified.
-
-    :param conn: database connection
-    :param config: dirbs config obj
-    :param month: data month
-    :param year: data year
-    :param country_name: country name
-    :param output_dir: output directory path
-    :param cond_names: list of condition names
-    :return: metadata obj
-    """
-    with contextlib.ExitStack() as stack:
-        # Push files into exit stack so that they will all be closed.
-        filename_cond_map = {'{0}_{1:d}_{2:d}_condition_imei_overlap_{3}.csv'.format(country_name, month, year, c): c
-                             for c in cond_names}
-        condname_file_map = {c: stack.enter_context(open(os.path.join(output_dir, fn), 'w', encoding='utf8'))
-                             for fn, c in filename_cond_map.items()}
-        # Create a map from condition name to csv writer
-        condname_csvwriter_map = {c: csv.writer(condname_file_map[c]) for c in cond_names}
-        # Write the header to each csvwriter
-        for _, writer in condname_csvwriter_map.items():
-            writer.writerow(['IMEI', 'Operators'])
-        # Runa query to find all the classified IMEIs seen on multiple operators
-        with conn.cursor(name='imeis_overlap') as cursor:
-            cursor.execute("""SELECT imei_norm, cond_name, string_agg(DISTINCT operator_id, '|') AS operators
-                                FROM classification_state
-                                JOIN monthly_network_triplets_per_mno_no_null_imeis
-                               USING (imei_norm)
-                               WHERE triplet_month = %s
-                                 AND triplet_year = %s
-                                 AND end_date IS NULL
-                            GROUP BY imei_norm, cond_name
-                                     HAVING COUNT(DISTINCT operator_id) > 1""",
-                           [month, year])
-            for res in cursor:
-                condname_csvwriter_map[res.cond_name].writerow([res.imei_norm, res.operators])
-
-    return _gen_metadata_for_reports(list(filename_cond_map.keys()), output_dir)
-
-
-def _make_report_directory(ctx, base_dir, run_id, conn, config, class_run_id=None, **extra_options):
-    """
-    Make directory based on timestamp, data_id and class_run_id.
-
-    :param ctx: current cli context
-    :param base_dir: base directory path
-    :param run_id: job run id
-    :param conn: database connection
-    :param config: dirbs config obj
-    :param class_run_id: class run id
-    :param extra_options: extra command line options
-    :return: path of report directory
-    """
-    assert run_id
-    fn_components = ['report']
-
-    # subcommand
-    subcommand = ctx.command.name
-    fn_components.append(subcommand)
-
-    # timestamp
-    run_id_start_time = metadata.job_start_time_by_run_id(conn, run_id)
-    assert run_id_start_time
-    fn_components.append(run_id_start_time.strftime('%Y%m%d_%H%M%S'))
-
-    # run_id
-    fn_components.append('run_id_{0:d}'.format(run_id))
-
-    # class_run_id - to be computed if not provided and could be None in case of no classification jobs.
-    if not class_run_id:
-        cond_run_info = utils.most_recently_run_condition_info(conn, [c.label for c in config.conditions],
-                                                               successful_only=True)
-        if not cond_run_info:
-            class_run_id = None
-        else:
-            class_run_id = max([v['run_id'] for k, v in cond_run_info.items()])
-
-    if class_run_id:
-        fn_components.append('class_id_{0:d}'.format(class_run_id))
-
-    # data_id, month, year
-    for k, v in sorted(extra_options.items()):
-        assert v
-        fn_components.append('{0}_{1}'.format(k, v))
-
-    dir_name = '__'.join(fn_components)
-    report_dir = os.path.join(base_dir, dir_name)
-    os.makedirs(report_dir)
-    return report_dir
-
-
-# validation checks
-def _reports_validation_checks(disable_retention_check, year, month, logger, config, conn, disable_data_check):
-    """
-    Helper method to perform validation checks on reports.
-
-    :param disable_retention_check: retention check flag
-    :param year: data year
-    :param month: data month
-    :param logger: dirbs logger obj
-    :param config: dirbs config obj
-    :param conn: database connection
-    :param disable_data_check: data check flag
-    """
-    _retention_window_check(disable_retention_check, year, month, config, logger)
-    _operators_configured_check(config, logger)
-    _extra_missing_operator_check(config, conn, month, year, logger, disable_data_check)
-
-
-def _retention_window_check(disable_retention_check, year, month, config, logger):
-    """
-    Helper method to perform retention check.
-
-    :param disable_retention_check: retention check flag
-    :param year: data year
-    :param month: data month
-    :param config: dirbs config obj
-    :param logger: dirbs logger obj
-    """
-    # DIRBS-371: Make sure that we fail if part of the month is outside the retention
-    # window
-    if not disable_retention_check:
-        report_start_date = datetime.date(year, month, 1)
-        curr_date = datetime.date.today()
-        retention_months = config.retention_config.months_retention
-        retention_window_start = datetime.date(curr_date.year, curr_date.month, 1) - \
-            relativedelta.relativedelta(months=retention_months)
-        if report_start_date < retention_window_start:
-            logger.error('Attempting to generate a report for a period outside the retention window...')
-            sys.exit(1)
-
-
-def _operators_configured_check(config, logger):
-    """
-    Helper method to perform configured operators check.
-
-    :param config: dirbs config obj
-    :param logger: dirbs logger obj
-    """
-    # Fail if there are no configured operators
-    operators = config.region_config.operators
-    if len(operators) == 0:
-        logger.error('No operators configured in region config. No report can be generated...')
-        sys.exit(1)
-
-
-def _extra_missing_operator_check(config, conn, month, year, logger, disable_data_check):
-    """
-    Process extra missing operator check.
-
-    :param config: dirbs config obj
-    :param conn: database connection
-    :param month: data month
-    :param year: data year
-    :param logger: dirbs logger obj
-    :param disable_data_check: data check flag
-    """
-    # Validate that data is present for all configured operators and only configured operators
     try:
-        _validate_data_partitions(config, conn, month, year, logger, disable_data_check)
-    except (exceptions.ExtraOperatorDataException, exceptions.MissingOperatorDataException):
-        logger.error('Extra or missing operator data detected above will skew report counts, so report '
-                     'will not be generated. To ignore this warning, use the --disable-data-check option')
-        sys.exit(1)
+        if value is not None:
+            parsed_value = int(value)
+            if parsed_value <= 0:
+                raise click.BadParameter('--period value must be greater than 0')
+            return parsed_value
+        raise click.BadParameter('--period is required')
+    except ValueError:
+        raise click.BadParameter('--period value must be positive integer')
 
 
 @click.group(no_args_is_help=False)
@@ -610,8 +239,14 @@ def _extra_missing_operator_check(config, conn, month, year, logger, disable_dat
 @common.parse_statsd_options
 @click.pass_context
 @common.configure_logging
-def cli(ctx):
-    """DIRBS script to output reports (operator and country) for a given MONTH and YEAR."""
+def cli(ctx: callable) -> None:
+    """DIRBS script to output reports (operator and country) for a given MONTH and YEAR.
+
+    Arguments:
+        ctx: click context (required)
+    Returns:
+        None
+    """
     pass
 
 
@@ -621,10 +256,33 @@ def cli(ctx):
 @click.pass_context
 @common.unhandled_exception_handler
 @common.cli_wrapper(command='dirbs-report', subcommand='standard', required_role='dirbs_core_report')
-def standard(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root, metrics_run_root,
-             force_refresh, disable_retention_check, disable_data_check, debug_query_performance,
-             month, year, output_dir):
-    """Generate standard monthly operator and country-level reports."""
+def standard(ctx: callable, config: callable, statsd: callable, logger: callable, run_id: int, conn: callable,
+             metadata_conn: callable, command: str, metrics_root: callable, metrics_run_root: callable,
+             force_refresh: bool, disable_retention_check: bool, disable_data_check: bool,
+             debug_query_performance: bool, month: int, year: int, output_dir: str) -> None:
+    """Generate standard monthly operator and country-level reports.
+
+    Arguments:
+        ctx: click context object
+        config: DIRBS config object
+        statsd: DIRBS statsd connection object
+        logger: DIRBS custom logger object
+        run_id: run id of the current job
+        conn: DIRBS PostgreSQL connection object
+        metadata_conn: DIRBS PostgreSQL metadata connection object
+        command: name of the command
+        metrics_root: root object for the statsd metrics
+        metrics_run_root: root object for the statsd run metrics
+        force_refresh: bool to force writing/generating reports from scratch
+        disable_retention_check: bool to disable data retention check
+        disable_data_check: bool to disable data check
+        debug_query_performance: bool to debug query performance
+        month: reporting month
+        year: reporting year
+        output_dir: output directory path
+    Returns:
+        None
+    """
     # Store metadata
     metadata.add_optional_job_metadata(metadata_conn, command, run_id,
                                        refreshed_data=force_refresh,
@@ -633,8 +291,8 @@ def standard(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, 
                                        report_schema_version=report_schema_version,
                                        output_dir=os.path.abspath(str(output_dir)))
 
-    _reports_validation_checks(disable_retention_check, year, month, logger, config, conn,
-                               disable_data_check)
+    reports_validation_checks(disable_retention_check, year, month, logger, config, conn,
+                              disable_data_check)
 
     # Next, generate all the report data so that report generation can happen very quickly
     data_id, class_run_id, per_tac_compliance_data = generate_monthly_report_stats(config, conn, month, year,
@@ -647,8 +305,8 @@ def standard(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, 
     metadata.add_optional_job_metadata(metadata_conn, command, run_id, data_id=data_id,
                                        classification_run_id=class_run_id)
 
-    report_dir = _make_report_directory(ctx, output_dir, run_id, conn, config, class_run_id=class_run_id,
-                                        year=year, month=month, data_id=data_id)
+    report_dir = make_report_directory(ctx, output_dir, run_id, conn, config, class_run_id=class_run_id,
+                                       year=year, month=month, data_id=data_id)
 
     # First, copy all the report JS/CSS files into the output directory in
     # cachebusted form and get the cachebusted filenames
@@ -680,8 +338,8 @@ def standard(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, 
             country_per_tac_compliance_data = per_tac_compliance_data[OperatorConfig.COUNTRY_OPERATOR_NAME]
         report = CountryReport(conn, data_id, config, month, year, country_name,
                                has_compliance_data=country_per_tac_compliance_data is not None)
-        report_metadata.extend(_write_report(report, month, year, report_dir, country_name,
-                                             css_filename, js_filename, country_per_tac_compliance_data))
+        report_metadata.extend(write_report(report, month, year, report_dir, country_name,
+                                            css_filename, js_filename, country_per_tac_compliance_data))
 
     statsd.gauge('{0}runtime.per_report.country'.format(metrics_run_root), cp.duration)
     operators = config.region_config.operators
@@ -695,8 +353,8 @@ def standard(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, 
             report = OperatorReport(conn, data_id, config, month, year, op,
                                     has_compliance_data=operator_per_tac_compliance_data is not None)
             report_prefix = '{0}_{1}'.format(country_name, op.id)
-            report_metadata.extend(_write_report(report, month, year, report_dir, report_prefix,
-                                                 css_filename, js_filename, operator_per_tac_compliance_data))
+            report_metadata.extend(write_report(report, month, year, report_dir, report_prefix,
+                                                css_filename, js_filename, operator_per_tac_compliance_data))
         statsd.gauge('{0}runtime.per_report.operators.{1}'.format(metrics_run_root, op.id),
                      cp.duration)
 
@@ -710,27 +368,50 @@ def standard(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, 
 @click.pass_context
 @common.unhandled_exception_handler
 @common.cli_wrapper(command='dirbs-report', subcommand='gsma_not_found', required_role='dirbs_core_report')
-def gsma_not_found(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root, metrics_run_root,
-                   force_refresh, disable_retention_check, disable_data_check, debug_query_performance,
-                   month, year, output_dir):
-    """Generate report of all GSMA not found IMEIs."""
-    _reports_validation_checks(disable_retention_check, year, month, logger, config, conn,
-                               disable_data_check)
+def gsma_not_found(ctx: callable, config: callable, statsd: callable, logger: callable, run_id: int, conn: callable,
+                   metadata_conn: callable, command: str, metrics_root: callable, metrics_run_root: callable,
+                   force_refresh: bool, disable_retention_check: bool, disable_data_check: bool,
+                   debug_query_performance: bool, month: int, year: int, output_dir: str) -> None:
+    """Generate report of all GSMA not found IMEIs.
+
+    Arguments:
+        ctx: click context object
+        config: DIRBS config object
+        statsd: DIRBS statsd connection object
+        logger: DIRBS custom logger object
+        run_id: run id of the current job
+        conn: DIRBS PostgreSQL connection object
+        metadata_conn: DIRBS PostgreSQL metadata connection object
+        command: name of the command
+        metrics_root: root object for the statsd metrics
+        metrics_run_root: root object for the statsd run metrics
+        force_refresh: bool to force writing/generating reports from scratch
+        disable_retention_check: bool to disable data retention check
+        disable_data_check: bool to disable data check
+        debug_query_performance: bool to debug query performance
+        month: reporting month
+        year: reporting year
+        output_dir: output directory path
+    Returns:
+        None
+    """
+    reports_validation_checks(disable_retention_check, year, month, logger, config, conn,
+                              disable_data_check)
     metadata.add_optional_job_metadata(metadata_conn, command, run_id,
                                        refreshed_data=force_refresh,
                                        month=month,
                                        year=year,
                                        report_schema_version=report_schema_version,
                                        output_dir=os.path.abspath(str(output_dir)))
-    report_dir = _make_report_directory(ctx, output_dir, run_id, conn, config, year=year, month=month)
+    report_dir = make_report_directory(ctx, output_dir, run_id, conn, config, year=year, month=month)
 
     report_metadata = []
 
     with utils.CodeProfiler() as cp:
         logger.info('Generating country GSMA not found report...')
         country_name = config.region_config.name
-        report_metadata.extend(_write_country_gsma_not_found_report(conn, config, month,
-                                                                    year, country_name, report_dir))
+        report_metadata.extend(write_country_gsma_not_found_report(conn, config, month,
+                                                                   year, country_name, report_dir))
     statsd.gauge('{0}runtime.per_report.gsma_not_found'.format(metrics_run_root), cp.duration)
 
     # Store metadata about the report data ID and classification run ID
@@ -743,12 +424,35 @@ def gsma_not_found(ctx, config, statsd, logger, run_id, conn, metadata_conn, com
 @click.pass_context
 @common.unhandled_exception_handler
 @common.cli_wrapper(command='dirbs-report', subcommand='top_duplicates', required_role='dirbs_core_report')
-def top_duplicates(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root, metrics_run_root,
-                   force_refresh, disable_retention_check, disable_data_check, debug_query_performance,
-                   month, year, output_dir):
-    """Generate report listing IMEIs seen with more than 5 IMSIs in a given month and year."""
-    _reports_validation_checks(disable_retention_check, year, month, logger, config, conn,
-                               disable_data_check)
+def top_duplicates(ctx: callable, config: callable, statsd: callable, logger: callable, run_id: int, conn: callable,
+                   metadata_conn: callable, command: str, metrics_root: callable, metrics_run_root: callable,
+                   force_refresh: bool, disable_retention_check: bool, disable_data_check: bool,
+                   debug_query_performance: bool, month: int, year: int, output_dir: str) -> None:
+    """Generate report listing IMEIs seen with more than 5 IMSIs in a given month and year.
+
+    Arguments:
+        ctx: click context object
+        config: DIRBS config object
+        statsd: DIRBS statsd connection object
+        logger: DIRBS custom logger object
+        run_id: run id of the current job
+        conn: DIRBS PostgreSQL connection object
+        metadata_conn: DIRBS PostgreSQL metadata connection object
+        command: name of the command
+        metrics_root: root object for the statsd metrics
+        metrics_run_root: root object for the statsd run metrics
+        force_refresh: bool to force writing/generating reports from scratch
+        disable_retention_check: bool to disable data retention check
+        disable_data_check: bool to disable data check
+        debug_query_performance: bool to debug query performance
+        month: reporting month
+        year: reporting year
+        output_dir: output directory path
+    Returns:
+        None
+    """
+    reports_validation_checks(disable_retention_check, year, month, logger, config, conn,
+                              disable_data_check)
     metadata.add_optional_job_metadata(metadata_conn, command, run_id,
                                        refreshed_data=force_refresh,
                                        month=month,
@@ -756,14 +460,14 @@ def top_duplicates(ctx, config, statsd, logger, run_id, conn, metadata_conn, com
                                        report_schema_version=report_schema_version,
                                        output_dir=os.path.abspath(str(output_dir)))
     report_metadata = []
-    report_dir = _make_report_directory(ctx, output_dir, run_id, conn, config, year=year, month=month)
+    report_dir = make_report_directory(ctx, output_dir, run_id, conn, config, year=year, month=month)
     with utils.CodeProfiler() as cp:
         imsi_min_limit = 5
         country_name = config.region_config.name
         logger.info('Generating country duplicate IMEI report (IMEIs seen with more than {0:d} IMSIs this '
                     'reporting month)...'.format(imsi_min_limit))
-        report_metadata.extend(_write_country_duplicates_report(conn, config, month, year, country_name,
-                                                                report_dir, imsi_min_limit=imsi_min_limit))
+        report_metadata.extend(write_country_duplicates_report(conn, config, month, year, country_name,
+                                                               report_dir, imsi_min_limit=imsi_min_limit))
     statsd.gauge('{0}runtime.per_report.top_duplicates'.format(metrics_run_root), cp.duration)
 
     # Store metadata about the report data ID and classification run ID
@@ -776,28 +480,51 @@ def top_duplicates(ctx, config, statsd, logger, run_id, conn, metadata_conn, com
 @click.pass_context
 @common.unhandled_exception_handler
 @common.cli_wrapper(command='dirbs-report', subcommand='condition_imei_overlaps', required_role='dirbs_core_report')
-def condition_imei_overlaps(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root,
-                            metrics_run_root, force_refresh, disable_retention_check, disable_data_check,
-                            debug_query_performance, month, year, output_dir):
-    """Generate per-condition reports showing matched IMEIs seen on more than one MNO network."""
-    _reports_validation_checks(disable_retention_check, year, month, logger, config, conn,
-                               disable_data_check)
+def condition_imei_overlaps(ctx: callable, config: callable, statsd: callable, logger: callable, run_id: int,
+                            conn: callable, metadata_conn: callable, command: str, metrics_root: callable,
+                            metrics_run_root: callable, force_refresh: bool, disable_retention_check: bool,
+                            disable_data_check: bool, debug_query_performance: bool, month: int, year: int,
+                            output_dir: str):
+    """Generate per-condition reports showing matched IMEIs seen on more than one MNO network.
+
+    Arguments:
+        ctx: click context object
+        config: DIRBS config object
+        statsd: DIRBS statsd connection object
+        logger: DIRBS custom logger object
+        run_id: run id of the current job
+        conn: DIRBS PostgreSQL connection object
+        metadata_conn: DIRBS PostgreSQL metadata connection object
+        command: name of the command
+        metrics_root: root object for the statsd metrics
+        metrics_run_root: root object for the statsd run metrics
+        force_refresh: bool to force writing/generating reports from scratch
+        disable_retention_check: bool to disable data retention check
+        disable_data_check: bool to disable data check
+        debug_query_performance: bool to debug query performance
+        month: reporting month
+        year: reporting year
+        output_dir: output directory path
+    Returns:
+        None
+    """
+    reports_validation_checks(disable_retention_check, year, month, logger, config, conn, disable_data_check)
     metadata.add_optional_job_metadata(metadata_conn, command, run_id,
                                        refreshed_data=force_refresh,
                                        month=month,
                                        year=year,
                                        report_schema_version=report_schema_version,
                                        output_dir=os.path.abspath(str(output_dir)))
-    report_dir = _make_report_directory(ctx, output_dir, run_id, conn, config, year=year, month=month)
+    report_dir = make_report_directory(ctx, output_dir, run_id, conn, config, year=year, month=month)
     report_metadata = []
 
     with utils.CodeProfiler() as cp:
         country_name = config.region_config.name
         logger.info('Generating country per-condition IMEI overlap reports (classified IMEIs seen on more than '
-                    'one MNO\'s network this month...')
+                    "one MNO\'s network this month...")
         cond_names = [c.label for c in config.conditions]
-        report_metadata.extend(_write_condition_imei_overlaps(conn, config, month, year, country_name,
-                                                              report_dir, cond_names))
+        report_metadata.extend(write_condition_imei_overlaps(conn, config, month, year, country_name,
+                                                             report_dir, cond_names))
     statsd.gauge('{0}runtime.per_report.condition_imei_overlaps'.format(metrics_run_root), cp.duration)
 
     # Store metadata about the report data ID and classification run ID
@@ -818,93 +545,42 @@ def condition_imei_overlaps(ctx, config, statsd, logger, run_id, conn, metadata_
               help='Specify a comma-separated list of condition names if you wish to filter by those conditions.',
               callback=common.validate_conditions,
               default=None)
-def stolen_violations(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root,
-                      metrics_run_root, output_dir, newer_than, filter_by_conditions):
-    """Generate per-MNO list of IMEIs seen on the network after they were reported stolen."""
-    _operators_configured_check(config, logger)
+def stolen_violations(ctx: callable, config: callable, statsd: callable, logger: callable, run_id: int, conn: callable,
+                      metadata_conn: callable, command: str, metrics_root: callable, metrics_run_root: callable,
+                      output_dir: str, newer_than: str, filter_by_conditions: list) -> None:
+    """Generate per-MNO list of IMEIs seen on the network after they were reported stolen.
+
+    Arguments:
+        ctx: click context object
+        config: DIRBS config object
+        statsd: DIRBS statsd connection object
+        logger: DIRBS custom logger object
+        run_id: run id of the current job
+        conn: DIRBS PostgreSQL connection object
+        metadata_conn: DIRBS PostgreSQL metadata connection object
+        command: name of the command
+        metrics_root: root object for the statsd metrics
+        metrics_run_root: root object for the statsd run metrics
+        output_dir: output directory path
+        newer_than: violation newer then this date
+        filter_by_conditions: list of condition to filter by
+    Returns:
+        None
+    """
+    operators_configured_check(config, logger)
     metadata.add_optional_job_metadata(metadata_conn, command, run_id,
                                        report_schema_version=report_schema_version,
                                        output_dir=os.path.abspath(str(output_dir)))
 
-    report_dir = _make_report_directory(ctx, output_dir, run_id, conn, config)
+    report_dir = make_report_directory(ctx, output_dir, run_id, conn, config)
 
     with utils.CodeProfiler() as cp:
-        logger.info('Generating per-MNO stolen list violations reports...')
-        with contextlib.ExitStack() as stack:
-            # Push files into exit stack so that they will all be closed.
-            operator_ids = [o.id for o in config.region_config.operators]
-            filename_op_map = {'stolen_violations_{0}.csv'.format(o): o for o in operator_ids}
-            opname_file_map = {o: stack.enter_context(open(os.path.join(report_dir, fn), 'w', encoding='utf8'))
-                               for fn, o in filename_op_map.items()}
-            # Create a map from operator name to csv writer
-            opname_csvwriter_map = {o: csv.writer(opname_file_map[o]) for o in operator_ids}
-            # Write the header to each csvwriter
-            for _, writer in opname_csvwriter_map.items():
-                writer.writerow(['imei_norm', 'last_seen', 'reporting_date'])
-
-            # Run a query to find all the classified IMEIs seen on multiple operators
-            blacklist_violations_grace_period_days = config.report_config.blacklist_violations_grace_period_days
-            with conn.cursor() as cursor:
-                query = sql.SQL("""SELECT imei_norm, last_seen, reporting_date, operator_id
-                                     FROM (SELECT imei_norm, MIN(reporting_date) AS reporting_date
-                                             FROM stolen_list
-                                         GROUP BY imei_norm) AS stolen_imeis
-                                     JOIN LATERAL (
-                                           SELECT imei_norm, operator_id, MAX(last_seen) AS last_seen
-                                             FROM monthly_network_triplets_per_mno_no_null_imeis nt
-                                            WHERE imei_norm = stolen_imeis.imei_norm
-                                              AND virt_imei_shard = calc_virt_imei_shard(stolen_imeis.imei_norm)
-                                         GROUP BY imei_norm, operator_id) network_imeis
-                                    USING (imei_norm)
-                                    WHERE network_imeis.last_seen > stolen_imeis.reporting_date + %s
-                                          {0}
-                                          {1}""")
-
-                if filter_by_conditions:
-                    cond_filter_query = """AND EXISTS(SELECT 1
-                                                        FROM classification_state
-                                                       WHERE imei_norm = stolen_imeis.imei_norm
-                                                         AND virt_imei_shard =
-                                                                calc_virt_imei_shard(stolen_imeis.imei_norm)
-                                                         AND cond_name IN %s
-                                                         AND end_date IS NULL)"""
-                    sql_bytes = cursor.mogrify(cond_filter_query, [tuple([c.label for c in filter_by_conditions])])
-                    conditions_filter_sql = sql.SQL(str(sql_bytes, conn.encoding))
-                else:
-                    conditions_filter_sql = sql.SQL('')
-
-                if newer_than:
-                    newer_than_query = 'AND last_seen > %s'
-                    sql_bytes = cursor.mogrify(newer_than_query, [newer_than])
-                    date_filter_sql = sql.SQL(str(sql_bytes, conn.encoding))
-                else:
-                    date_filter_sql = sql.SQL('')
-
-                cursor.execute(query.format(conditions_filter_sql, date_filter_sql),
-                               [blacklist_violations_grace_period_days])
-                for res in cursor:
-                    opname_csvwriter_map[res.operator_id].writerow([res.imei_norm, res.last_seen.strftime('%Y%m%d'),
-                                                                    res.reporting_date.strftime('%Y%m%d')])
-
-        report_metadata = _gen_metadata_for_reports(list(filename_op_map.keys()), report_dir)
+        report_metadata = write_stolen_violations(config, logger, report_dir, conn, filter_by_conditions, newer_than)
 
     statsd.gauge('{0}runtime.per_report.blacklist_violations_stolen'.format(metrics_run_root), cp.duration)
 
     # Store metadata about the report data ID and classification run ID
     metadata.add_optional_job_metadata(metadata_conn, command, run_id, report_outputs=report_metadata)
-
-
-def _parse_positive_int(ctx, param, value):
-    """Helper function to parse a positive integer and return."""
-    try:
-        if value is not None:
-            parsed_value = int(value)
-            if parsed_value <= 0:
-                raise click.BadParameter('--period value must be greater than 0')
-            return parsed_value
-        raise click.BadParameter('--period is req')
-    except ValueError:
-        raise click.BadParameter('--period value must be positive integer')
 
 
 @cli.command(name='non_active_pairs')  # noqa: C901
@@ -913,11 +589,28 @@ def _parse_positive_int(ctx, param, value):
 @click.argument('period', callback=_parse_positive_int)
 @_parse_output_dir
 @common.cli_wrapper(command='dirbs-report', subcommand='non_active_pairs', required_role='dirbs_core_report')
-def non_active_pairs(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root,
-                     metrics_run_root, output_dir, period):
-    """Generate list of Non-Active pairs over specified period."""
-    metadata.add_optional_job_metadata(metadata_conn, command, run_id,
-                                       report_schema_version=report_schema_version,
+def non_active_pairs(ctx: callable, config: callable, statsd: callable, logger: callable, run_id: int,
+                     conn: callable, metadata_conn: callable, command: str, metrics_root: callable,
+                     metrics_run_root: callable, output_dir: str, period: int) -> None:
+    """Generate list of Non-Active pairs over specified period.
+
+    Arguments:
+        ctx: click context object
+        config: DIRBS config object
+        statsd: DIRBS statsd connection object
+        logger: DIRBS custom logger object
+        run_id: run id of the current job
+        conn: DIRBS PostgreSQL connection object
+        metadata_conn: DIRBS PostgreSQL metadata connection object
+        command: name of the command
+        metrics_root: root object for the statsd metrics
+        metrics_run_root: root object for the statsd run metrics
+        output_dir: output directory path
+        period: period in days for a pair being count as not active (not active for these many days)
+    Returns:
+        None
+    """
+    metadata.add_optional_job_metadata(metadata_conn, command, run_id, report_schema_version=report_schema_version,
                                        output_dir=os.path.abspath(str(output_dir)))
 
     current_date = datetime.date.today()
@@ -925,32 +618,10 @@ def non_active_pairs(ctx, config, statsd, logger, run_id, conn, metadata_conn, c
                                    current_date.month,
                                    current_date.day) - datetime.timedelta(period)
     logger.info('List of None-Active Pairs with last_seen less than {0} will be generated'.format(last_seen_date))
-    report_dir = _make_report_directory(ctx, output_dir, run_id, conn, config)
+    report_dir = make_report_directory(ctx, output_dir, run_id, conn, config)
 
     with utils.CodeProfiler() as cp:
-        logger.info('Generating Non-Active Pairs report...')
-        with open(os.path.join(report_dir, 'non_active_pairs_{0}.csv'.format(last_seen_date)),
-                  'w', encoding='utf-8') as pairs_file, conn.cursor() as cursor:
-            csv_writer = csv.DictWriter(pairs_file,
-                                        fieldnames=['imei_norm', 'imsi', 'last_seen'],
-                                        extrasaction='ignore')
-            csv_writer.writeheader()
-            cursor.execute(sql.SQL("""SELECT pl.imei_norm, pl.imsi, mnt.last_seen
-                                        FROM pairing_list AS pl
-                                  INNER JOIN monthly_network_triplets_country AS mnt
-                                             ON pl.imei_norm = mnt.imei_norm
-                                         AND pl.imsi = mnt.imsi
-                                       WHERE mnt.last_seen < %s"""), [last_seen_date])
-            num_written_records = 0
-            for row_data in cursor:
-                csv_writer.writerow(row_data._asdict())
-                num_written_records += 1
-
-            cursor.execute('SELECT COUNT(*) FROM pairing_list')
-            total_records = cursor.fetchone()[0]
-            logger.info('total_records: {0}, written_records: {1}'.format(total_records, num_written_records))
-
-        report_metadata = _gen_metadata_for_reports(['non_active_pairs_{0}.csv'.format(last_seen_date)], report_dir)
+        report_metadata = write_non_active_pairs(conn, logger, report_dir, last_seen_date)
 
     statsd.gauge('{0}runtime.per_report.non_active_pairs'.format(metrics_run_root), cp.duration)
     metadata.add_optional_job_metadata(metadata_conn, command, run_id, report_outputs=report_metadata)
@@ -966,54 +637,35 @@ def non_active_pairs(ctx, config, statsd, logger, run_id, conn, metadata_conn, c
               default=None,
               callback=common.validate_date,
               help='Include imsis only when observed date on network is newer than this date (YYYYMMDD).')
-def unregistered_subscribers(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root,
-                             metrics_run_root, output_dir, newer_than):
-    """Generate per-MNO list of IMSIs that are not registered in subscribers list."""
-    _operators_configured_check(config, logger)
+def unregistered_subscribers(ctx: callable, config: callable, statsd: callable, logger: callable, run_id: int,
+                             conn: callable, metadata_conn: callable, command: str, metrics_root: callable,
+                             metrics_run_root: callable, output_dir: str, newer_than: str):
+    """Generate per-MNO list of IMSIs that are not registered in subscribers list.
+
+    Arguments:
+        ctx: click context object
+        config: DIRBS config object
+        statsd: DIRBS statsd connection object
+        logger: DIRBS custom logger object
+        run_id: run id of the current job
+        conn: DIRBS PostgreSQL connection object
+        metadata_conn: DIRBS PostgreSQL metadata connection object
+        command: name of the command
+        metrics_root: root object for the statsd metrics
+        metrics_run_root: root object for the statsd run metrics
+        output_dir: output directory path
+        newer_than: violation newer then this date
+    Returns:
+        None
+    """
+    operators_configured_check(config, logger)
     metadata.add_optional_job_metadata(metadata_conn, command, run_id,
                                        report_schema_version=report_schema_version,
                                        output_dir=os.path.abspath(str(output_dir)))
-    report_dir = _make_report_directory(ctx, output_dir, run_id, conn, config)
+    report_dir = make_report_directory(ctx, output_dir, run_id, conn, config)
 
     with utils.CodeProfiler() as cp:
-        logger.info('Generating per-MNO unregistered subscribers list...')
-        with contextlib.ExitStack() as stack:
-            # push files to the exit stack so that they will all be closed properly.
-            operator_ids = [o.id for o in config.region_config.operators]
-            filename_op_map = {'unregistered_subscribers_{0}.csv'.format(o): o for o in operator_ids}
-            opname_file_map = {o: stack.enter_context(open(os.path.join(report_dir, fn), 'w', encoding='utf-8'))
-                               for fn, o in filename_op_map.items()}
-
-            # create a map from operator name to csv writer
-            opname_csvwriter_map = {o: csv.writer(opname_file_map[o]) for o in operator_ids}
-
-            # write the header to each file
-            for _, writer in opname_csvwriter_map.items():
-                writer.writerow(['imsi', 'first_seen', 'last_seen'])
-
-            # query to find all the unregistered imsis across the operators
-            with conn.cursor() as cursor:
-                query = sql.SQL("""SELECT imsi, first_seen, last_seen, operator_id
-                                     FROM monthly_network_triplets_per_mno_no_null_imeis AS mno
-                                    WHERE NOT EXISTS (SELECT 1
-                                                        FROM subscribers_registration_list
-                                                       WHERE imsi = mno.imsi) {0}""")
-
-                if newer_than:
-                    newer_than_query = 'AND last_seen > %s'
-                    sql_bytes = cursor.mogrify(newer_than_query, [newer_than])
-                    date_filter_sql = sql.SQL(str(sql_bytes, conn.encoding))
-                else:
-                    date_filter_sql = sql.SQL('')
-
-                cursor.execute(query.format(date_filter_sql))
-                for res in cursor:
-                    opname_csvwriter_map[res.operator_id].writerow([res.imsi,
-                                                                    res.first_seen.strftime('%Y%m%d'),
-                                                                    res.last_seen.strftime('%Y%m%d')])
-
-        logger.info('per-MNO unregistered subscribers list generated successfully')
-        report_metadata = _gen_metadata_for_reports(list(filename_op_map.keys()), report_dir)
+        report_metadata = write_un_registered_subscribers(logger, config, report_dir, conn, newer_than)
 
     statsd.gauge('{0}runtime.per_report.unregistered_subscribers'.format(metrics_run_root), cp.duration)
 
@@ -1027,50 +679,35 @@ def unregistered_subscribers(ctx, config, statsd, logger, run_id, conn, metadata
 @click.argument('conditions', callback=common.validate_conditions)
 @_parse_output_dir
 @common.cli_wrapper(command='dirbs-report', subcommand='classified_triplets', required_role='dirbs_core_report')
-def classified_triplets(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root,
-                        metrics_run_root, output_dir, conditions):
-    """Generate per-condition classified triplets list."""
+def classified_triplets(ctx: callable, config: callable, statsd: callable, logger: callable, run_id: int,
+                        conn: callable, metadata_conn: callable, command: str, metrics_root: callable,
+                        metrics_run_root: callable, output_dir: str, conditions: list) -> None:
+    """Generate per-condition classified triplets list.
+
+    Arguments:
+        ctx: click context object
+        config: DIRBS config object
+        statsd: DIRBS statsd connection object
+        logger: DIRBS custom logger object
+        run_id: run id of the current job
+        conn: DIRBS PostgreSQL connection object
+        metadata_conn: DIRBS PostgreSQL metadata connection object
+        command: name of the command
+        metrics_root: root object for the statsd metrics
+        metrics_run_root: root object for the statsd run metrics
+        output_dir: output directory path
+        conditions: list of conditions for classified triplets
+    Returns:
+        None
+    """
     metadata.add_optional_job_metadata(metadata_conn, command, run_id,
                                        report_schema_version=report_schema_version,
                                        output_dir=os.path.abspath(str(output_dir)))
-    report_dir = _make_report_directory(ctx, output_dir, run_id, conn, config)
+    report_dir = make_report_directory(ctx, output_dir, run_id, conn, config)
 
     with utils.CodeProfiler() as cp:
-        logger.info('Generating per-condition classified triplets list...')
-        with contextlib.ExitStack() as stack:
-            # push files to the exit stack, to close them properly
-            condition_labels = [c.label for c in conditions]
-            filename_cond_map = {'classified_triplets_{0}.csv'.format(c): c for c in condition_labels}
-            cond_label_file_map = {c: stack.enter_context(open(os.path.join(report_dir, fn), 'w', encoding='utf-8'))
-                                   for fn, c in filename_cond_map.items()}
+        report_metadata = write_classified_triplets(logger, conditions, report_dir, conn)
 
-            # create mapping between condition label and csv writer
-            cond_label_csvwriter_map = {c: csv.writer(cond_label_file_map[c]) for c in condition_labels}
-
-            # write headers to the files
-            for _, writer in cond_label_csvwriter_map.items():
-                writer.writerow(['imei', 'imsi', 'msisdn', 'operator'])
-
-            # run query to find all classified triplets for the given conditions
-            with conn.cursor() as cursor:
-                query = """SELECT cs.imei_norm AS imei, cs.cond_name, mno.imsi,
-                                  mno.msisdn, mno.operator_id AS operator
-                             FROM classification_state AS cs
-                       INNER JOIN monthly_network_triplets_per_mno_no_null_imeis AS mno
-                                  ON mno.imei_norm = cs.imei_norm
-                            WHERE cs.cond_name IN %s
-                              AND cs.virt_imei_shard = calc_virt_imei_shard(cs.imei_norm)
-                              AND cs.end_date IS NULL
-                              AND mno.virt_imei_shard = calc_virt_imei_shard(mno.imei_norm)"""  # noqa: Q440
-                sql_bytes = cursor.mogrify(query, [tuple([c for c in condition_labels])])
-                query = sql.SQL(str(sql_bytes, conn.encoding))
-                cursor.execute(query)
-
-                for res in cursor:
-                    cond_label_csvwriter_map[res.cond_name].writerow([res.imei, res.imsi, res.msisdn, res.operator])
-            logger.info('Per-condition classified triplets list generated successfully.')
-
-        report_metadata = _gen_metadata_for_reports(list(filename_cond_map.keys()), report_dir)
     statsd.gauge('{0}runtime.per_report.classified_triplets'.format(metrics_run_root), cp.duration)
     metadata.add_optional_job_metadata(metadata_conn, command, run_id, report_outputs=report_metadata)
 
@@ -1082,44 +719,35 @@ def classified_triplets(ctx, config, statsd, logger, run_id, conn, metadata_conn
 @_parse_year
 @_parse_output_dir
 @common.cli_wrapper(command='dirbs-report', subcommand='blacklist_violations', required_role='dirbs_core_report')
-def blacklist_violations(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root,
-                         metrics_run_root, output_dir, month, year):
-    """Generate per-operator blacklist violations."""
+def blacklist_violations(ctx: callable, config: callable, statsd: callable, logger: callable, run_id: int,
+                         conn: callable, metadata_conn: callable, command: str, metrics_root: callable,
+                         metrics_run_root: callable, output_dir: str, month: int, year: int) -> None:
+    """Generate per-operator blacklist violations.
+
+    Arguments:
+        ctx: click context object
+        config: DIRBS config object
+        statsd: DIRBS statsd connection object
+        logger: DIRBS custom logger object
+        run_id: run id of the current job
+        conn: DIRBS PostgreSQL connection object
+        metadata_conn: DIRBS PostgreSQL metadata connection object
+        command: name of the command
+        metrics_root: root object for the statsd metrics
+        metrics_run_root: root object for the statsd run metrics
+        output_dir: output directory path
+        month: reporting month
+        year: reporting year
+    Returns:
+        None
+    """
     metadata.add_optional_job_metadata(metadata_conn, command, run_id,
                                        report_schema_version=report_schema_version,
                                        output_dir=os.path.abspath(str(output_dir)))
-    report_dir = _make_report_directory(ctx, output_dir, run_id, conn, config)
+    report_dir = make_report_directory(ctx, output_dir, run_id, conn, config)
 
     with utils.CodeProfiler() as cp:
-        logger.info('Generating per-MNO blacklist violations...')
-        with contextlib.ExitStack() as stack:
-            # push files to the stack to handle
-            operator_ids = [o.id for o in config.region_config.operators]
-            filename_op_map = {'blacklist_violations_{0}.csv'.format(o): o for o in operator_ids}
-            opname_file_map = {o: stack.enter_context(open(os.path.join(report_dir, fn), 'w', encoding='utf-8'))
-                               for fn, o in filename_op_map.items()}
-            opname_csvwriter_map = {o: csv.writer(opname_file_map[o]) for o in operator_ids}
-
-            # write the headers
-            for _, writer in opname_csvwriter_map.items():
-                writer.writerow(['imei', 'last_seen'])
-
-            # query to find blacklist violations
-            with conn.cursor() as cursor:
-                cursor.execute("""SELECT imei_norm AS imei, last_seen, operator_id
-                                    FROM classification_state
-                                    JOIN monthly_network_triplets_per_mno_no_null_imeis
-                                   USING (imei_norm)
-                                   WHERE triplet_month = %s
-                                     AND triplet_year = %s
-                                     AND end_date IS NULL
-                                     AND block_date IS NOT NULL
-                                     AND last_seen > block_date""",
-                               [month, year])
-                for res in cursor:
-                    opname_csvwriter_map[res.operator_id].writerow([res.imei, res.last_seen])
-            logger.info('Per-MNO blacklist violation generated successfully.')
-        report_metadata = _gen_metadata_for_reports(list(filename_op_map.keys()), report_dir)
+        report_metadata = write_blacklist_violations(logger, config, report_dir, conn, month, year)
     statsd.gauge('{0}runtime.per_report.blacklist_violation'.format(metrics_run_root), cp.duration)
     metadata.add_optional_job_metadata(metadata_conn, command, run_id, report_outputs=report_metadata)
 
@@ -1130,48 +758,36 @@ def blacklist_violations(ctx, config, statsd, logger, run_id, conn, metadata_con
 @_parse_month
 @_parse_year
 @_parse_output_dir
-@common.cli_wrapper(command='dirbs-report',
-                    subcommand='association_list_violations',
+@common.cli_wrapper(command='dirbs-report', subcommand='association_list_violations',
                     required_role='dirbs_core_report')
-def association_list_violations(ctx, config, statsd, logger, run_id, conn, metadata_conn, command, metrics_root,
-                                metrics_run_root, output_dir, month, year):
-    """Generate per-operator association list violations (UID-IMEI-IMSI)."""
+def association_list_violations(ctx: callable, config: callable, statsd: callable, logger: callable, run_id: int,
+                                conn: callable, metadata_conn: callable, command: str, metrics_root: callable,
+                                metrics_run_root: callable, output_dir: str, month: int, year: int):
+    """Generate per-operator association list violations (UID-IMEI-IMSI).
+
+    Arguments:
+        ctx: click context object
+        config: DIRBS config object
+        statsd: DIRBS statsd connection object
+        logger: DIRBS custom logger object
+        run_id: run id of the current job
+        conn: DIRBS PostgreSQL connection object
+        metadata_conn: DIRBS PostgreSQL metadata connection object
+        command: name of the command
+        metrics_root: root object for the statsd metrics
+        metrics_run_root: root object for the statsd run metrics
+        output_dir: output directory path
+        month: reporting month
+        year: reporting year
+    Returns:
+        None
+    """
     metadata.add_optional_job_metadata(metadata_conn, command, run_id,
                                        report_schema_version=report_schema_version,
                                        output_dir=os.path.abspath(str(output_dir)))
-    report_dir = _make_report_directory(ctx, output_dir, run_id, conn, config)
+    report_dir = make_report_directory(ctx, output_dir, run_id, conn, config)
 
     with utils.CodeProfiler() as cp:
-        logger.info('Generating per-MNO association list violations...')
-        with contextlib.ExitStack() as stack:
-            operator_ids = [o.id for o in config.region_config.operators]
-            filename_op_map = {'association_violations_{0}.csv'.format(o): o for o in operator_ids}
-            opname_file_map = {o: stack.enter_context(open(os.path.join(report_dir, fn), 'w', encoding='utf-8'))
-                               for fn, o in filename_op_map.items()}
-            opname_csvwriter_map = {o: csv.writer(opname_file_map[o]) for o in operator_ids}
-
-            for _, writer in opname_csvwriter_map.items():
-                writer.writerow(['imei', 'imsi', 'msisdn', 'first_seen', 'last_seen'])
-
-            with conn.cursor() as cursor:
-                cursor.execute("""SELECT imei_norm imei, imsi, msisdn, first_seen, last_seen, operator_id
-                                    FROM monthly_network_triplets_per_mno_no_null_imeis mno
-                                   WHERE NOT EXISTS(SELECT 1
-                                                      FROM (SELECT imei_norm, imsi
-                                                              FROM device_association_list dal
-                                                        INNER JOIN subscribers_registration_list srl
-                                                                   ON dal.uid = srl.uid) association
-                                                     WHERE mno.imei_norm = association.imei_norm
-                                                       AND mno.imsi = association.imsi)
-                                     AND mno.triplet_month = %s
-                                     AND mno.triplet_year = %s""", [month, year])
-                for res in cursor:
-                    opname_csvwriter_map[res.operator_id].writerow([res.imei,
-                                                                    res.imsi,
-                                                                    res.msisdn,
-                                                                    res.first_seen,
-                                                                    res.last_seen])
-            logger.info('Per-MNO association list violations list generated successfully.')
-        report_metadata = _gen_metadata_for_reports(list(filename_op_map.keys()), report_dir)
+        report_metadata = write_association_list_violations(logger, config, report_dir, conn, month, year)
     statsd.gauge('{0}runtime.per_report.association_list_violations'.format(metrics_run_root), cp.duration)
     metadata.add_optional_job_metadata(metadata_conn, command, run_id, report_outputs=report_metadata)

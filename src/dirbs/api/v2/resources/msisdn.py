@@ -1,7 +1,7 @@
 """
 DIRBS REST-ful MSISDN API module.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -30,18 +30,21 @@ BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 """
+
+from typing import Union
+
 from flask import abort, jsonify
 
 from dirbs.api.common.db import get_db_connection
 from dirbs.api.v2.schemas.msisdn import MSISDN
 
 
-def msisdn_api(msisdn):
+def msisdn_api(msisdn: str) -> Union[abort, jsonify]:
     """
     MSISDN API (version 2) GET endpoint.
 
-    :param msisdn: MSISDN
-    :return: json
+    Arguments:
+        msisdn: 15 digits MSISDN value
     """
     if len(msisdn) > 15:
         abort(400, 'Bad MSISDN format (too long)')

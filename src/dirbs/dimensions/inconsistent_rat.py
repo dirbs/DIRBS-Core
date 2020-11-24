@@ -1,7 +1,7 @@
 """
 DIRBS dimension function for IMEIs connecting to RAT greater than device capability based on GSMA TAC database.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -94,8 +94,8 @@ class InconsistentRAT(Dimension):
                            ON imei_rat.tac = gsma_per_tac_bitmask.tac
                 WHERE ((device_rat_bitmask & 48) > 0 AND (model_rat_bitmask & 64) = 0)
                    OR ((device_rat_bitmask & 960) > 0 AND (model_rat_bitmask & 512) = 0)
-                   OR ((device_rat_bitmask & 7168) > 0 AND (model_rat_bitmask & 4096) = 0)"""  # noqa: Q447
-            ).format(network_imeis_shard=sql.Identifier(network_imeis_shard)).as_string(conn)
+                   OR ((device_rat_bitmask & 7168) > 0 AND (model_rat_bitmask & 4096) = 0)""").format(  # noqa: Q447
+            network_imeis_shard=sql.Identifier(network_imeis_shard)).as_string(conn)
 
 
 dimension = InconsistentRAT

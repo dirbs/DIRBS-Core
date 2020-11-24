@@ -1,7 +1,7 @@
 """
 DIRBS base dimension functionality shared by all dimensions.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -89,7 +89,7 @@ class Dimension(object):
                                   WHERE NOT EXISTS(SELECT imei_norm
                                                      FROM ({base_dim_sql}) base
                                                     WHERE imei_norm = {network_imeis_shard}.imei_norm)
-                              """).format(network_imeis_shard=sql.Identifier(network_imeis_shard),
+                              """).format(network_imeis_shard=sql.Identifier(network_imeis_shard),  # noqa: Q449
                                           base_dim_sql=sql.SQL(base_sql))
         else:
             dim_sql = sql.SQL(base_sql)
