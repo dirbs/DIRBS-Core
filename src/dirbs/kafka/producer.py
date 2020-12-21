@@ -31,6 +31,7 @@ BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 POSSIBILITY OF SUCH DAMAGE.
 """
 
+import ssl
 import json
 
 from kafka import KafkaProducer
@@ -42,12 +43,30 @@ class KProducer:
 
     # TODO: add support for multiple topics
 
-    def __init__(self, config, kafka_host, kafka_port, logger):
-        """Constructor."""
+    def __init__(self, config, kafka_host, kafka_port, logger, security_protocol='PLAINTEXT',
+                 client_certificate=None, client_key=None, caroot_certificate=None, skip_tls_verifications=False):
+        """Constructor.
+
+        Arguments:
+            config: DIRBS required config object
+            kafka_host: hostname or ip address of the kafka server
+            kafka_port: port of the kafka host
+            logger: DIRBS logger object
+            security_protocol: security protocol for communication, currently only PLAIN & SSL are supported
+            client_certificate: client certificate (.pem) file signed by the CA
+            client_key: client private key (.pem)
+            caroot_certificate: CARoot certificate (.pem) file
+            skip_tls_verifications: (True/False), should only be used in dev env, typically for self signed cert error
+        """
         self._config = config
         self._host = kafka_host
         self._port = kafka_port
         self._logger = logger
+        self._security_protocol = security_protocol
+        self._client_cert = client_certificate
+        self._client_key = client_key
+        self._caroot_cert = caroot_certificate
+        self._skip_tls_verification = skip_tls_verifications
 
     @property
     def kafka_host(self):
@@ -69,8 +88,28 @@ class KProducer:
         try:
             self._logger.info('Creating new KAFKA producer on host {0}'.format(
                 self.bootstrap_server_addr))
-            return KafkaProducer(bootstrap_servers=self.bootstrap_server_addr,
-                                 value_serializer=lambda m: json.dumps(m).encode('utf-8'))
+
+            if self._security_protocol == 'PLAINTEXT':
+                return KafkaProducer(bootstrap_servers=self.bootstrap_server_addr,
+                                     security_protocol=self._security_protocol,
+                                     value_serializer=lambda m: json.dumps(m).encode('utf-8'))
+            else:
+                ssl_ctx = ssl.create_default_context()
+                ssl_ctx.options &= ssl.OP_NO_TLSv1
+                ssl_ctx.options &= ssl.OP_NO_TLSv1_1
+
+                # this is strictly for dev purposes, where we need the self signed cert to be working
+                if self._skip_tls_verification:
+                    ssl_ctx.check_hostname = False
+                    ssl_ctx.verify_mode = ssl.CERT_NONE
+
+                return KafkaProducer(bootstrap_servers=self.bootstrap_server_addr,
+                                     security_protocol=self._security_protocol,
+                                     ssl_context=ssl_ctx,
+                                     ssl_cafile=self._caroot_cert,
+                                     ssl_certfile=self._client_cert,
+                                     ssl_keyfile=self._client_key,
+                                     value_serializer=lambda m: json.dumps(m).encode('utf-8'))
         except NoBrokersAvailable as e:
             self._logger.info('No Broker {0} available, check if hostname and port is right...'
                               .format(self.bootstrap_server_addr))

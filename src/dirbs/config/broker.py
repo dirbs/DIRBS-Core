@@ -74,6 +74,28 @@ class KafkaConfig(ConfigSection):
         self.port = self._parse_positive_int('port')
         self.topic = self._parse_string('topic')
 
+        # protocol and checks, plain and ssl only
+        self.security_protocol = self._parse_string('security_protocol').upper()
+        if self.security_protocol not in ['SSL', 'PLAINTEXT']:
+            msg = 'Invalid security protocol specified, use one on [PLAIN, SSL] only'
+            _logger.error(msg)
+            raise ConfigParseException(msg)
+
+        # if security protocol is set to SSL then verify the required options
+        if self.security_protocol == 'SSL':
+            self.client_certificate = self._parse_file_path('client_certificate', ext='.pem')
+            self.client_key = self._parse_file_path('client_key', ext='.pem')
+            self.caroot_certificate = self._parse_file_path('caroot_certificate', ext='.pem')
+            self.skip_tls_verifications = self._parse_bool('skip_tls_verifications')
+
+            if self.skip_tls_verifications is True:
+                _logger.warning('TLS verifications should only be turned off in DEV Env, '
+                                'not recommended for production environment')
+        # if security protocol is set to PLAIN show warning
+        else:
+            _logger.warning('Security protocol is set to PLAIN, which is not recommended in production'
+                            'environment')
+
     @property
     def section_name(self):
         """Property for the section name."""
@@ -90,7 +112,12 @@ class KafkaConfig(ConfigSection):
         return {
             'hostname': 'localhost',
             'port': 9092,
-            'topic': 'dirbs'
+            'topic': 'dirbs',
+            'security_protocol': 'PLAIN',
+            'skip_tls_verifications': False,
+            'client_certificate': None,
+            'client_key': None,
+            'caroot_certificate': None
         }
 
     @property
@@ -99,7 +126,11 @@ class KafkaConfig(ConfigSection):
         return {
             'hostname': 'DIRBS_KAFKA_HOST',
             'port': 'DIRBS_KAFKA_PORT',
-            'topic': 'DIRBS_KAFKA_TOPIC'
+            'topic': 'DIRBS_KAFKA_TOPIC',
+            'security_protocol': 'DIRBS_KAFKA_PROTOCOL',
+            'client_certificate': 'DIRBS_KAFKA_CLIENT_CERT',
+            'client_key': 'DIRBS_KAFKA_CLIENT_KEY',
+            'caroot_certificate': 'DIRBS_KAFKA_CAROOT_CERT'
         }
 
 

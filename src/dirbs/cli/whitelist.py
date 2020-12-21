@@ -46,23 +46,60 @@ from dirbs.kafka import consumer, producer
 
 
 def create_kafka_consumer(logger, config):
-    """Method to create a single high level KAFKA Consumer."""
+    """Method to create a single high level KAFKA Consumer.
+
+    Arguments:
+        logger: DIRBS logger object
+        config: DIRBS config object
+    """
     kafka_config = config.broker_config.kafka
     logger.info("Creating a single high level consumer on topic \'{0}\'".format(kafka_config.topic))
-    c_obj = consumer.KConsumer(config, kafka_config.hostname, kafka_config.port, kafka_config.topic, logger)
-    return c_obj.create_consumer()
+
+    cons = consumer.KConsumer(config=config,
+                              kafka_host=kafka_config.hostname,
+                              kafka_port=kafka_config.port,
+                              kafka_topic=kafka_config.topic,
+                              logger=logger,
+                              security_protocol=kafka_config.security_protocol,
+                              client_certificate=kafka_config.client_certificate,
+                              client_key=kafka_config.client_key,
+                              caroot_certificate=kafka_config.caroot_certificate,
+                              skip_tls_verifications=kafka_config.skip_tls_verifications)
+    return cons.create_consumer()
 
 
 def create_kafka_producer(logger, config):
-    """Method to create a high level producer."""
+    """Method to create a high level producer.
+
+    Arguments:
+        logger: DIRBS logger object
+        config: DIRBS config object
+    """
     kafka_config = config.broker_config.kafka
     logger.info("Creating a high level producer on KAFKA host \'{0}\'".format(kafka_config.hostname))
-    p_obj = producer.KProducer(config, kafka_config.hostname, kafka_config.port, logger)
-    return p_obj.create_producer()
+    prod = producer.KProducer(config=config,
+                              kafka_host=kafka_config.hostname,
+                              kafka_port=kafka_config.port,
+                              logger=logger,
+                              security_protocol=kafka_config.security_protocol,
+                              client_certificate=kafka_config.client_certificate,
+                              client_key=kafka_config.client_key,
+                              caroot_certificate=kafka_config.caroot_certificate,
+                              skip_tls_verifications=kafka_config.skip_tls_verifications)
+    return prod.create_producer()
 
 
 def broadcast_notification(imei_norm, operator_id, producer, broadcast_type, operator_config, logger):
-    """Broadcast IMEI association message to operators other than the operator_id."""
+    """Broadcast IMEI association message to operators other than the operator_id.
+
+    Arguments:
+        imei_norm: normalized IMEI to notify about
+        operator_id: ID of operator not to be notified
+        producer: kafka producer object
+        broadcast_type: type of the broadcast [association, de-association]
+        operator_config: kafka operator config object
+        logger: DIRBS logger object
+    """
     if broadcast_type == 'association':
         message = {
             'type': 'imei_association_notification',
