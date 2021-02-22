@@ -36,6 +36,7 @@ import re
 import collections
 import logging
 from datetime import datetime
+from pathlib import Path
 
 _logger = logging.getLogger('dirbs.config')
 
@@ -124,6 +125,26 @@ class ConfigSection:
             msg = '{0}: {1} value "{2}" must be an integer value'\
                   .format(self.section_name, propname, self.raw_config[propname])
             _logger.error((msg))
+            raise ConfigParseException(msg)
+
+    def _parse_file_path(self, propname, ext=None):
+        """Helper function to parse a valid file path. If ext is defined then check for the suffix as well."""
+        try:
+            self._check_for_missing_propname(propname)
+            self._parse_string(propname)
+            file_path = Path(self.raw_config[propname])
+            resolved_path = file_path.resolve(strict=True)
+
+            if ext is not None:
+                if resolved_path.suffix != ext:
+                    msg = 'Invalid file type or extension, required is {0}'.format(ext)
+                    _logger.error(msg)
+                    raise ConfigParseException(msg)
+            return resolved_path
+        except FileNotFoundError:
+            msg = '{0}:{1} value is not valid, either file does not exists or permission issue'\
+                .format(self.section_name, propname)
+            _logger.error(msg)
             raise ConfigParseException(msg)
 
     def _parse_float_ratio(self, propname):

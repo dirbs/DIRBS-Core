@@ -31,6 +31,7 @@ BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 POSSIBILITY OF SUCH DAMAGE.
 """
 
+import ssl
 import json
 
 from kafka import KafkaConsumer
@@ -42,13 +43,32 @@ class KConsumer:
 
     # TODO: add support for multiple topics
 
-    def __init__(self, config, kafka_host, kafka_port, kafka_topic, logger):
-        """Constructor."""
+    def __init__(self, config, kafka_host, kafka_port, kafka_topic, logger, security_protocol='PLAINTEXT',
+                 client_certificate=None, client_key=None, caroot_certificate=None, skip_tls_verifications=False):
+        """Constructor.
+
+        Arguments:
+            config: DIRBS required config object
+            kafka_host: hostname or ip address of the kafka server
+            kafka_port: port of the kafka host
+            kafka_topic: topic name to consume from
+            logger: DIRBS logger object
+            security_protocol: security protocol for communication, currently only PLAIN & SSL are supported
+            client_certificate: client certificate (.pem) file signed by the CA
+            client_key: client private key (.pem)
+            caroot_certificate: CARoot certificate (.pem) file
+            skip_tls_verifications: (True/False), should only be used in dev env, typically for self signed cert error
+        """
         self._config = config
         self._host = kafka_host
         self._port = kafka_port
         self._topic = kafka_topic
         self._logger = logger
+        self._security_protocol = security_protocol
+        self._client_cert = client_certificate
+        self._client_key = client_key
+        self._caroot_cert = caroot_certificate
+        self._skip_tls_verification = skip_tls_verifications
 
     @property
     def kafka_host(self):
@@ -83,9 +103,34 @@ class KConsumer:
             self._logger.info('Creating new KAFKA consumer on host {0} using topic {1}'
                               .format(self.bootstrap_server_addr, self.kafka_topic))
 
-            return KafkaConsumer(self.kafka_topic, bootstrap_servers=[self.bootstrap_server_addr],
-                                 group_id=None, auto_offset_reset='latest',
-                                 value_deserializer=self._deserialize_value)
+            if self._security_protocol == 'PLAINTEXT':
+                return KafkaConsumer(self.kafka_topic,
+                                     group_id=None,
+                                     security_protocol=self._security_protocol,
+                                     auto_offset_reset='latest',
+                                     value_deserializer=self._deserialize_value,
+                                     bootstrap_servers=[self.bootstrap_server_addr])
+            else:
+                ssl_ctx = ssl.create_default_context()
+                ssl_ctx.options &= ssl.OP_NO_TLSv1
+                ssl_ctx.options &= ssl.OP_NO_TLSv1_1
+
+                # this is strictly for dev purposes, where we need the self signed cert to be working
+                if self._skip_tls_verification:
+                    ssl_ctx.check_hostname = False
+                    ssl_ctx.verify_mode = ssl.CERT_NONE
+
+                return KafkaConsumer(self.kafka_topic,
+                                     bootstrap_servers=[self.bootstrap_server_addr],
+                                     security_protocol=self._security_protocol,
+                                     ssl_context=ssl_ctx,
+                                     ssl_cafile=self._caroot_cert,
+                                     ssl_certfile=self._client_cert,
+                                     ssl_keyfile=self._client_key,
+                                     group_id=None,
+                                     auto_offset_reset='latest',
+                                     value_deserializer=self._deserialize_value)
+
         except NoBrokersAvailable as e:
             self._logger.info('No Broker {0} available, check if hostname and port is right...'
                               .format(self.bootstrap_server_addr))
