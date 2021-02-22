@@ -40,6 +40,7 @@ import hashlib
 import datetime
 import contextlib
 
+import numpy as np
 from psycopg2 import sql
 from dateutil import relativedelta
 
@@ -801,3 +802,158 @@ def write_association_list_violations(logger: callable, config: callable, report
                                                                 res.last_seen])
         logger.info('Per-MNO association list violations list generated successfully.')
     return _gen_metadata_for_reports(list(filename_op_map.keys()), report_dir)
+
+
+def write_transient_msisdns(logger: callable, period: int, report_dir: str, conn: callable, config: callable,
+                            num_of_imeis: int, current_date: str = None):
+    """Helper method to write transient msisdns report.
+
+    Arguments:
+        logger: DIRBS logger object
+        period: analysis period in days
+        report_dir: output directory to write files into
+        conn: DIRBS postgresql connection object
+        config: DIRBS config object
+        num_of_imeis: Number of IMEIs to be seen with
+        current_date: setting custom current date for analysis
+    Returns:
+        Report metadata
+    """
+    logger.info('Generating per-operator possible transient MSISDNs list...')
+    with contextlib.ExitStack() as stack:
+        # push files to the exit stack so that they will closed properly at the end
+        operator_ids = [o.id for o in config.region_config.operators]
+        filename_op_map = {'transient_msisdns_{0}.csv'.format(o): o for o in operator_ids}
+        opname_file_map = {o: stack.enter_context(open(os.path.join(report_dir, fn), 'w', encoding='utf-8'))
+                           for fn, o in filename_op_map.items()}
+
+        # create a map from operator name to csv writer
+        opname_csvwriter_map = {o: csv.writer(opname_file_map[o]) for o in operator_ids}
+
+        # write header to each file
+        for _, writer in opname_csvwriter_map.items():
+            writer.writerow(['msisdn'])
+
+        # the operation begins here
+        # compute time periods for analysis
+        current_date = datetime.date.today() if current_date is None else current_date
+        analysis_end_date = utils.compute_analysis_end_date(conn, current_date)
+        analysis_start_date = analysis_end_date - relativedelta.relativedelta(days=period)
+        logger.debug('Analysis start date: {0}, analysis_end_date: {1}'.format(analysis_start_date, analysis_end_date))
+        with conn.cursor() as cursor:
+            # AND msisdn NOT IN(SELECT msisdn
+            #                     FROM monthly_network_triplets_country
+            #                    WHERE first_seen = last_seen
+            #                 GROUP BY msisdn
+            #                     HAVING COUNT(*) = 1)
+
+            query_bit_counts_in_period = sql.SQL("""SELECT msisdn, imeis_count, operator_id
+                                                      FROM (SELECT msisdn, operator_id, SUM(bit) AS imeis_count
+                                                              FROM (SELECT msisdn, operator_id,
+                                                                           get_bitmask_within_window(
+                                                                                date_bitmask,
+                                                                                first_seen,
+                                                                                last_seen,
+                                                                                {analysis_start_date},
+                                                                                {analysis_start_dom},
+                                                                                {analysis_end_date},
+                                                                                {analysis_end_dom}
+                                                                                ) AS date_bitmask
+                                                                      FROM monthly_network_triplets_per_mno
+                                                                     WHERE last_seen >= {analysis_start_date}
+                                                                       AND first_seen < {analysis_end_date}
+                                                                       AND is_valid_msisdn(msisdn)) mn
+                                                        CROSS JOIN generate_series(0, 30) AS i
+                                                        CROSS JOIN LATERAL get_bit(mn.date_bitmask::bit(31), i) AS bit
+                                                          GROUP BY msisdn, operator_id) AS msisdns_to_imeis
+                                                     WHERE imeis_count/{period} >= {num_of_imeis}""").format(
+                analysis_start_date=sql.Literal(analysis_start_date),
+                analysis_start_dom=sql.Literal(analysis_start_date.day),
+                analysis_end_date=sql.Literal(analysis_end_date),
+                analysis_end_dom=sql.Literal(analysis_end_date.day),
+                period=sql.Literal(period),
+                num_of_imeis=sql.Literal(num_of_imeis)
+            )
+            cursor.execute(query_bit_counts_in_period.as_string(conn))
+            msisdn_to_imei_count_map = [
+                {
+                    'msisdn': res.msisdn,
+                    'imei_count': res.imeis_count,
+                    'operator_id': res.operator_id
+                } for res in cursor]
+
+            possible_transients = []  # dict to identify possible transients based on tests
+            for val in msisdn_to_imei_count_map:
+                imei_extraction_query = sql.SQL("""SELECT DISTINCT imei_norm
+                                                     FROM monthly_network_triplets_country_no_null_imeis
+                                                    WHERE msisdn = {msisdn}
+                                                      AND last_seen >= {analysis_start_date}
+                                                      AND first_seen < {analysis_end_date}
+                                                 ORDER BY imei_norm ASC""").format(
+                    msisdn=sql.Literal(val.get('msisdn')),
+                    analysis_start_date=sql.Literal(analysis_start_date),
+                    analysis_end_date=sql.Literal(analysis_end_date)
+                )
+                cursor.execute(imei_extraction_query)
+                imei_list = [res.imei_norm for res in cursor if res.imei_norm.isnumeric()]
+                tac_list = [int(imei[:8]) for imei in imei_list]
+                imei_list = list(map(int, imei_list))
+
+                analysis_tests = {
+                    'identical_tac': False,
+                    'consecutive_tac': False,
+                    'arithmetic_tac': False,
+                    'consecutive_imei': False,
+                    'arithmetic_imei': False
+                }
+
+                logger.info('Performing TAC analysis on the data...')
+                if len(set(tac_list)) == 1:
+                    analysis_tests['identical_tac'] = True
+                else:
+                    if _have_consecutive_numbers(tac_list):
+                        analysis_tests['consecutive_tac'] = True
+
+                    if _is_arithmetic_series(tac_list):
+                        analysis_tests['arithmetic_tac'] = True
+
+                logger.info('Performing IMEIs analysis on data...')
+                if _have_consecutive_numbers(imei_list):
+                    analysis_tests['consecutive_imei'] = True
+
+                if _is_arithmetic_series(imei_list):
+                    analysis_tests['arithmetic_imei'] = True
+
+                if any(analysis_tests.values()):
+                    possible_transients.append(val)
+
+            for item in possible_transients:
+                opname_csvwriter_map[item.get('operator_id')].writerow([item.get('msisdn')])
+
+        logger.info('Per-MNO possible transient MSISDN lists generated successfully.')
+    return _gen_metadata_for_reports(list(filename_op_map.keys()), report_dir)
+
+
+def _have_consecutive_numbers(input_list: list):
+    """
+    Helper method to detect weather a list of numbers are consecutive in order.
+
+    Arguments:
+        input_list: input list of integers
+    Returns:
+        Boolean: True/False
+    """
+    return True if sum(np.diff(sorted(input_list))) == (len(input_list) - 1) else False
+
+
+def _is_arithmetic_series(input_list: list):
+    """
+    Helper method to detect weather a list of numbers are arithmetic in order.
+
+    Arguments:
+        input_list: input list of integers
+    Returns:
+        Boolean: True/False
+    """
+    diff_arr = np.diff(input_list)
+    return np.all(diff_arr == diff_arr[0])

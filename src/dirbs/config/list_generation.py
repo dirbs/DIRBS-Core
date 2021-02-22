@@ -1,7 +1,7 @@
 """
 DIRBS Core list-gen configuration section parser.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -61,5 +61,5 @@ class ListGenerationConfig(ConfigSection):
             'generate_check_digit': False,
             'output_invalid_imeis': True,
             'include_barred_imeis_in_exceptions_list': False,
-            'notify_imsi_change': False
+            'notify_imsi_change': True
         }

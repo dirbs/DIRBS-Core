@@ -69,7 +69,8 @@ class SchemaMigrator(dirbs.schema_migrators.AbstractMigrator):
 
             # copy data from original partition
             cursor.execute("""INSERT INTO historic_pairing_list_new
-                                   SELECT p.imei_norm, p.imsi, p.start_date, p.end_date, p.virt_imei_shard, m.msisdn
+                                   SELECT DISTINCT p.imei_norm, p.imsi, p.start_date, p.end_date, p.virt_imei_shard,
+                                          m.msisdn
                                      FROM historic_pairing_list p
                                INNER JOIN monthly_network_triplets_country m ON p.imsi = m.imsi""")
 

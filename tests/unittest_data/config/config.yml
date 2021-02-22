@@ -266,6 +266,23 @@ broker:
     # The topic DIRBS will use to receive notifications and requests from operators, overridden
     # by environment variable DIRBS_KAFKA_TOPIC if set.
     topic: test
+
+    # The configs below are used for SSL based KAFKA deployment, if enabled the system will use them to established
+    # connection to KAFKA using SSL.
+    # To set a security protocol mode, two available options right now, plain & ssl. If ssl is enabled the value beneath
+    # should be set accordingly. Default is set to plain, which means no ssl.
+    security_protocol: PLAINTEXT
+    # The path to the client certificate signed by the CA, which will be used for the SSL connection. This should be in
+    # .pem format. e.g client-cert.pem
+    #client_certificate: 'data/client-cert.pem'
+    # The path to the client key, it should be in .pem format
+    #client_key: 'data/client-key.pem'
+    # The path to the CARoot certificate. The valid format should be a .pem file.
+    #caroot_certificate: 'data/CARoot.pem'
+    # To weather skip tls verification or not. The default value is False. This should only be used in a dev env where
+    # one needs to use a self-signed certificates
+    #skip_tls_verifications: False
+
   # Definitions of EIR(s) with their respective operators and topic names to subscribe to
   operators:
     - id: operator1

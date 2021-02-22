@@ -79,7 +79,7 @@ audit:
 						   flake8-debugger==3.1.0 flake8-mutable==1.2.0 flake8-import-order==0.18.1 \
 						   flake8-pep3101==1.3.0 flake8-string-format==0.3.0 flake8-quotes==3.2.0 \
 						   flake8-docstrings==1.5.0 pydocstyle==5.0.2
-	flake8 src tests
+	flake8 src scripts tests
 	eslint src/dirbs/js/*.js
 
 

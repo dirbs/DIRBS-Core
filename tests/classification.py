@@ -1,7 +1,7 @@
 """
 Classification unit tests.
 
-Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2021 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -42,6 +42,7 @@ from click.testing import CliRunner
 
 from dirbs.cli.prune import cli as dirbs_prune_cli
 from dirbs.config.region import OperatorConfig
+from dirbs.config.common import ConfigParseException
 from dirbs.cli.classify import cli as dirbs_classify_cli
 from dirbs.importer.operator_data_importer import OperatorDataImporter
 from dirbs.importer.golden_list_importer import GoldenListImporter
@@ -2993,3 +2994,126 @@ def test_exists_in_monitoring_list_dim_with_param(per_test_postgres, db_conn, op
                                                                classify_options=['--no-safety-check'],
                                                                db_conn=db_conn, curr_date='20161110')
     assert matched_imeis == []
+
+
+@pytest.mark.parametrize('operator_data_importer',
+                         [OperatorDataParams(
+                             filename='transient_imei_operator1_20201201_20201231.csv',
+                             operator='1',
+                             extract=False,
+                             perform_leading_zero_check=False,
+                             mcc_mnc_pairs=[{'mcc': '111', 'mnc': '04'}],
+                             perform_unclean_checks=False,
+                             perform_file_daterange_check=False,
+                             perform_region_checks=False,
+                             perform_home_network_check=False,
+                             perform_historic_checks=False
+                         )],
+                         indirect=True)
+def test_transient_imei_dimension(per_test_postgres, db_conn, operator_data_importer, mocked_config, logger,
+                                  tmpdir, monkeypatch, metadata_db_conn, mocked_statsd):
+    """Verifies transient_imei_dimension."""
+    # param validation checks first
+    condition = [{
+        'label': 'transient_imei',
+        'reason': 'IMEI detect as transient',
+        'dimensions': [{
+            'module': 'transient_imei',
+            'parameters': {
+                'num_msisdns': 3
+            }
+        }],
+        'max_allowed_matching_ratio': 1.0,
+        'blocking': True,
+        'grace_period_days': 10
+    }]
+
+    # should raise Config parse exception on null period param
+    with pytest.raises(ConfigParseException):
+        invoke_cli_classify_with_conditions_helper(condition, mocked_config, monkeypatch,
+                                                   classify_options=['--no-safety-check'],
+                                                   db_conn=db_conn, curr_date='20201201')
+
+    # should raise Config parse exception on non int period param
+    condition = [{
+        'label': 'transient_imei',
+        'reason': 'IMEI detect as transient',
+        'dimensions': [{
+            'module': 'transient_imei',
+            'parameters': {
+                'num_msisdns': 3,
+                'period': 'A'
+            }
+        }],
+        'max_allowed_matching_ratio': 1.0,
+        'blocking': True,
+        'grace_period_days': 10
+    }]
+
+    with pytest.raises(ConfigParseException):
+        invoke_cli_classify_with_conditions_helper(condition, mocked_config, monkeypatch,
+                                                   classify_options=['--no-safety-check'],
+                                                   db_conn=db_conn, curr_date='20201201')
+
+        # should raise Config parse exception on null num_msisdns param
+        condition = [{
+            'label': 'transient_imei',
+            'reason': 'IMEI detect as transient',
+            'dimensions': [{
+                'module': 'transient_imei',
+                'parameters': {
+                    'period': 20
+                }
+            }],
+            'max_allowed_matching_ratio': 1.0,
+            'blocking': True,
+            'grace_period_days': 10
+        }]
+
+    with pytest.raises(ConfigParseException):
+        invoke_cli_classify_with_conditions_helper(condition, mocked_config, monkeypatch,
+                                                   classify_options=['--no-safety-check'],
+                                                   db_conn=db_conn, curr_date='20201201')
+
+    # should raise Config parse exception on non int num_msisdns param
+    condition = [{
+        'label': 'transient_imei',
+        'reason': 'IMEI detect as transient',
+        'dimensions': [{
+            'module': 'transient_imei',
+            'parameters': {
+                'num_msisdns': 'a',
+                'period': 20
+            }
+        }],
+        'max_allowed_matching_ratio': 1.0,
+        'blocking': True,
+        'grace_period_days': 10
+    }]
+
+    with pytest.raises(ConfigParseException):
+        invoke_cli_classify_with_conditions_helper(condition, mocked_config, monkeypatch,
+                                                   classify_options=['--no-safety-check'],
+                                                   db_conn=db_conn, curr_date='20201201')
+
+    # now a happy scenario, 1 imei detected as transient
+    operator_data_importer.import_data()
+    condition = [{
+        'label': 'transient_imei',
+        'reason': 'IMEI detect as transient',
+        'dimensions': [{
+            'module': 'transient_imei',
+            'parameters': {
+                'num_msisdns': 3,
+                'period': 30
+            }
+        }],
+        'max_allowed_matching_ratio': 1.0,
+        'blocking': True,
+        'grace_period_days': 10
+    }]
+
+    matched_imeis = invoke_cli_classify_with_conditions_helper(condition, mocked_config, monkeypatch,
+                                                               classify_options=['--no-safety-check'],
+                                                               db_conn=db_conn, curr_date='20201231')
+    assert matched_imeis == ['34444444444444']

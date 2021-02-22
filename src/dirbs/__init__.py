@@ -1,7 +1,7 @@
 """
 Top-level DIRBS package.
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -32,10 +32,10 @@ POSSIBILITY OF SUCH DAMAGE.
 """
 
 # Bump the version number as per semantic versioning guidelines
-__version__ = '14.1.0'
+__version__ = '15.0.0'
 
 # Bump this version everytime the schema is modified
-db_schema_version = 86
+db_schema_version = 87
 
 # Bump this version everytime the reports change in an incompatible way
 report_schema_version = 8

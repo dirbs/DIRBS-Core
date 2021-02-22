@@ -156,6 +156,9 @@ class AppConfig:
         self.statsd_config = StatsdConfig(ignore_env=ignore_env, **(yaml_config.get('statsd', {}) or {}))
         self.catalog_config = CatalogConfig(ignore_env=ignore_env, **(yaml_config.get('catalog', {}) or {}))
         self.amnesty_config = AmnestyConfig(ignore_env=ignore_env, **(yaml_config.get('amnesty', {}) or {}))
-        self.broker_config = BrokerConfig(ignore_env=ignore_env, **(yaml_config.get('broker', {}) or {}))
         self.operational_config = OperationalConfig(ignore_env=ignore_env,
                                                     **(yaml_config.get('operational', {}) or {}))
+
+        self.broker_config = BrokerConfig(
+            ignore_env=ignore_env,
+            **(yaml_config.get('broker', {}) or {})) if self.operational_config.activate_whitelist else None

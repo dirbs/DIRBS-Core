@@ -93,8 +93,8 @@ class KafkaConfig(ConfigSection):
                                 'not recommended for production environment')
         # if security protocol is set to PLAIN show warning
         else:
-            _logger.warning('Security protocol is set to PLAIN, which is not recommended in production'
-                            'environment')
+            _logger.warning('Security protocol in broker config is set to PLAIN, which is not recommended '
+                            'in production environment')
 
     @property
     def section_name(self):

@@ -46,7 +46,7 @@ from dirbs.reports import CountryReport, OperatorReport, generate_monthly_report
 from dirbs.reports.csv_reports import reports_validation_checks, make_report_directory, write_report, \
     write_country_gsma_not_found_report, write_country_duplicates_report, write_condition_imei_overlaps, \
     operators_configured_check, write_stolen_violations, write_non_active_pairs, write_un_registered_subscribers, \
-    write_classified_triplets, write_blacklist_violations, write_association_list_violations
+    write_classified_triplets, write_blacklist_violations, write_association_list_violations, write_transient_msisdns
 
 
 def _parse_month_year_report_options_args(f: callable) -> callable:
@@ -790,4 +790,38 @@ def association_list_violations(ctx: callable, config: callable, statsd: callabl
     with utils.CodeProfiler() as cp:
         report_metadata = write_association_list_violations(logger, config, report_dir, conn, month, year)
     statsd.gauge('{0}runtime.per_report.association_list_violations'.format(metrics_run_root), cp.duration)
+    metadata.add_optional_job_metadata(metadata_conn, command, run_id, report_outputs=report_metadata)
+
+
+@cli.command(name='transient_msisdns')
+@click.pass_context
+@common.unhandled_exception_handler
+@click.argument('period', callback=_parse_positive_int)
+@click.argument('num_of_imeis', callback=_parse_positive_int)
+@_parse_output_dir
+@common.cli_wrapper(command='dirbs-report', subcommand='transient_msisdns', required_role='dirbs_core_report')
+@click.option('--current-date',
+              default=None,
+              callback=common.validate_date,
+              help='Setting current date for the analysis in the form (YYYYMMDD).')
+def transient_msisdns(ctx: callable, config: callable, statsd: callable, logger: callable, run_id: int,
+                      conn: callable, metadata_conn: callable, command: str, metrics_root: callable,
+                      metrics_run_root: callable, output_dir: str, period: int, num_of_imeis: int,
+                      current_date: str) -> None:
+    """Generate list of MSISDNS used with possible transient IMEIs.
+
+    Required Arguments:
+        period: Analysis period in days (positive integer)
+        num_of_imeis: Number of IMEIs a MSISDN must be seen with for analysis
+    """
+    metadata.add_optional_job_metadata(metadata_conn, command, run_id,
+                                       report_schema_version=report_schema_version,
+                                       output_dir=os.path.abspath(str(output_dir)))
+    report_dir = make_report_directory(ctx, output_dir, run_id, conn, config)
+
+    with utils.CodeProfiler() as cp:
+        report_metadata = write_transient_msisdns(logger, period, report_dir, conn,
+                                                  config, num_of_imeis, current_date=current_date)
+
+    statsd.gauge('{0}runtime.per_report.transient_msisdns'.format(metrics_run_root), cp.duration)
     metadata.add_optional_job_metadata(metadata_conn, command, run_id, report_outputs=report_metadata)
