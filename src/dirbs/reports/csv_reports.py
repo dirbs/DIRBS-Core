@@ -1,7 +1,7 @@
 """
 DIRBS CSV/CLI reports generation scripts.
 
-Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2021 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -841,12 +841,6 @@ def write_transient_msisdns(logger: callable, period: int, report_dir: str, conn
         analysis_start_date = analysis_end_date - relativedelta.relativedelta(days=period)
         logger.debug('Analysis start date: {0}, analysis_end_date: {1}'.format(analysis_start_date, analysis_end_date))
         with conn.cursor() as cursor:
-            # AND msisdn NOT IN(SELECT msisdn
-            #                     FROM monthly_network_triplets_country
-            #                    WHERE first_seen = last_seen
-            #                 GROUP BY msisdn
-            #                     HAVING COUNT(*) = 1)
-
             query_bit_counts_in_period = sql.SQL("""SELECT msisdn, imeis_count, operator_id
                                                       FROM (SELECT msisdn, operator_id, SUM(bit) AS imeis_count
                                                               FROM (SELECT msisdn, operator_id,
