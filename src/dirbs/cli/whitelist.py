@@ -55,16 +55,23 @@ def create_kafka_consumer(logger, config):
     kafka_config = config.broker_config.kafka
     logger.info("Creating a single high level consumer on topic \'{0}\'".format(kafka_config.topic))
 
-    cons = consumer.KConsumer(config=config,
-                              kafka_host=kafka_config.hostname,
-                              kafka_port=kafka_config.port,
-                              kafka_topic=kafka_config.topic,
-                              logger=logger,
-                              security_protocol=kafka_config.security_protocol,
-                              client_certificate=kafka_config.client_certificate,
-                              client_key=kafka_config.client_key,
-                              caroot_certificate=kafka_config.caroot_certificate,
-                              skip_tls_verifications=kafka_config.skip_tls_verifications)
+    if kafka_config.security_protocol == 'PLAINTEXT':
+        cons = consumer.KConsumer(config=config,
+                                  kafka_host=kafka_config.hostname,
+                                  kafka_port=kafka_config.port,
+                                  kafka_topic=kafka_config.topic,
+                                  logger=logger)
+    else:
+        cons = consumer.KConsumer(config=config,
+                                  kafka_host=kafka_config.hostname,
+                                  kafka_port=kafka_config.port,
+                                  kafka_topic=kafka_config.topic,
+                                  logger=logger,
+                                  security_protocol=kafka_config.security_protocol,
+                                  client_certificate=kafka_config.client_certificate,
+                                  client_key=kafka_config.client_key,
+                                  caroot_certificate=kafka_config.caroot_certificate,
+                                  skip_tls_verifications=kafka_config.skip_tls_verifications)
     return cons.create_consumer()
 
 
@@ -77,15 +84,22 @@ def create_kafka_producer(logger, config):
     """
     kafka_config = config.broker_config.kafka
     logger.info("Creating a high level producer on KAFKA host \'{0}\'".format(kafka_config.hostname))
-    prod = producer.KProducer(config=config,
-                              kafka_host=kafka_config.hostname,
-                              kafka_port=kafka_config.port,
-                              logger=logger,
-                              security_protocol=kafka_config.security_protocol,
-                              client_certificate=kafka_config.client_certificate,
-                              client_key=kafka_config.client_key,
-                              caroot_certificate=kafka_config.caroot_certificate,
-                              skip_tls_verifications=kafka_config.skip_tls_verifications)
+
+    if kafka_config.security_protocol == 'PLAINTEXT':
+        prod = producer.KProducer(config=config,
+                                  kafka_host=kafka_config.hostname,
+                                  kafka_port=kafka_config.port,
+                                  logger=logger)
+    else:
+        prod = producer.KProducer(config=config,
+                                  kafka_host=kafka_config.hostname,
+                                  kafka_port=kafka_config.port,
+                                  logger=logger,
+                                  security_protocol=kafka_config.security_protocol,
+                                  client_certificate=kafka_config.client_certificate,
+                                  client_key=kafka_config.client_key,
+                                  caroot_certificate=kafka_config.caroot_certificate,
+                                  skip_tls_verifications=kafka_config.skip_tls_verifications)
     return prod.create_producer()
 
 

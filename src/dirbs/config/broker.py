@@ -113,7 +113,7 @@ class KafkaConfig(ConfigSection):
             'hostname': 'localhost',
             'port': 9092,
             'topic': 'dirbs',
-            'security_protocol': 'PLAIN',
+            'security_protocol': 'PLAINTEXT',
             'skip_tls_verifications': False,
             'client_certificate': None,
             'client_key': None,
