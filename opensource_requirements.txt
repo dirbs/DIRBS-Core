@@ -1,7 +1,7 @@
 click==7.1.2
 Flask==1.1.2
 luhn==0.2.0
-Jinja2==2.10.1
+Jinja2==2.11.3
 psycopg2==2.8.5 --no-binary psycopg2
 python-dateutil==2.8.1
 PyYAML==5.3.1
