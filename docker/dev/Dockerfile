@@ -4,7 +4,7 @@
 # Assumes that the DIRBS git repo is bind-mounted to /home/dirbs/git
 #
 #
-# Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
+# Copyright (c) 2018-2021 Qualcomm Technologies, Inc.
 #
 # All rights reserved.
 #
@@ -18,7 +18,7 @@
 # - Neither the name of Qualcomm Technologies, Inc. nor the names of its contributors may be used to endorse or promote
 #  products derived from this software without specific prior written permission.
 # - The origin of this software must not be misrepresented; you must not claim that you wrote the original software.
-#  If you use this software in a product, an acknowledgment is required by displaying the trademark/log as per the
+#  If you use this software in a product, an acknowledgment is required by displaying the trademark/logo as per the
 #  details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
 # - Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
 # - This notice may not be removed or altered from any source distribution.
@@ -47,18 +47,8 @@ RUN set -x && \
                                                   build-essential && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Upgrade node and npm versions
-# Uninstall package n
-#RUN set -x && \
-#    npm install npm@latest -g && \
-#    npm cache clean -f && \
-#    npm install -g n && \
-#    n stable && \
-#    npm uninstall -g n
-
 # NPM packages for verifying CSS/JS
 RUN set -x && \
-    #ln -s nodejs /usr/bin/node && \
     npm install -g eslint && \
     npm install -g uncss
 

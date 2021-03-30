@@ -1,7 +1,7 @@
 """
 DIRBS Core message broker configuration section parser.
 
-Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2021 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -15,7 +15,7 @@ limitations in the disclaimer below) provided that the following conditions are 
 - Neither the name of Qualcomm Technologies, Inc. nor the names of its contributors may be used to endorse or promote
   products derived from this software without specific prior written permission.
 - The origin of this software must not be misrepresented; you must not claim that you wrote the original software.
-  If you use this software in a product, an acknowledgment is required by displaying the trademark/log as per the
+  If you use this software in a product, an acknowledgment is required by displaying the trademark/logo as per the
   details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
 - Altered source versions must be plainly marked as such, and must not be misrepresented as being the original
   software.
@@ -93,8 +93,8 @@ class KafkaConfig(ConfigSection):
                                 'not recommended for production environment')
         # if security protocol is set to PLAIN show warning
         else:
-            _logger.warning('Security protocol is set to PLAIN, which is not recommended in production'
-                            'environment')
+            _logger.warning('Security protocol in broker config is set to PLAIN, which is not recommended '
+                            'in production environment')
 
     @property
     def section_name(self):
@@ -113,7 +113,7 @@ class KafkaConfig(ConfigSection):
             'hostname': 'localhost',
             'port': 9092,
             'topic': 'dirbs',
-            'security_protocol': 'PLAIN',
+            'security_protocol': 'PLAINTEXT',
             'skip_tls_verifications': False,
             'client_certificate': None,
             'client_key': None,

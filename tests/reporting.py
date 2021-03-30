@@ -1,7 +1,7 @@
 """
 Reporting unit tests.
 
-Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2021 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -15,7 +15,7 @@ limitations in the disclaimer below) provided that the following conditions are 
 - Neither the name of Qualcomm Technologies, Inc. nor the names of its contributors may be used to endorse or promote
   products derived from this software without specific prior written permission.
 - The origin of this software must not be misrepresented; you must not claim that you wrote the original software.
-  If you use this software in a product, an acknowledgment is required by displaying the trademark/log as per the
+  If you use this software in a product, an acknowledgment is required by displaying the trademark/logo as per the
   details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
 - Altered source versions must be plainly marked as such, and must not be misrepresented as being the original
   software.
@@ -3047,3 +3047,41 @@ def test_association_list_violations(per_test_postgres, mocked_config, logger, m
                      ['12345678901233', '11109678901239', '1', '2019-02-12', '2019-02-12'],
                      ['12345678901231', '11107678901237', '1', '2019-02-12', '2019-02-12']]
     assert all([x in rows for x in expected_list])
+
+
+@pytest.mark.parametrize('operator_data_importer',
+                         [OperatorDataParams(
+                             filename='transient_msisdn_operator1_20201201_20201231.csv',
+                             operator='operator1',
+                             extract=False,
+                             perform_leading_zero_check=False,
+                             mcc_mnc_pairs=[{'mcc': '111', 'mnc': '04'}],
+                             perform_unclean_checks=False,
+                             perform_file_daterange_check=False,
+                             perform_region_checks=False,
+                             perform_home_network_check=False,
+                             perform_historic_checks=False
+                         )],
+                         indirect=True)
+def test_transient_msisdns(per_test_postgres, mocked_config, logger, monkeypatch,
+                           tmpdir, db_conn, operator_data_importer):
+    """Verify the transient msisdns reporting functionality."""
+    operator_data_importer.import_data()
+
+    runner = CliRunner()
+    output_dir = str(tmpdir)
+    result = runner.invoke(dirbs_report_cli,
+                           ['transient_msisdns', '30', '3', '--current-date', '20201231', output_dir],
+                           obj={'APP_CONFIG': mocked_config})
+    assert result.exit_code == 0
+
+    fn = find_subdirectory_in_dir('report__transient_msisdns*', output_dir)
+    dir_path = os.path.join(output_dir, fn)
+    with open('{0}/transient_msisdns_operator1.csv'.format(dir_path), 'r') as fn:
+        reader = csv.reader(fn)
+        rows = list(reader)
+
+    assert len(rows) == 2
+    expected_res = [['msisdn'],
+                    ['2210011111111']]
+    assert all([x in rows for x in expected_res])

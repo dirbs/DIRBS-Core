@@ -1,7 +1,7 @@
 """
 DIRBS Core configuration file parser package.
 
-Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2021 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -15,7 +15,7 @@ limitations in the disclaimer below) provided that the following conditions are 
 - Neither the name of Qualcomm Technologies, Inc. nor the names of its contributors may be used to endorse or promote
   products derived from this software without specific prior written permission.
 - The origin of this software must not be misrepresented; you must not claim that you wrote the original software.
-  If you use this software in a product, an acknowledgment is required by displaying the trademark/log as per the
+  If you use this software in a product, an acknowledgment is required by displaying the trademark/logo as per the
   details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
 - Altered source versions must be plainly marked as such, and must not be misrepresented as being the original
   software.
@@ -156,6 +156,9 @@ class AppConfig:
         self.statsd_config = StatsdConfig(ignore_env=ignore_env, **(yaml_config.get('statsd', {}) or {}))
         self.catalog_config = CatalogConfig(ignore_env=ignore_env, **(yaml_config.get('catalog', {}) or {}))
         self.amnesty_config = AmnestyConfig(ignore_env=ignore_env, **(yaml_config.get('amnesty', {}) or {}))
-        self.broker_config = BrokerConfig(ignore_env=ignore_env, **(yaml_config.get('broker', {}) or {}))
         self.operational_config = OperationalConfig(ignore_env=ignore_env,
                                                     **(yaml_config.get('operational', {}) or {}))
+
+        self.broker_config = BrokerConfig(
+            ignore_env=ignore_env,
+            **(yaml_config.get('broker', {}) or {})) if self.operational_config.activate_whitelist else None

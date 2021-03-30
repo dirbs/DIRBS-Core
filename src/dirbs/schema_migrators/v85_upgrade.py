@@ -1,7 +1,7 @@
 """
 DIRBS DB schema migration script (v84 -> v85).
 
-Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2021 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -15,7 +15,7 @@ limitations in the disclaimer below) provided that the following conditions are 
 - Neither the name of Qualcomm Technologies, Inc. nor the names of its contributors may be used to endorse or promote
   products derived from this software without specific prior written permission.
 - The origin of this software must not be misrepresented; you must not claim that you wrote the original software.
-  If you use this software in a product, an acknowledgment is required by displaying the trademark/log as per the
+  If you use this software in a product, an acknowledgment is required by displaying the trademark/logo as per the
   details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
 - Altered source versions must be plainly marked as such, and must not be misrepresented as being the original
   software.
@@ -69,7 +69,8 @@ class SchemaMigrator(dirbs.schema_migrators.AbstractMigrator):
 
             # copy data from original partition
             cursor.execute("""INSERT INTO historic_pairing_list_new
-                                   SELECT p.imei_norm, p.imsi, p.start_date, p.end_date, p.virt_imei_shard, m.msisdn
+                                   SELECT DISTINCT p.imei_norm, p.imsi, p.start_date, p.end_date, p.virt_imei_shard,
+                                          m.msisdn
                                      FROM historic_pairing_list p
                                INNER JOIN monthly_network_triplets_country m ON p.imsi = m.imsi""")
 

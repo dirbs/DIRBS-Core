@@ -1,7 +1,7 @@
 #
 # Sample annotated config for DIRBS Core configuration.
 #
-# Copyright (c) 2018-2019 Qualcomm Technologies, Inc.
+# Copyright (c) 2018-2021 Qualcomm Technologies, Inc.
 #
 # All rights reserved.
 #
@@ -15,7 +15,7 @@
 # - Neither the name of Qualcomm Technologies, Inc. nor the names of its contributors may be used to endorse or promote
 #   products derived from this software without specific prior written permission.
 # - The origin of this software must not be misrepresented; you must not claim that you wrote the original software.
-#   If you use this software in a product, an acknowledgment is required by displaying the trademark/log as per the
+#   If you use this software in a product, an acknowledgment is required by displaying the trademark/logo as per the
 #   details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
 # - Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
 # - This notice may not be removed or altered from any source distribution.
@@ -306,36 +306,39 @@ conditions:
   # the release documentation for available dimensions and their parameters.
   - label: simple_dimension
     dimensions:
-      - module: gsma_not_found
+      - module: transient_imei
+        parameters:
+          period: 20
+          num_msisdns: 3
     grace_period_days: 30
     blocking: true
     reason: Violated simple dimension
     max_allowed_matching_ratio: 1.0
-  - label: compound_dimension
-    dimensions:
-      - module: stolen_list
-      - module: duplicate_daily_avg
-        parameters:
-          threshold: 3.1
-          period_days: 30
-          min_seen_days: 5
-        invert: True
-    grace_period_days: 0
-    blocking: true
-    reason: Violated compound dimension
-    max_allowed_matching_ratio: 1.0
-  - label: daily_avg_uid
-    dimensions:
-      - module: daily_avg_uid
-        parameters:
-          threshold: 2.5
-          period_days: 30
-          min_seen_days: 5
-    grace_period_days: 5
-    blocking: false
-    sticky: false
-    reason: Daily Average UID Limit Exceeded
-    max_allowed_matching_ratio: 1.0
+#  - label: compound_dimension
+#    dimensions:
+#      - module: stolen_list
+#      - module: duplicate_daily_avg
+#        parameters:
+#          threshold: 3.1
+#          period_days: 30
+#          min_seen_days: 5
+#        invert: True
+#    grace_period_days: 0
+#    blocking: true
+#    reason: Violated compound dimension
+#    max_allowed_matching_ratio: 1.0
+#  - label: daily_avg_uid
+#    dimensions:
+#      - module: daily_avg_uid
+#        parameters:
+#          threshold: 2.5
+#          period_days: 30
+#          min_seen_days: 5
+#    grace_period_days: 5
+#    blocking: false
+#    sticky: false
+#    reason: Daily Average UID Limit Exceeded
+#    max_allowed_matching_ratio: 1.0
 
 # Definition of settings to be used for logging output of DIRBS system.
 logging:

@@ -1,7 +1,7 @@
 """
 DIRBS CLI for Whitelisting Process. Installed by setuptools as a dirbs-classify console script.
 
-Copyright (c) 2018-2020 Qualcomm Technologies, Inc.
+Copyright (c) 2018-2021 Qualcomm Technologies, Inc.
 
 All rights reserved.
 
@@ -15,7 +15,7 @@ limitations in the disclaimer below) provided that the following conditions are 
 - Neither the name of Qualcomm Technologies, Inc. nor the names of its contributors may be used to endorse or promote
   products derived from this software without specific prior written permission.
 - The origin of this software must not be misrepresented; you must not claim that you wrote the original software.
-  If you use this software in a product, an acknowledgment is required by displaying the trademark/log as per the
+  If you use this software in a product, an acknowledgment is required by displaying the trademark/logo as per the
   details provided here: https://www.qualcomm.com/documents/dirbs-logo-and-brand-guidelines
 - Altered source versions must be plainly marked as such, and must not be misrepresented as being the original
   software.
@@ -55,16 +55,23 @@ def create_kafka_consumer(logger, config):
     kafka_config = config.broker_config.kafka
     logger.info("Creating a single high level consumer on topic \'{0}\'".format(kafka_config.topic))
 
-    cons = consumer.KConsumer(config=config,
-                              kafka_host=kafka_config.hostname,
-                              kafka_port=kafka_config.port,
-                              kafka_topic=kafka_config.topic,
-                              logger=logger,
-                              security_protocol=kafka_config.security_protocol,
-                              client_certificate=kafka_config.client_certificate,
-                              client_key=kafka_config.client_key,
-                              caroot_certificate=kafka_config.caroot_certificate,
-                              skip_tls_verifications=kafka_config.skip_tls_verifications)
+    if kafka_config.security_protocol == 'PLAINTEXT':
+        cons = consumer.KConsumer(config=config,
+                                  kafka_host=kafka_config.hostname,
+                                  kafka_port=kafka_config.port,
+                                  kafka_topic=kafka_config.topic,
+                                  logger=logger)
+    else:
+        cons = consumer.KConsumer(config=config,
+                                  kafka_host=kafka_config.hostname,
+                                  kafka_port=kafka_config.port,
+                                  kafka_topic=kafka_config.topic,
+                                  logger=logger,
+                                  security_protocol=kafka_config.security_protocol,
+                                  client_certificate=kafka_config.client_certificate,
+                                  client_key=kafka_config.client_key,
+                                  caroot_certificate=kafka_config.caroot_certificate,
+                                  skip_tls_verifications=kafka_config.skip_tls_verifications)
     return cons.create_consumer()
 
 
@@ -77,15 +84,22 @@ def create_kafka_producer(logger, config):
     """
     kafka_config = config.broker_config.kafka
     logger.info("Creating a high level producer on KAFKA host \'{0}\'".format(kafka_config.hostname))
-    prod = producer.KProducer(config=config,
-                              kafka_host=kafka_config.hostname,
-                              kafka_port=kafka_config.port,
-                              logger=logger,
-                              security_protocol=kafka_config.security_protocol,
-                              client_certificate=kafka_config.client_certificate,
-                              client_key=kafka_config.client_key,
-                              caroot_certificate=kafka_config.caroot_certificate,
-                              skip_tls_verifications=kafka_config.skip_tls_verifications)
+
+    if kafka_config.security_protocol == 'PLAINTEXT':
+        prod = producer.KProducer(config=config,
+                                  kafka_host=kafka_config.hostname,
+                                  kafka_port=kafka_config.port,
+                                  logger=logger)
+    else:
+        prod = producer.KProducer(config=config,
+                                  kafka_host=kafka_config.hostname,
+                                  kafka_port=kafka_config.port,
+                                  logger=logger,
+                                  security_protocol=kafka_config.security_protocol,
+                                  client_certificate=kafka_config.client_certificate,
+                                  client_key=kafka_config.client_key,
+                                  caroot_certificate=kafka_config.caroot_certificate,
+                                  skip_tls_verifications=kafka_config.skip_tls_verifications)
     return prod.create_producer()
 
 
