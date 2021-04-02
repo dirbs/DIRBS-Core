@@ -42,6 +42,7 @@ services:
       - statsd
       - grafana
       - postgres10
+      - redis
     environment:
       - PYTHONUNBUFFERED=1
       - FLASK_DEBUG=1
@@ -83,3 +84,9 @@ services:
       - ~/local_postgres:/data
       - ./local_pg_hba.conf:/data/config/pg_hba.conf
       - ./local_postgresql.conf:/data/config/postgresql.conf
+
+  redis:
+    image: redis:latest
+    container_name: dirbs_redis
+    ports:
+      - "127.0.0.1:6379:6379"

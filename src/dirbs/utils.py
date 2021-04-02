@@ -53,7 +53,12 @@ class DatabaseSchemaException(Exception):
     """Custom exception class to indicate there was a problem validating the schema."""
 
     def __init__(self, msg):
-        """Constructor."""
+        """
+        Constructor.
+
+        Parameters:
+            msg: custom exception message
+        """
         super().__init__('DB schema check failure: {0}'.format(msg))
 
 
@@ -61,7 +66,12 @@ class DatabaseRoleCheckException(Exception):
     """Custom exception class to indicate the user does not have the correct roles for this job."""
 
     def __init__(self, msg):
-        """Constructor."""
+        """
+        Constructor.
+
+        Parameters:
+            msg: custom exception message
+        """
         super().__init__('DB role check failure: {0}'.format(msg))
 
 
@@ -69,7 +79,14 @@ class JSONEncoder(json.JSONEncoder):
     """Custom JSONEncoder class which serializes dates in ISO format."""
 
     def default(self, obj):
-        """Overrides JSONEncoder.default."""
+        """
+        Overrides JSONEncoder.default.
+
+        Arguments:
+            obj: JSON object to serialize
+        Returns:
+            Serialized JSON object
+        """
         if isinstance(obj, datetime.date):
             return obj.isoformat()
 
@@ -87,7 +104,13 @@ class LoggingNamedTupleCursor(NamedTupleCursor):
             self.itersize = 100000
 
     def execute(self, query, params=None):
-        """Overrides NamedTupleCursor.execute."""
+        """
+        Overrides NamedTupleCursor.execute.
+
+        Arguments:
+            query: SQL query to execute
+            params: optional parameters if query is parameterized, default None
+        """
         try:
             return super(LoggingNamedTupleCursor, self).execute(query, params)
         finally:
@@ -95,7 +118,13 @@ class LoggingNamedTupleCursor(NamedTupleCursor):
                 logging.getLogger('dirbs.sql').log(logging.DEBUG, str(self.query, encoding='utf-8'))
 
     def callproc(self, procname, params=None):
-        """Overrides NamedTupleCursor.callproc."""
+        """
+        Overrides NamedTupleCursor.callproc.
+
+        Arguments:
+            procname: procedure name
+            params: optional parameters, default None
+        """
         try:
             return super(LoggingNamedTupleCursor, self).callproc(procname, params)
         finally:
@@ -105,7 +134,13 @@ class LoggingNamedTupleCursor(NamedTupleCursor):
 
 @contextlib.contextmanager
 def db_role_setter(conn, *, role_name):
-    """Since we catch exceptions here and log, temporarily install a customised hook."""
+    """
+    Since we catch exceptions here and log, temporarily install a customised hook.
+
+    Arguments:
+        conn: dirbs db connection object
+        role_name: name of the Role to set in the current context.
+    """
     with conn.cursor() as cursor:
         cursor.execute('SHOW ROLE')
         old_role = cursor.fetchone()[0]
@@ -128,7 +163,15 @@ class CodeProfiler(object):
 
 
 def compute_md5_hash(file, buf_size=65536):
-    """Utility method to generate a md5 hash of file."""
+    """
+    Utility method to generate a md5 hash of file.
+
+    Arguments:
+        file: file object in memory to read
+        buf_size: buffer size for read() function, default is 65536
+    Returns:
+        md5 hash of the file
+    """
     md5_hash = hashlib.md5()
     while True:
         data = file.read(buf_size)
@@ -140,12 +183,30 @@ def compute_md5_hash(file, buf_size=65536):
 
 
 def cachebusted_filename_from_contents(byte_array):
-    """Utility method to generate a unique filename based on the hash of a given content array (of bytes)."""
+    """
+    Utility method to generate a unique filename based on the hash of a given content array (of bytes).
+
+    Arguments:
+        byte_array: content array
+    Returns:
+        filename
+    """
     return compute_md5_hash(io.BytesIO(byte_array))[:8]
 
 
 def cli_db_params_from_dsn(dsn, user=None, database=None, port=None, host=None):
-    """Convert DB-related command-line arguments from a DSN into a format appropriate for DIRBS CLI commands."""
+    """
+    Convert DB-related command-line arguments from a DSN into a format appropriate for DIRBS CLI commands.
+
+    Arguments:
+        dsn: data source name for the current database to format
+        user: db user name, default None
+        database: db name, default None
+        port: db port, default None
+        host: db host name, default None
+    Returns:
+        compatible cmd arguments for dirbs cli
+    """
     db_args = []
     db_args.append('--db-user={0}'.format(user if user is not None else dsn.get('user')))
     db_args.append('--db-name={0}'.format(database if database is not None else dsn.get('database')))
@@ -161,6 +222,13 @@ def create_db_connection(db_config, readonly=False, autocommit=False):
     Changes to the config file made after this method has been called will not be read.
 
     Calling entity should handle connection errors as appropriate.
+
+    Arguments:
+        db_config: dirbs db config object
+        readonly: bool to indicate if the connect would be readonly, default False
+        autocommit: bool to indicate weather the auto-commit will be on, default False (off)
+    Returns:
+        connection object
     """
     logger = logging.getLogger('dirbs.sql')
     logger.debug('Attempting to connect to the database {0} on host {1}'.format(db_config.database, db_config.host))
@@ -173,7 +241,13 @@ def create_db_connection(db_config, readonly=False, autocommit=False):
 
 
 def verify_db_schema(conn, required_role):
-    """Function that runs all DB verification checks."""
+    """
+    Function that runs all DB verification checks.
+
+    Arguments:
+        conn: dirbs db connection object
+        required_role: required role to verify it for the job
+    """
     warn_if_db_superuser(conn)
     verify_db_roles_installed(conn)
     verify_db_role_for_job(conn, required_role)
@@ -185,7 +259,12 @@ def verify_db_schema(conn, required_role):
 
 
 def warn_if_db_superuser(conn):
-    """Warn if the current DB user is a PostgreSQL superuser."""
+    """
+    Warn if the current DB user is a PostgreSQL superuser.
+
+    Arguments:
+        conn: dirbs db connection object
+    """
     logger = logging.getLogger('dirbs.db')
     if is_db_user_superuser(conn):
         logger.warning('Running as PostgreSQL superuser -- for security reasons, we recommend running all '
@@ -199,7 +278,13 @@ def notify_if_whitelist_activation():
 
 
 def verify_db_roles_installed(conn):
-    """Function used to verify whether roles have been installed in the DB."""
+    """Function used to verify whether roles have been installed in the DB.
+
+    Arguments:
+        conn: dirbs db connection object
+    Raises:
+        DatabaseSchemaException: if the core roles are not installed
+    """
     # The below is not a guaranteed check, but a heuristic
     logger = logging.getLogger('dirbs.db')
     with conn.cursor() as cursor:
@@ -211,7 +296,15 @@ def verify_db_roles_installed(conn):
 
 
 def verify_db_role_for_job(conn, expected_role):
-    """Function used to verify that the current DB user is in the role expected for this job."""
+    """
+    Function used to verify that the current DB user is in the role expected for this job.
+
+    Arguments:
+        conn: dirbs db connection object
+        expected_role: name of the role to verify for the job
+    Raises:
+        DatabaseRoleCheckException: raises if the role is not the required role
+    """
     if not is_db_user_dirbs_role(conn, expected_role):
         role = conn.get_dsn_parameters().get('user')
         raise DatabaseRoleCheckException('Current DB user {0} does not have required role: {1}. To fix this:'
@@ -219,7 +312,14 @@ def verify_db_role_for_job(conn, expected_role):
 
 
 def verify_db_schema_version(conn):
-    """Function used to check whether the DB schema version matches the code schema version."""
+    """
+    Function used to check whether the DB schema version matches the code schema version.
+
+    Arguments:
+        conn: dirbs db connection object
+    Raises:
+        DatabaseSchemaException: if db schema is not installed or code and db schema version is not matched
+    """
     logger = logging.getLogger('dirbs.db')
     version = query_db_schema_version(conn)
     if version != code_db_schema_version:
@@ -234,7 +334,14 @@ def verify_db_schema_version(conn):
 
 
 def verify_db_ownership(conn):
-    """Function used to check whether DB ownership matches what we expect."""
+    """
+    Function used to check whether DB ownership matches what we expect.
+
+    Arguments:
+        conn: dirbs db connection object
+    Raises:
+        DatabaseSchemaException: if the db ownership is not correct
+    """
     logger = logging.getLogger('dirbs.db')
     if query_db_ownership(conn) != 'dirbs_core_power_user':
         logger.error('Database is not owned by the dirbs_core_power_user group! Please the '
@@ -244,7 +351,15 @@ def verify_db_ownership(conn):
 
 
 def verify_core_schema(conn):
-    """Function used to check whether Core schema exists and has correct ownership."""
+    """
+    Function used to check whether Core schema exists and has correct ownership.
+
+    Arguments:
+        conn: dirbs db connection object
+    Raises:
+        DatabaseSchemaException: if the schema `core` is not installed or if the schema `core` is not owned by
+                                 `dirbs_core_power_user`
+    """
     if not query_schema_existence(conn, 'core'):
         raise DatabaseSchemaException("Missing schema \'core\' in DB. Was dirbs-db install run successfully?")
 
@@ -253,7 +368,15 @@ def verify_core_schema(conn):
 
 
 def verify_hll_schema(conn):
-    """Function used to check whether HLL schema exists and that extension is installed correctly."""
+    """
+    Function used to check whether HLL schema exists and that extension is installed correctly.
+
+    Arguments:
+        conn: dirbs db connection object
+    Raises:
+        DatabaseSchemaException: if HLL schema is not created or db search path does not include hll or
+                                 hll extension is not installed
+    """
     logger = logging.getLogger('dirbs.db')
     if not query_schema_existence(conn, 'hll'):
         logger.error("Schema \'hll\' does not exist. Please ensure the hll extension is installed and run the "
@@ -275,7 +398,14 @@ def verify_hll_schema(conn):
 
 
 def verify_db_search_path(conn):
-    """Function used to check whether db_search_path is correct by looking for objects."""
+    """
+    Function used to check whether db_search_path is correct by looking for objects.
+
+    Arguments:
+        conn: dirbs db connection object
+    Raises:
+        DatabaseSchemaException: if DB search path is not set correctly
+    """
     logger = logging.getLogger('dirbs.db')
     is_search_path_valid = True
     with conn.cursor() as cursor:
@@ -297,7 +427,14 @@ def verify_db_search_path(conn):
 
 
 def query_db_schema_version(conn):
-    """Function to fetch the DB version number from the database."""
+    """
+    Function to fetch the DB version number from the database.
+
+    Arguments:
+        conn: dirbs db connection object
+    Returns:
+        DB schema version number or None if does not exists
+    """
     logger = logging.getLogger('dirbs.db')
     with conn.cursor() as cur:
         try:
@@ -309,7 +446,14 @@ def query_db_schema_version(conn):
 
 
 def query_wl_db_schema_version(conn):
-    """Function to fetch the WHITELIST DB version number from the database."""
+    """
+    Function to fetch the WHITELIST DB version number from the database.
+
+    Arguments:
+        conn: dirbs db connection object
+    Returns:
+        DB schema version number or 0 if does not exists
+    """
     logger = logging.getLogger('dirbs.db')
     with conn.cursor() as cur:
         try:
@@ -321,7 +465,13 @@ def query_wl_db_schema_version(conn):
 
 
 def set_db_schema_version(conn, new_version):
-    """Function to set the DB version number in the database."""
+    """
+    Function to set the DB version number in the database.
+
+    Arguments:
+        conn: dirbs db connection object
+        new_version: new version string to set
+    """
     with conn.cursor() as cur:
         cur.execute('SELECT COUNT(*) FROM schema_version')
         num_rows = cur.fetchone()[0]
@@ -333,13 +483,26 @@ def set_db_schema_version(conn, new_version):
 
 
 def set_wl_db_schema_version(conn, new_version):
-    """Function to set the Whitelist DB version number in the database."""
+    """
+    Function to set the Whitelist DB version number in the database.
+
+    Arguments:
+        conn: dirbs db connection object
+        new_version: new version string to set
+    """
     with conn.cursor() as cur:
         cur.execute('UPDATE schema_metadata SET wl_version = %s', [new_version])
 
 
 def is_db_user_superuser(conn):
-    """Function to test whether the current DB user is a PostgreSQL superuser."""
+    """
+    Function to test whether the current DB user is a PostgreSQL superuser.
+
+    Arguments:
+        conn: dirbs db connection object
+    Returns:
+        bool to indicate result
+    """
     logger = logging.getLogger('dirbs.db')
     with conn.cursor() as cur:
         cur.execute("""SELECT rolsuper
@@ -353,19 +516,41 @@ def is_db_user_superuser(conn):
 
 
 def is_db_user_dirbs_role(conn, role_name):
-    """Function to test whether the current DB user is in a DIRBS role."""
+    """
+    Function to test whether the current DB user is in a DIRBS role.
+
+    Arguments:
+        conn: dirbs db connection object
+        role_name: role name to test for verification
+    Returns:
+        bool for confirmation
+    """
     with conn.cursor() as cur:
         cur.execute("""SELECT pg_has_role(%s, 'MEMBER')""", [role_name])
         return cur.fetchone()[0]
 
 
 def is_db_user_dirbs_poweruser(conn):
-    """Function to test whether the current DB user is a DIRBS power user."""
+    """
+    Function to test whether the current DB user is a DIRBS power user.
+
+    Arguments:
+        conn: dirbs db connection object
+    Returns:
+        bool for confirmation
+    """
     return is_db_user_dirbs_role(conn, 'dirbs_core_power_user')
 
 
 def can_db_user_create_roles(conn):
-    """Function to test whether the current DB user has the CREATEROLE privilege."""
+    """
+    Function to test whether the current DB user has the CREATEROLE privilege.
+
+    Arguments:
+        conn: dirbs db connection object
+    Returns:
+        bool for confirmation
+    """
     logger = logging.getLogger('dirbs.db')
     with conn.cursor() as cur:
         cur.execute("""SELECT rolcreaterole
@@ -379,7 +564,14 @@ def can_db_user_create_roles(conn):
 
 
 def query_db_ownership(conn):
-    """Function to verify whether the current database ownership is correct."""
+    """
+    Function to verify whether the current database ownership is correct.
+
+    Arguments:
+        conn: dirbs db connection object
+    Returns:
+        bool for confirmation
+    """
     logger = logging.getLogger('dirbs.db')
     with conn.cursor() as cur:
         cur.execute("""SELECT rolname
@@ -395,7 +587,15 @@ def query_db_ownership(conn):
 
 
 def query_schema_existence(conn, schema_name):
-    """Function to verify whether the current database schema ownership is correct."""
+    """
+    Function to verify whether the current database schema ownership is correct.
+
+    Arguments:
+        conn: dirbs db connection object
+        schema_name: name of the schema to verify
+    Returns:
+        bool for confirmation
+    """
     with conn.cursor() as cur:
         cur.execute('SELECT EXISTS(SELECT 1 FROM information_schema.schemata WHERE SCHEMA_NAME = %s)',
                     [schema_name])
@@ -403,7 +603,15 @@ def query_schema_existence(conn, schema_name):
 
 
 def query_schema_ownership(conn, schema_name):
-    """Function to verify whether the current database schema ownership is correct."""
+    """
+    Function to verify whether the current database schema ownership is correct.
+
+    Arguments:
+        conn: dirbs db connection object
+        schema_name: name of the schema to verify
+    Returns:
+        bool for confirmation
+    """
     logger = logging.getLogger('dirbs.db')
     with conn.cursor() as cur:
         cur.execute("""SELECT rolname
@@ -419,7 +627,15 @@ def query_schema_ownership(conn, schema_name):
 
 
 def compute_analysis_end_date(conn, curr_date):
-    """Function to get the end of the analysis window based on current operator data."""
+    """
+    Function to get the end of the analysis window based on current operator data.
+
+    Arguments:
+        conn: dirbs db connection object
+        curr_date: current date of the system to compute analysis end date with
+    Returns:
+        analysis end date
+    """
     end_date = curr_date
     if end_date is None:
         # If current date is None, set analysis end date as the last day for which operator data exists."""
@@ -445,7 +661,14 @@ def compute_analysis_end_date(conn, curr_date):
 
 
 def hash_string_64bit(s):
-    """Basic string hash based on taking an initial prime number and multiplying it by another prime numnber."""
+    """
+    Basic string hash based on taking an initial prime number and multiplying it by another prime number.
+
+    Arguments:
+        s: string to hash
+    Returns:
+        hashed string
+    """
     string_hash = 7
     string_bytes = bytearray(s, 'utf-8')
     for b in string_bytes:
@@ -455,7 +678,15 @@ def hash_string_64bit(s):
 
 
 def child_table_names(conn, parent_name):
-    """Return a list of table names for a parent table name."""
+    """
+    Return a list of table names for a parent table name.
+
+    Arguments:
+        conn: dirbs db connection object
+        parent_name: parent table name to get names of child tables
+    Returns:
+        list of child table names
+    """
     with conn.cursor() as cursor:
         cursor.execute("""SELECT c.relname AS child_tblname
                             FROM pg_inherits
@@ -475,7 +706,16 @@ def child_table_names(conn, parent_name):
 
 
 def table_invariants_list(conn, table_names, invariant_col_names):
-    """Gets a list of tuples containing the values for common table invariant columns across a list table names."""
+    """
+    Gets a list of tuples containing the values for common table invariant columns across a list table names.
+
+    Arguments:
+        conn: dirbs db connection object
+        table_names: table names to return invariant columns for
+        invariant_col_names: invariant column names to find
+    Returns:
+        list of invariant columns
+    """
     if len(table_names) == 0:
         # Need to return an empty list to avoid doing an empty query and generating an error
         return []
@@ -496,6 +736,13 @@ def most_recently_run_condition_info(conn, cond_names, successful_only=False):
 
     If a particular condition has never completed successfully, the value of the dict will be None, unless the
     successful_only parameter is set to True, in which case the key will not exist in the returned dict.
+
+    Arguments:
+        conn: dirbs db connection object
+        cond_names: list of condition names
+        successful_only: bool to return successful only
+    Returns:
+        dict of conditions config
     """
     conditions_to_find = copy.copy(cond_names)
     rv = {}
@@ -530,7 +777,16 @@ def most_recently_run_condition_info(conn, cond_names, successful_only=False):
 
 
 def filter_imei_list_sql_by_device_type(conn, exempted_device_types, imei_list_sql):
-    """Function to return SQL filtering out exempted device types."""
+    """
+    Function to return SQL filtering out exempted device types.
+
+    Arguments:
+        conn: dirbs db connection object
+        exempted_device_types: exempted device types from config
+        imei_list_sql: custom sql for imei lists
+    Returns:
+        formatted sql query
+    """
     # If certain device types are exempted, first select the IMEIs passed in imei_list_sql query.
     # These IMEIs are then joined against GSMA TAC db to get their device type.
     # Finally, any IMEIs that belong to exempted device types are excluded.
@@ -549,6 +805,11 @@ def format_datetime_for_report(timestamp_with_tz):
     """Format the datetime into a string for reporting.
 
     Replace this function with datetime.isoformat(sep=' ', timespec='seconds') after we update python version to 3.6
+
+    Arguments:
+        timestamp_with_tz: timestamp object
+    Returns:
+        formatted date
     """
     if timestamp_with_tz is not None:
         return timestamp_with_tz.strftime('%Y-%m-%d %X')
@@ -557,7 +818,15 @@ def format_datetime_for_report(timestamp_with_tz):
 
 
 def validate_exempted_device_types(conn, config):
-    """Method to validate exempted device types specified in config."""
+    """
+    Method to validate exempted device types specified in config.
+
+    Arguments:
+        conn: dirbs db connection object
+        config: dirbs parsed configuration object
+    Raises:
+        ConfigParseException: if device types are not valid
+    """
     with conn.cursor() as cursor:
         logger = logging.getLogger('dirbs.config')
         exempted_device_types = config.region_config.exempted_device_types
@@ -578,7 +847,17 @@ def validate_exempted_device_types(conn, config):
 
 def log_analysis_window(logger, analysis_start_date, analysis_end_date, start_message='',
                         start_date_inclusive=True, end_date_inclusive=False):
-    """Helper function to print out window on used for analysis and list generation using interval notation."""
+    """
+    Helper function to print out window on used for analysis and list generation using interval notation.
+
+    Arguments:
+        logger: DIRBS logger object
+        analysis_start_date: start date of the analysis window
+        analysis_end_date: end date of the analysis window
+        start_message: start message string default empty
+        start_date_inclusive: bool to indicate if start date is inclusive default True
+        end_date_inclusive: bool to indicate if end date is inclusive default False
+    """
     start_date_interval_notation = '[' if start_date_inclusive else '('
     end_date_interval_notation = ']' if end_date_inclusive else ')'
     logger.debug('{0} {sd_interval_notation}{start_date}, '
@@ -595,7 +874,15 @@ def registration_list_status_filter_sql():
 
 
 def compute_amnesty_flags(app_config, curr_date):
-    """Helper function to determine whether the date falls within amnesty eval or amnesty period."""
+    """
+    Helper function to determine whether the date falls within amnesty eval or amnesty period.
+
+    Arguments:
+        app_config: dirbs app config object
+        curr_date: current date of the system
+    Returns:
+        bool,bool
+    """
     in_amnesty_eval_period = True if app_config.amnesty_config.amnesty_enabled and \
         curr_date <= app_config.amnesty_config.evaluation_period_end_date else False
     in_amnesty_period = True if app_config.amnesty_config.amnesty_enabled and \
@@ -605,7 +892,14 @@ def compute_amnesty_flags(app_config, curr_date):
 
 
 def table_exists_sql(any_schema=False):
-    """SQL to check for existence of a table. Note that for temp tables, any_schema should be set to True."""
+    """
+    SQL to check for existence of a table. Note that for temp tables, any_schema should be set to True.
+
+    Arguments:
+        any_schema: filtration bool for schema
+    Returns:
+        sql
+    """
     if not any_schema:
         schema_filter_sql = sql.SQL('AND schemaname = current_schema()')
     else:
@@ -618,7 +912,15 @@ def table_exists_sql(any_schema=False):
 
 
 def is_table_partitioned(conn, tbl_name):
-    """Function to determine whether a table is partitioned."""
+    """
+    Function to determine whether a table is partitioned.
+
+    Arguments:
+        conn: DIRBS db connection object
+        tbl_name: name of the table to check
+    Returns:
+        bool
+    """
     with conn.cursor() as cursor:
         cursor.execute("""SELECT EXISTS (SELECT 1
                                            FROM pg_class

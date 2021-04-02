@@ -36,7 +36,7 @@ import logging
 
 import yaml
 
-from dirbs.config.common import ConfigParseException, check_for_duplicates
+from dirbs.config.common import ConfigParseException, check_for_duplicates, check_redis_status
 from dirbs.config.db import DBConfig
 from dirbs.config.region import RegionConfig
 from dirbs.config.dirbs_logging import LoggingConfig
@@ -47,6 +47,7 @@ from dirbs.config.list_generation import ListGenerationConfig
 from dirbs.config.report_generation import ReportGenerationConfig
 from dirbs.config.multiprocessing import MultiprocessingConfig
 from dirbs.config.statsd import StatsdConfig
+from dirbs.config.redis import RedisConfig
 from dirbs.config.catalog import CatalogConfig
 from dirbs.config.amnesty import AmnestyConfig
 from dirbs.config.broker import BrokerConfig
@@ -162,3 +163,6 @@ class AppConfig:
         self.broker_config = BrokerConfig(
             ignore_env=ignore_env,
             **(yaml_config.get('broker', {}) or {})) if self.operational_config.activate_whitelist else None
+
+        self.redis_config = RedisConfig(ignore_env=ignore_env, **(yaml_config.get('redis', {}) or {}))
+        check_redis_status(redis_config=self.redis_config)

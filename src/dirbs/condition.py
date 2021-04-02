@@ -48,7 +48,12 @@ class Condition(object):
     """Class representing the configuration for an individual dimension."""
 
     def __init__(self, cond_config):
-        """Constructor."""
+        """
+        Constructor to initialize config for individual dimension.
+
+        Arguments:
+            cond_config: dimension config object to init
+        """
         self.label = cond_config.label
         self.config = cond_config
         self.dimensions = []
@@ -60,16 +65,40 @@ class Condition(object):
             self.dimensions.append(dim_constructor(**d.params, condition_label=self.label, invert=d.invert))
 
     def intermediate_tbl_name(self, run_id):
-        """Method to return the intermediate table name used by this condition for this run_id."""
+        """
+        Method to return the intermediate table name used by this condition for this run_id.
+
+        Arguments:
+            run_id: current run_id of the classification job which needs the name of this intermediate table
+
+        Returns:
+            intermediate table name with prefix 'classify_temp_'
+        """
         hashed_label = hashlib.md5(self.label.encode('utf-8')).hexdigest()
         return 'classify_temp_{0}_{1}'.format(hashed_label, run_id)
 
     def intermediate_tbl_id(self, run_id):
-        """Method to return a sql.Identifier version of the intermediate_tbl_name function."""
+        """
+        Method to return a sql.Identifier version of the intermediate_tbl_name function.
+
+        Arguments:
+            run_id: current run_id of the classification job which needs the name of this intermediate table
+
+        Returns:
+            sql.Identifier version of the intermediate_tbl_name function
+        """
         return sql.Identifier(self.intermediate_tbl_name(run_id))
 
     def queue_calc_imeis_jobs(self, executor, app_config, run_id, curr_date):
-        """Method to queue jobs to calculate the IMEIs that are met by this condition."""
+        """
+        Method to queue jobs to calculate the IMEIs that are met by this condition.
+
+        Arguments:
+            executor: instance of the python executor class, to submit back the results
+            app_config: dirbs app current configuration, to extract various configs required for the job
+            run_id: run id of the current classification job
+            curr_date: current date of the system
+        """
         with create_db_connection(app_config.db_config) as conn, conn.cursor() as cursor:
             cursor.execute(sql.SQL("""CREATE UNLOGGED TABLE {intermediate_tbl} (
                                           imei_norm TEXT NOT NULL,
@@ -92,7 +121,19 @@ class Condition(object):
                                   virt_imei_range_end)
 
     def _calc_imeis_job(self, app_config, run_id, curr_date, virt_imei_range_start, virt_imei_range_end):
-        """Function to calculate the IMEIs that are met by this condition (single job)."""
+        """
+        Function to calculate the IMEIs that are met by this condition (single job).
+
+        Arguments:
+            app_config: dirbs app current configuration, to extract various configs required for the job
+            run_id: run_id of the currently running classification job
+            curr_date: current date of the system to be used within the job
+            virt_imei_range_start: start of the shard for the imeis to analyze
+            virt_imei_range_end: end of the shard for the imeis to analyze
+
+        Returns:
+            tuple containing count of matched imeis and time duration of the job execution
+        """
         with create_db_connection(app_config.db_config) as conn, conn.cursor() as cursor, CodeProfiler() as cp:
             dims_sql = [d.sql(conn, app_config, virt_imei_range_start, virt_imei_range_end, curr_date=curr_date)
                         for d in self.dimensions]
@@ -132,7 +173,15 @@ class Condition(object):
         return matching_imeis_count, cp.duration
 
     def queue_update_classification_state_jobs(self, executor, app_config, run_id, curr_date):
-        """Method to queue jobs to update the classification_state table after the IMEIs have been calculated."""
+        """
+        Method to queue jobs to update the classification_state table after the IMEIs have been calculated.
+
+        Arguments:
+            executor: job executor instance to submit back the results to the queue
+            app_config: current dirbs app config object to use configuration from
+            run_id: run_id of the current running classification job
+            curr_date: current date of the system
+        """
         with create_db_connection(app_config.db_config) as conn:
             parallel_shards = partition_utils.num_physical_imei_shards(conn)
             virt_imei_shard_ranges = partition_utils.virt_imei_shard_bounds(parallel_shards)
@@ -146,7 +195,19 @@ class Condition(object):
 
     def _update_classification_state_job(self, app_config, run_id, curr_date, virt_imei_range_start,
                                          virt_imei_range_end):
-        """Function to update the classificate_state table with IMEIs that are met by this condition (single job)."""
+        """
+        Function to update the classificate_state table with IMEIs that are met by this condition (single job).
+
+        Arguments:
+            app_config: current dirbs app config object
+            run_id: id of the job currently executing and accessing this method
+            curr_date: current date of the system
+            virt_imei_range_start: start of the shard for the imeis to analyze
+            virt_imei_range_end: end of the shard for the imeis to analyze
+
+        Returns:
+            duration of the job
+        """
         with create_db_connection(app_config.db_config) as conn, conn.cursor() as cursor, CodeProfiler() as cp:
             src_shard_name = partition_utils.imei_shard_name(base_name=self.intermediate_tbl_name(run_id),
                                                              virt_imei_range_start=virt_imei_range_start,

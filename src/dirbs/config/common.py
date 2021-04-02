@@ -38,6 +38,9 @@ import logging
 from datetime import datetime
 from pathlib import Path
 
+from redis import Redis, ConnectionError
+
+
 _logger = logging.getLogger('dirbs.config')
 
 
@@ -62,6 +65,16 @@ def check_for_duplicates(input_list, duplicates_found_error_message):
     if len(dupe_names) > 0:
         _logger.error(duplicates_found_error_message)
         raise ConfigParseException(duplicates_found_error_message)
+
+
+def check_redis_status(redis_config):
+    """Helper method that checks if the redis server is up and running."""
+    server = Redis(host=redis_config.hostname, socket_timeout=1)
+
+    try:
+        server.ping()
+    except ConnectionError:
+        _logger.error("Can\'t connect to Redis server. Check if the server is up and running...")
 
 
 class ConfigSection:

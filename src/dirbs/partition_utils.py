@@ -42,13 +42,26 @@ class IndexMetadatum:
     """Class to represent metadata about an index."""
 
     def __init__(self, *, idx_cols, is_unique=False, partial_sql=None):
-        """Constructor."""
+        """Constructor to initialize IndexMetadatum class.
+
+        Arguments:
+            idx_cols: list of column names to be indexed.
+            is_unique: bool to indicate weather an indexed is to unique, default is False.
+            partial_sql: optional partial sql string to be used with indexing, default is None.
+        """
         self.idx_cols = idx_cols
         self.is_unique = is_unique
         self.partial_sql = partial_sql
 
     def idx_name(self, tbl_name):
-        """Method to calculate an index name for a table and this set of columns."""
+        """
+        Method to calculate an index name for a table and this set of columns.
+
+        Arguments:
+            tbl_name: name of the table to use in index name calculation for the same table.
+        Returns:
+            index name (idx_name)
+        """
         hashed_tbl_name = hashlib.md5(tbl_name.encode('utf-8')).hexdigest()
         idx_name = '{0}_{1}_idx'.format(hashed_tbl_name, '_'.join(self.idx_cols))
         assert len(idx_name) < 64
@@ -56,7 +69,15 @@ class IndexMetadatum:
 
 
 def physical_imei_shards(conn, *, tbl_name):
-    """Iterates over all the IMEI shards for a given table name."""
+    """
+    Iterates over all the IMEI shards for a given table name.
+
+    Arguments:
+        conn: dirbs db connection instance
+        tbl_name: name of the table for iteration of imei shards
+    Yields:
+        name of the shard, start of the shard, end of the shard
+    """
     num_physical_shards = num_physical_imei_shards(conn)
     virt_imei_shard_ranges = virt_imei_shard_bounds(num_physical_shards)
     for virt_imei_range_start, virt_imei_range_end in virt_imei_shard_ranges:
@@ -67,14 +88,29 @@ def physical_imei_shards(conn, *, tbl_name):
 
 
 def num_physical_imei_shards(conn):
-    """Helper function to return the number of physical shards for IMEI-shared partitions."""
+    """
+    Helper function to return the number of physical shards for IMEI-shared partitions.
+
+    Arguments:
+        conn: dirbs db connection object
+    Returns:
+        number of physical imei shard in the schema
+    """
     with conn.cursor() as cursor:
         cursor.execute('SELECT phys_shards FROM schema_metadata')
         return cursor.fetchone()[0]
 
 
 def _add_index_to_single_shard(conn, *, part_name, idx_metadatum, if_not_exists=False):
-    """Method to dry out the addition of a single index to a single shard partition in a table."""
+    """
+    Method to dry out the addition of a single index to a single shard partition in a table.
+
+    Arguments:
+        conn: dirbs db connection object
+        part_name: name of the partition
+        idx_metadatum: idx_metadatum instance to return metadata about index
+        if_not_exists:IF NOT EXISTS statement activation, default is False
+    """
     with conn.cursor() as cursor:
         if if_not_exists:
             if_not_exists_sql = sql.SQL('IF NOT EXISTS ')
@@ -106,19 +142,47 @@ def _add_index_to_single_shard(conn, *, part_name, idx_metadatum, if_not_exists=
 
 
 def _add_indices_to_single_shard(conn, *, part_name, idx_metadata, if_not_exists=False):
-    """Method to DRY out to addition of indexes to a single shard partition in a table."""
+    """
+    Method to DRY out to addition of indexes to a single shard partition in a table.
+
+    Arguments:
+        conn: dirbs db connection instance
+        part_name: name of partition to add index to
+        idx_metadata: index metadata object, contains metadata about index
+        if_not_exists: bool to activate 'IF NOT EXISTS', default False
+    """
     for idx_metadatum in idx_metadata:
         _add_index_to_single_shard(conn, part_name=part_name, idx_metadatum=idx_metadatum, if_not_exists=if_not_exists)
 
 
 def _add_indices_parallel_single_job(db_config, *, tbl_name, idx_metadatum, if_not_exists=False):
-    """Job function called by add_indices_parallel."""
+    """
+    Job function called by add_indices_parallel.
+
+    Arguments:
+        db_config: dirbs db configuration object
+        tbl_name: name of the table to add indices parallel
+        idx_metadatum: index metadata object
+        if_not_exists: bool to activate 'IF NOT EXISTS', default False
+    """
     with utils.create_db_connection(db_config) as conn:
         _add_index_to_single_shard(conn, part_name=tbl_name, idx_metadatum=idx_metadatum, if_not_exists=if_not_exists)
 
 
 def _queue_add_indices_parallel_job(conn, executor, db_config, *, tbl_name, idx_metadata, if_not_exists=False):
-    """Function to queue and accumulate futures."""
+    """
+    Function to queue and accumulate futures.
+
+    Arguments:
+        conn: dirbs db connection object
+        executor: python executor class object
+        db_config: dirbs db configuration object
+        tbl_name: name of the table to be processed for the job
+        idx_metadata: index metadata
+        if_not_exists: bool to activate 'IF NOT EXISTS' statement, default False
+    Returns:
+        python futures object
+    """
     futures = []
     if not utils.is_table_partitioned(conn, tbl_name):
         for idx_metadatum in idx_metadata:
@@ -144,6 +208,14 @@ def add_indices_parallel(conn, executor, db_config, *, tbl_name, idx_metadata, i
 
     Can not be used with temporary tables and requires that transactions writing the table data be previously
     committed to avoid lock issues.
+
+    Arguments:
+        conn: dirbs db connection object
+        executor: python future executor object
+        db_config: dirbs db configuration object
+        tbl_name: name of the table to be processed for the job
+        idx_metadata: meta data of the index
+        if_not_exists: bool to activate 'IF NOT EXISTS' statement
     """
     for future in _queue_add_indices_parallel_job(conn, executor, db_config, tbl_name=tbl_name,
                                                   idx_metadata=idx_metadata, if_not_exists=if_not_exists):
@@ -156,6 +228,12 @@ def add_indices(conn, *, tbl_name, idx_metadata, if_not_exists=False):
 
     If table is not partitioned, will just add the index to the physical table. Otherwise, will recursively
     go through the child tables until if find non-partitioned tables to add the indices to.
+
+    Arguments:
+        conn: dirbs db connection object
+        tbl_name: name of the table to be indexed
+        idx_metadata: metadata of the index
+        if_not_exists: bool to activate 'IF NOT EXISTS' statement, default False
     """
     if not utils.is_table_partitioned(conn, tbl_name):
         _add_indices_to_single_shard(conn, part_name=tbl_name, idx_metadata=idx_metadata,
@@ -166,7 +244,17 @@ def add_indices(conn, *, tbl_name, idx_metadata, if_not_exists=False):
 
 
 def rename_table_and_indices(conn, *, old_tbl_name, new_tbl_name, idx_metadata=None):
-    """Function to rename a potentially partitioned table and all associated indices on leaf tables."""
+    """Function to rename a potentially partitioned table and all associated indices on leaf tables.
+
+    This will recursively rename the child tables and indices on them if the target table is partitioned, otherwise
+    it will simply rename table and indices on the main table.
+
+    Arguments:
+        conn: dirbs db connection object
+        old_tbl_name: old name of the table
+        new_tbl_name: desired new name of the table
+        idx_metadata: metadata about an index if exists, default is None
+    """
     if idx_metadata is None:
         idx_metadata = []
 
@@ -192,7 +280,19 @@ def rename_table_and_indices(conn, *, old_tbl_name, new_tbl_name, idx_metadata=N
 
 def create_imei_shard_partitions(conn, *, tbl_name, num_physical_shards=None, perms_func=None,
                                  fillfactor=100, temporary=False, unlogged=False):
-    """Helper function try to dry out creating physical IMEI shards."""
+    """
+    Helper function try to dry out creating physical IMEI shards.
+
+    Arguments:
+        conn: dirbs db connection object
+        tbl_name: name of the table to create imei based shards
+        num_physical_shards: number of shards to create, default None, if None then system will pick default number
+                             of imei shards
+        perms_func: permissions function to supply, it will execute and apply permissions on the table
+        fillfactor: fill factor of the partition, default value is set 100%
+        temporary: bool to specify if the table to be partitioned is temporary, default is False
+        unlogged: bool to specify if the table to be partitioned is unlogged, default is False
+    """
     if num_physical_shards is None:
         num_physical_shards = num_physical_imei_shards(conn)
 
@@ -231,18 +331,40 @@ def create_imei_shard_partitions(conn, *, tbl_name, num_physical_shards=None, pe
 
 
 def virt_imei_shard_bounds(num_physical_imei_shards):
-    """Utility function to determine the virtual IMEI shard ranges that should be created for each physical shard."""
+    """
+    Utility function to determine the virtual IMEI shard ranges that should be created for each physical shard.
+
+    Arguments:
+        num_physical_imei_shards: number of physical imei shards
+    Returns:
+        list of virt imei shards bounds
+    """
     k, m = divmod(100, num_physical_imei_shards)
     return [(i * k + min(i, m), (i + 1) * k + min(i + 1, m)) for i in range(num_physical_imei_shards)]
 
 
 def imei_shard_name(*, base_name, virt_imei_range_start, virt_imei_range_end):
-    """Function to DRY out generation of IMEI shard partition names."""
+    """
+    Function to DRY out generation of IMEI shard partition names.
+
+    Arguments:
+        base_name: base name table
+        virt_imei_range_start: start of the virt imei shard
+        virt_imei_range_end: end of the virt imei shard
+    Returns:
+        name of the imei shard
+    """
     return '{0}_{1}_{2}'.format(base_name, virt_imei_range_start, virt_imei_range_end - 1)
 
 
 def _grant_perms_classification_state(conn, *, part_name):
-    """Function to DRY out granting of permissions to classification_state partitiions."""
+    """
+    Function to DRY out granting of permissions to classification_state partitions.
+
+    Arguments:
+        conn: dirbs db connection object
+        part_name: name of the partition to grant permissions on
+    """
     with conn.cursor() as cursor:
         part_id = sql.Identifier(part_name)
         cursor.execute(sql.SQL('GRANT SELECT ON {0} TO dirbs_core_listgen').format(part_id))
@@ -252,7 +374,14 @@ def _grant_perms_classification_state(conn, *, part_name):
 
 
 def repartition_classification_state(conn, *, num_physical_shards, src_filter_sql=None):
-    """Function to repartition the classification_state table."""
+    """
+    Function to repartition the classification_state table.
+
+    Arguments:
+        conn: dirbs db connection object
+        num_physical_shards: number of physical shards to use
+        src_filter_sql: custom filter sql, default is None
+    """
     with conn.cursor() as cursor, utils.db_role_setter(conn, role_name='dirbs_core_power_user'):
         # Create parent partition
         cursor.execute(
@@ -304,7 +433,13 @@ def repartition_classification_state(conn, *, num_physical_shards, src_filter_sq
 
 
 def _grant_perms_registration_list(conn, *, part_name):
-    """Function to DRY out granting of permissions to registration_list partitiions."""
+    """
+    Function to DRY out granting of permissions to registration_list partitions.
+
+    Arguments:
+        conn: dirbs db connection object
+        part_name: name of the partition
+    """
     with conn.cursor() as cursor:
         part_id = sql.Identifier(part_name)
         cursor.execute(sql.SQL('GRANT SELECT ON {0} TO dirbs_core_classify, dirbs_core_api').format(part_id))
@@ -313,7 +448,13 @@ def _grant_perms_registration_list(conn, *, part_name):
 
 
 def _grant_perms_barred_list(conn, *, part_name):
-    """Method to DRY out granting of permissions to barred_list partitions."""
+    """
+    Method to DRY out granting of permissions to barred_list partitions.
+
+    Arguments:
+        conn: dirbs db connection object
+        part_name: name of the partition
+    """
     with conn.cursor() as cursor:
         part_id = sql.Identifier(part_name)
         cursor.execute(sql.SQL('GRANT SELECT ON {0} TO dirbs_core_classify, dirbs_core_api').format(part_id))
@@ -322,7 +463,13 @@ def _grant_perms_barred_list(conn, *, part_name):
 
 
 def _grant_perms_monitoring_list(conn, *, part_name):
-    """Method to DRY out granting of permissions to monitoring_list partitions."""
+    """
+    Method to DRY out granting of permissions to monitoring_list partitions.
+
+    Arguments:
+        conn: dirbs db connection object
+        part_name: name of the partition
+    """
     with conn.cursor() as cursor:
         part_id = sql.Identifier(part_name)
         cursor.execute(sql.SQL('GRANT SELECT ON {0} TO dirbs_core_classify, dirbs_core_api').format(part_id))
@@ -331,7 +478,13 @@ def _grant_perms_monitoring_list(conn, *, part_name):
 
 
 def _grant_perms_association_list(conn, *, part_name):
-    """Method to DRY out granting of permissions to device association list partitions."""
+    """
+    Method to DRY out granting of permissions to device association list partitions.
+
+    Arguments:
+        conn: dirbs db connection object
+        part_name: name of the partition
+    """
     with conn.cursor() as cursor:
         part_id = sql.Identifier(part_name)
         cursor.execute(sql.SQL('GRANT SELECT ON {0} TO dirbs_core_classify, dirbs_core_api').format(part_id))
@@ -340,7 +493,13 @@ def _grant_perms_association_list(conn, *, part_name):
 
 
 def repartition_registration_list(conn, *, num_physical_shards):
-    """Function to repartition the registration_list table."""
+    """
+    Function to repartition the registration_list table.
+
+    Arguments:
+        conn: dirbs db connection object
+        num_physical_shards: number of physical shard used to repartition
+    """
     with conn.cursor() as cursor, utils.db_role_setter(conn, role_name='dirbs_core_power_user'):
         # Create parent partition
         cursor.execute(
@@ -388,7 +547,13 @@ def repartition_registration_list(conn, *, num_physical_shards):
 
 
 def _grant_perms_stolen_list(conn, *, part_name):
-    """Function to DRY out granting of permissions to stolen_list partitiions."""
+    """
+    Function to DRY out granting of permissions to stolen_list partitions.
+
+    Arguments:
+        conn: dirbs db connection object
+        part_name: name of the partition
+    """
     with conn.cursor() as cursor:
         part_id = sql.Identifier(part_name)
         cursor.execute(sql.SQL('GRANT SELECT ON {0} TO dirbs_core_classify, dirbs_core_api').format(part_id))
@@ -397,7 +562,13 @@ def _grant_perms_stolen_list(conn, *, part_name):
 
 
 def repartition_stolen_list(conn, *, num_physical_shards):
-    """Function to repartition the stolen_list table."""
+    """
+    Function to repartition the stolen_list table.
+
+    Arguments:
+        conn: dirbs db connection object
+        num_physical_shards: number of physical shards to repartition
+    """
     with conn.cursor() as cursor, utils.db_role_setter(conn, role_name='dirbs_core_power_user'):
         # Create parent partition
         cursor.execute(
@@ -443,7 +614,13 @@ def repartition_stolen_list(conn, *, num_physical_shards):
 
 
 def _grant_perms_pairing_list(conn, *, part_name):
-    """Function to DRY out granting of permissions to pairing_list partitiions."""
+    """
+    Function to DRY out granting of permissions to pairing_list partitions.
+
+    Arguments:
+        conn: dirbs db connection object
+        part_name: name of the partition
+    """
     with conn.cursor() as cursor:
         part_id = sql.Identifier(part_name)
         cursor.execute(sql.SQL("""GRANT SELECT ON {0}
@@ -453,7 +630,13 @@ def _grant_perms_pairing_list(conn, *, part_name):
 
 
 def repartition_pairing_list(conn, *, num_physical_shards):
-    """Function to repartition the pairing_list table."""
+    """
+    Function to repartition the pairing_list table.
+
+    Arguments:
+        conn: dirbs db connection object
+        num_physical_shards: number of shards to repartition table on
+    """
     with conn.cursor() as cursor, utils.db_role_setter(conn, role_name='dirbs_core_power_user'):
         cursor.execute(
             """CREATE TABLE historic_pairing_list_new (
@@ -498,12 +681,25 @@ def repartition_pairing_list(conn, *, num_physical_shards):
 
 
 def _grant_perms_list(conn, *, part_name):
-    """Function to DRY out granting of permissions to list (black/notifications/exceptions) partitiions."""
+    """
+    Function to DRY out granting of permissions to list (black/notifications/exceptions) partitions.
+
+    Arguments:
+        conn: dirbs db connection object
+        part_name: name of the partition
+    """
     pass
 
 
 def repartition_blacklist(conn, *, num_physical_shards, src_filter_sql=None):
-    """Function to repartition the blacklist table."""
+    """
+    Function to repartition the blacklist table.
+
+    Arguments:
+        conn: dirbs db connection object
+        num_physical_shards: number of shard to partition with
+        src_filter_sql: custom filtration sql, default None
+    """
     with conn.cursor() as cursor, utils.db_role_setter(conn, role_name='dirbs_core_listgen'):
         # Create parent partition
         cursor.execute(
@@ -551,13 +747,33 @@ def repartition_blacklist(conn, *, num_physical_shards, src_filter_sql=None):
 
 
 def per_mno_lists_partition(*, operator_id, list_type, suffix=''):
-    """Function to DRY out the name of a per-MNO lists partition for a given operator_id."""
+    """
+    Function to DRY out the name of a per-MNO lists partition for a given operator_id.
+
+    Arguments:
+        operator_id: str operator id
+        list_type: type of the list
+        suffix: suffix string default empty
+    Returns:
+        name of the partition
+    """
     return '{0}_lists{1}_{2}'.format(list_type, suffix, operator_id)
 
 
 def create_per_mno_lists_partition(conn, *, operator_id, parent_tbl_name, tbl_name, num_physical_shards=None,
                                    unlogged=False, fillfactor=80):
-    """Function to DRY out creation of a new operator partition for notifications_lists."""
+    """
+    Function to DRY out creation of a new operator partition for notifications_lists.
+
+    Arguments:
+        conn: dirbs db connection object
+        operator_id: operator id to create partition of
+        parent_tbl_name: name of the parent table to create partition
+        tbl_name: name of the current table
+        num_physical_shards: number of physical shards, default None
+        unlogged: bool to indicate if it is an unlogged table
+        fillfactor: fill factor of the partition, default 80%
+    """
     assert len(tbl_name) < 64
 
     if num_physical_shards is None:
@@ -597,7 +813,14 @@ def notifications_lists_indices():
 
 
 def repartition_notifications_lists(conn, *, num_physical_shards, src_filter_sql=None):
-    """Function to repartition the notifications_lists table."""
+    """
+    Function to repartition the notifications_lists table.
+
+    Arguments:
+        conn: dirbs db connection instance
+        num_physical_shards: number of physical shards
+        src_filter_sql: custom filter sql, default None
+    """
     with conn.cursor() as cursor, utils.db_role_setter(conn, role_name='dirbs_core_listgen'):
         # Create parent partition
         cursor.execute(
@@ -658,7 +881,14 @@ def exceptions_lists_indices():
 
 
 def repartition_exceptions_lists(conn, *, num_physical_shards, src_filter_sql=None):
-    """Function to repartition the exceptions_lists table."""
+    """
+    Function to repartition the exceptions_lists table.
+
+    Arguments:
+        conn: dirbs db connection instance
+        num_physical_shards: number of physical shards to repartition
+        src_filter_sql: custom filter sql, default None
+    """
     with conn.cursor() as cursor, utils.db_role_setter(conn, role_name='dirbs_core_listgen'):
         # Create parent partition
         cursor.execute(
@@ -707,7 +937,13 @@ def repartition_exceptions_lists(conn, *, num_physical_shards, src_filter_sql=No
 
 
 def _grant_perms_network_imeis(conn, *, part_name):
-    """Function to DRY out granting of permissions to network_imeis partitiions."""
+    """
+    Function to DRY out granting of permissions to network_imeis partitions.
+
+    Arguments:
+        conn: dirbs db connection object
+        part_name: partition name
+    """
     with conn.cursor() as cursor:
         part_id = sql.Identifier(part_name)
         cursor.execute(sql.SQL("""GRANT SELECT ON {0}
@@ -715,7 +951,13 @@ def _grant_perms_network_imeis(conn, *, part_name):
 
 
 def repartition_network_imeis(conn, *, num_physical_shards):
-    """Function to repartition the network_imeis table."""
+    """
+    Function to repartition the network_imeis table.
+
+    Arguments:
+        conn: dirbs db connection object
+        num_physical_shards: number of physical shards
+    """
     with conn.cursor() as cursor, utils.db_role_setter(conn, role_name='dirbs_core_import_operator'):
         # Create parent partition
         cursor.execute(
@@ -757,7 +999,13 @@ def repartition_network_imeis(conn, *, num_physical_shards):
 
 
 def _grant_perms_monthly_network_triplets(conn, *, part_name):
-    """Function to DRY out granting of permissions to monthly_network_triplet partitiions."""
+    """
+    Function to DRY out granting of permissions to monthly_network_triplet partitions.
+
+    Arguments:
+        conn: dirbs db connection object
+        part_name: partition name
+    """
     with conn.cursor() as cursor:
         part_id = sql.Identifier(part_name)
         cursor.execute(sql.SQL("""GRANT SELECT ON {0}
@@ -766,12 +1014,31 @@ def _grant_perms_monthly_network_triplets(conn, *, part_name):
 
 
 def monthly_network_triplets_country_partition(*, month, year, suffix=''):
-    """Function to DRY out the name of a monthly_network_triplets_country partition for a month and year."""
+    """
+    Function to DRY out the name of a monthly_network_triplets_country partition for a month and year.
+
+    Arguments:
+        month: partition month
+        year: partition year
+        suffix: suffix string, default empty
+    Returns:
+        name of the monthly_network_triplets_country partition for month/year
+    """
     return 'monthly_network_triplets_country{0}_{1:d}_{2:02d}'.format(suffix, year, month)
 
 
 def monthly_network_triplets_per_mno_partition(*, operator_id, month, year, suffix=''):
-    """Function to DRY out the name of a monthly_network_triplets_per_mno partition for a month and year."""
+    """
+    Function to DRY out the name of a monthly_network_triplets_per_mno partition for a month and year.
+
+    Arguments:
+        operator_id: id of the operator
+        month: partition month
+        year: partition year
+        suffix: suffix string, default empty
+    Returns:
+        name of the monthly_network_triplets_per_mno partition for month/year
+    """
     if month is None and year is None:
         return 'monthly_network_triplets_per_mno{0}_{1}'.format(suffix, operator_id)
     else:
@@ -780,7 +1047,17 @@ def monthly_network_triplets_per_mno_partition(*, operator_id, month, year, suff
 
 def create_monthly_network_triplets_country_partition(conn, *, month, year, suffix='', num_physical_shards=None,
                                                       fillfactor=45):
-    """Function to DRY out creation of a new month/year partition for monthly_network_triplets_country."""
+    """
+    Function to DRY out creation of a new month/year partition for monthly_network_triplets_country.
+
+    Arguments:
+        conn: dirbs db connection object
+        month: partition month
+        year: partition year
+        suffix: suffix string, default empty
+        num_physical_shards: number of physical shards to apply, default none
+        fillfactor: fill factor of the partition, default 45%
+    """
     if num_physical_shards is None:
         num_physical_shards = num_physical_imei_shards(conn)
 
@@ -818,7 +1095,18 @@ def monthly_network_triplets_country_indices():
 
 def create_monthly_network_triplets_per_mno_partition(conn, *, operator_id, month, year, suffix='',
                                                       num_physical_shards=None, fillfactor=45):
-    """Function to DRY out creation of a new month/year partition for monthly_network_triplets_per_mno."""
+    """
+    Function to DRY out creation of a new month/year partition for monthly_network_triplets_per_mno.
+
+    Arguments:
+        operator_id: id of the operator/mno
+        conn: dirbs db connection object
+        month: partition month
+        year: partition year
+        suffix: suffix string, default empty
+        num_physical_shards: number of physical shards to apply, default none
+        fillfactor: fill factor of the partition, default 45%
+    """
     if num_physical_shards is None:
         num_physical_shards = num_physical_imei_shards(conn)
 
@@ -869,7 +1157,13 @@ def monthly_network_triplets_per_mno_indices():
 
 
 def repartition_monthly_network_triplets(conn, *, num_physical_shards):
-    """Function to repartition the monthly_network_triplets_country and monthly_network_triplets_country tables."""
+    """
+    Function to repartition the monthly_network_triplets_country and monthly_network_triplets_country tables.
+
+    Arguments:
+        conn: dirbs db connection object
+        num_physical_shards: number of physical shards to apply
+    """
     with conn.cursor() as cursor, utils.db_role_setter(conn, role_name='dirbs_core_import_operator'):
         # Create parent partitions
         cursor.execute(

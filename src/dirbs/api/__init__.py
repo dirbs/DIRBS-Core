@@ -40,6 +40,7 @@ from flask import Flask, request, g
 from werkzeug.exceptions import HTTPException, InternalServerError, BadRequest, ServiceUnavailable
 
 import dirbs.utils as utils
+from dirbs.api.common.cache import cache
 from dirbs.config import ConfigParser
 from dirbs.config.common import ConfigParseException
 from dirbs.logging import StatsClient, setup_initial_logging, configure_logging, setup_file_logging
@@ -91,6 +92,18 @@ statsd = StatsClient(app.config['DIRBS_CONFIG'].statsd_config)
 
 # Init custom JSONEncoder (handles dates, etc.)
 app.json_encoder = utils.JSONEncoder
+
+# setup redis as cache with dirbs apis app
+cache.init_app(app,
+               config={
+                   'CACHE_TYPE': 'redis',
+                   'CACHE_REDIS_HOST': app.config['DIRBS_CONFIG'].redis_config.hostname,
+                   'CACHE_REDIS_PORT': app.config['DIRBS_CONFIG'].redis_config.port,
+                   'CACHE_REDIS_PASSWORD': app.config['DIRBS_CONFIG'].redis_config.password,
+                   'CACHE_REDIS_DB': app.config['DIRBS_CONFIG'].redis_config.db,
+                   'CACHE_DEFAULT_TIMEOUT': app.config['DIRBS_CONFIG'].redis_config.cache_timeout,
+                   'CACHE_KEY_PREFIX': 'dirbs'
+               })
 
 
 def _metrics_type_from_req_ctxt(req: callable) -> str:

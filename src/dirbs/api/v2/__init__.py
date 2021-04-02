@@ -34,6 +34,7 @@ POSSIBILITY OF SUCH DAMAGE.
 from flask import Blueprint
 from flask_apispec import use_kwargs, marshal_with, doc
 
+from dirbs.api.common.cache import cache
 from dirbs.api.v2.resources import imei as imei_resource
 from dirbs.api.v2.schemas.imei import IMEI, BatchIMEI, IMEIBatchArgs, IMEISubscribers, \
     SubscriberArgs, IMEIPairings, IMEIInfo, IMEIArgs
@@ -87,6 +88,7 @@ def register_docs(api_doc):
 @use_kwargs(TacArgs().fields_dict, locations=['json'])
 @marshal_with(None, code=400, description='Bad TAC format')
 @disable_options_method()
+@cache.memoize()
 def tac_post_api(**kwargs: dict) -> str:
     """
     Batch TAC API (version 2) POST route.
@@ -104,6 +106,7 @@ def tac_post_api(**kwargs: dict) -> str:
 @marshal_with(TacInfo, code=200, description='On success (TAC found in GSMA database)')
 @marshal_with(None, code=400, description='Bad TAC format')
 @disable_options_method()
+@cache.memoize()
 def tac_get_api(tac: str) -> str:
     """
     TAC API (version 2) GET route.
@@ -122,6 +125,7 @@ def tac_get_api(tac: str) -> str:
 @marshal_with(MSISDNResp, code=200, description='On success (MSISDN info found in database)')
 @marshal_with(None, code=400, description='Bad MSISDN format')
 @disable_options_method()
+@cache.memoize()
 def msisdn_get_api(msisdn: str) -> str:
     """
     MSISDN API (version 2) GET route.
@@ -142,6 +146,7 @@ def msisdn_get_api(msisdn: str) -> str:
 @marshal_with(IMEI, code=200, description='On success (IMEI info found in Core)')
 @marshal_with(None, code=400, description='Bad IMEI format')
 @disable_options_method()
+@cache.memoize()
 def imei_get_api(imei: str, **kwargs: dict) -> str:
     """
     IMEI API (version 2.0) GET route.
@@ -162,6 +167,7 @@ def imei_get_api(imei: str, **kwargs: dict) -> str:
 @marshal_with(IMEISubscribers, code=200, description='On success (Info found in database)')
 @marshal_with(None, code=400, description='Bad IMEI format')
 @disable_options_method()
+@cache.memoize()
 def imei_get_subscribers_api(imei: str, **kwargs: dict) -> str:
     """
     IMEI Subscribers API (version 2.0) GET route.
@@ -182,6 +188,7 @@ def imei_get_subscribers_api(imei: str, **kwargs: dict) -> str:
 @marshal_with(IMEIPairings, code=200, description='On success (Info found in database)')
 @marshal_with(None, code=400, description='Bad IMEI format')
 @disable_options_method()
+@cache.memoize()
 def imei_get_pairings_api(imei: str, **kwargs: dict) -> str:
     """
     IMEI Pairings API (version 2.0) GET route.
@@ -201,6 +208,7 @@ def imei_get_pairings_api(imei: str, **kwargs: dict) -> str:
 @marshal_with(IMEIInfo, code=200, description='On success (Info found in database)')
 @marshal_with(None, code=400, description='Bad IMEI format')
 @disable_options_method()
+@cache.memoize()
 def imei_info_api(imei: str) -> str:
     """
     IMEI-Info API (Version 2.0) GET route.
@@ -220,6 +228,7 @@ def imei_info_api(imei: str) -> str:
 @marshal_with(BatchIMEI, code=200, description='On success (Info found in database)')
 @marshal_with(None, code=400, description='Bad IMEI format')
 @disable_options_method()
+@cache.memoize()
 def imei_batch_api(**kwargs: dict) -> str:
     """
     IMEI Batch API (version 2.0) POST route.
