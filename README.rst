@@ -359,4 +359,4 @@ To create the distribution (wheel, assets) for a release:
 All assets to be shipped will be output to the ``dist`` directory.
 
 
-© 2016-2020 Qualcomm Technologies, Inc.  All rights reserved.
+© 2016-2021 Qualcomm Technologies, Inc.  All rights reserved.

@@ -80,8 +80,11 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 def read(*names):
     """
     Method to read the names provided.
-    :param names: target file names/paths
-    :return: file pointer
+
+    Arguments:
+        *names: names of the files in form of tuples
+    Returns:
+        file pointer
     """
     with open(path.join(here, *names), encoding="utf8") as fp:
         return fp.read()
@@ -90,8 +93,12 @@ def read(*names):
 def find_version(*file_paths):
     """
     Method to find the current version of dirbs to bump in release.
-    :param file_paths: path of the version file
-    :return: dirbs version str
+
+    Arguments:
+        *file_paths: path to the file containing version string
+
+    Returns:
+        version str
     """
     version_file = read(*file_paths)
     version_match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]",

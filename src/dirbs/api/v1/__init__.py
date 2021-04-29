@@ -36,6 +36,7 @@ from typing import Callable
 from flask import Blueprint
 from flask_apispec import use_kwargs, marshal_with, doc
 
+from dirbs.api.common.cache import cache
 from dirbs.api.v1.resources import imei as imei_resource
 from dirbs.api.v1.resources import version as version_resource
 from dirbs.api.v1.resources import tac as tac_resource
@@ -88,6 +89,7 @@ def register_docs(apidoc) -> None:
 @marshal_with(IMEI, code=200, description='On success')
 @marshal_with(None, code=400, description='Bad parameter value')
 @disable_options_method()
+@cache.memoize()
 def imei_api(imei: str, **kwargs: dict) -> Callable[[str, dict], str]:
     """
     IMEI API route.
@@ -106,6 +108,7 @@ def imei_api(imei: str, **kwargs: dict) -> Callable[[str, dict], str]:
 @marshal_with(GSMATacInfo, code=200, description='On success (TAC found in the GSMA database)')
 @marshal_with(None, code=400, description='Bad TAC format')
 @disable_options_method()
+@cache.memoize()
 def tac_api(tac: str) -> Callable[[str], str]:
     """
     TAC API route.
@@ -171,6 +174,7 @@ def version_api() -> Callable[[], str]:
 @api.route('/msisdn/<msisdn>', methods=['GET'])
 @marshal_with(MSISDN, code=200, description='On success')
 @disable_options_method()
+@cache.memoize()
 def msisdn_api(msisdn: str) -> Callable[[str], str]:
     """
     MSISDN API route.

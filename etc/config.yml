@@ -384,6 +384,29 @@ statsd:
   # Uncomment this and set to a prefix string to enable prefixing of StatsD metrics
   # prefix =
 
+# Definition of settings to be used for caching api responses to a Redis Server
+redis:
+  # The hostname for the Redis server. Overriding by environment variable DIRBS_REDIS_HOST if set.
+  # The default hostname is set to localhost if not set here
+  hostname: redis
+  #
+  # The port number that the Redis server is listening on. Overridden by environment variable
+  # DIRBS_REDIS_PORT if set. The default port is 6379 if not set here.
+  port: 6379
+  #
+  # The password for the redis server. Overriding by environment variable DIRBS_REDIS_PASSWORD if set.
+  # The default is none, to enable it uncomment the below to specify the passowrd.
+  # password: P@ssw0rd
+  #
+  # The redis db instance to be used as cache. Overridden by DIRBS_REDIS_DB if set.
+  # The default is set to instance 0.
+  # db: 0
+  #
+  # Cache timeout in seconds, Overridden by environment varaible DIRBS_REDIS_CACHE_TIMEOUT if set.
+  # The default value is 5 minutes i.e 300 seconds if not specified. Uncomment and specify below your
+  # custom timeout value.
+  # cache_timeout: 300
+
 # Definition of settings to be used during data cataloging process.
 catalog:
   # The prospector harvests all files in the path adding them to the data catalog.
